@@ -1,0 +1,59 @@
+{
+  "name": "docs-ts",
+  "version": "0.0.1",
+  "description": "Documentation tool for TypeScript packages",
+  "files": [
+    "lib"
+  ],
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
+  "scripts": {
+    "lint": "tslint -p tsconfig.json src/**/*.ts test/**/*.ts",
+    "jest": "jest",
+    "prettier": "prettier --no-semi --single-quote --print-width 120 --parser typescript --list-different \"{src,test}/**/*.ts\"",
+    "fix-prettier": "prettier --no-semi --single-quote --print-width 120 --parser typescript --write \"{src,test}/**/*.ts\"",
+    "test": "npm run prettier && npm run dtslint && npm run jest",
+    "clean": "rimraf rm -rf lib/*",
+    "build": "npm run clean && tsc",
+    "dtslint": "dtslint dtslint",
+    "mocha": "mocha -r ts-node/register test/*.ts",
+    "docs": "rimraf rm -rf docs/**/*.md!docs/index.md && ts-node docs.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gcanti/docs-ts.git"
+  },
+  "author": "Giulio Canti <giulio.canti@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/gcanti/docs-ts/issues"
+  },
+  "homepage": "https://github.com/gcanti/docs-ts",
+  "dependencies": {
+    "@types/glob": "^7.1.1",
+    "doctrine": "^3.0.0",
+    "fp-ts": "^1.14.2",
+    "fs-extra": "^7.0.1",
+    "glob": "^7.1.3",
+    "prettier": "^1.16.4",
+    "ts-simple-ast": "^21.0.4"
+  },
+  "devDependencies": {
+    "@types/doctrine": "0.0.3",
+    "@types/fs-extra": "^5.0.5",
+    "@types/jest": "^23.3.13",
+    "@types/node": "^10.12.18",
+    "@types/prettier": "^1.16.1",
+    "dtslint": "github:gcanti/dtslint",
+    "jest": "^23.6.0",
+    "mocha": "^5.2.0",
+    "rimraf": "^2.6.2",
+    "ts-jest": "^23.10.5",
+    "ts-node": "^8.0.2",
+    "tslint": "^5.12.1",
+    "tslint-config-standard": "^8.0.1",
+    "typescript": "^3.3.3333"
+  },
+  "tags": [],
+  "keywords": []
+}

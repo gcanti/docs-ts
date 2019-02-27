@@ -11,9 +11,9 @@ describe('getExamples', () => {
   it('should load the project name', () => {
     assert.deepStrictEqual(getExamples([m], 'docs-ts'), {
       // tslint:disable-next-line: quotemark
-      'src-index.ts-f1.ts': "import * as docs from '../src'",
+      'src-index.ts-f1.ts': "import * as docs from './src'",
       // tslint:disable-next-line: quotemark
-      'src-index.ts-f2.ts': "import * as parser from '../src/parser'"
+      'src-index.ts-f2.ts': "import * as parser from './src/parser'"
     })
   })
 })

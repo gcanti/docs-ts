@@ -35,7 +35,7 @@ export function getExamples(nodes: Array<parser.Node>, projectName?: string): Re
   function replaceProjectName(source: string): string {
     const root = new RegExp(`from '${projectName}'`, 'g')
     const module = new RegExp(`from '${projectName}/lib/`, 'g')
-    return source.replace(root, `from '../src'`).replace(module, `from '../src/`)
+    return source.replace(root, `from './src'`).replace(module, `from './src/`)
   }
 
   function toArray(prefix: Array<string>, x: { name: string; example: Option<string> }): Array<[string, string]> {

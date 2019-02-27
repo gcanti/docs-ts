@@ -98,6 +98,12 @@ function printClass(c: Class): string {
   return s
 }
 
+function doctoc(): string {
+  return `<!-- START doctoc -->
+<!-- END doctoc -->
+`
+}
+
 export function run(node: Node): string {
   return prettier.format(
     fold(
@@ -116,6 +122,7 @@ export function run(node: Node): string {
       },
       (_p, interfaces, functions, classes) => {
         return (
+          doctoc() +
           interfaces.map(i => printInterface(i)).join('') +
           functions.map(f => printFunction(f)).join('') +
           classes.map(c => printClass(c)).join('')

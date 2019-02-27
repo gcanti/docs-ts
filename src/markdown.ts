@@ -38,6 +38,7 @@ function printInterface(i: Interface): string {
   let s = h1(handleDeprecated(i.name, i.deprecated))
   s += printDescription(i.description)
   s += printSignature(i.signature, 'interface')
+  s += printExample(i.example)
   s += printSince(i.since)
   s += CRLF
   return s
@@ -47,6 +48,7 @@ function printTypeAlias(ta: TypeAlias): string {
   let s = h1(handleDeprecated(ta.name, ta.deprecated))
   s += printDescription(ta.description)
   s += printSignature(ta.signature, 'type alias')
+  s += printExample(ta.example)
   s += printSince(ta.since)
   s += CRLF
   return s
@@ -56,6 +58,7 @@ function printConstant(c: Constant): string {
   let s = h1(handleDeprecated(c.name, c.deprecated))
   s += printDescription(c.description)
   s += printSignature(c.signature, 'constant')
+  s += printExample(c.example)
   s += printSince(c.since)
   s += CRLF
   return s

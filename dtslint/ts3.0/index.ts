@@ -1,4 +1,1 @@
-import { sum } from '../../src'
-
-// $ExpectError
-sum(1, 'a')
+const a = 1

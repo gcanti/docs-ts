@@ -8,11 +8,12 @@ import { tree } from 'fp-ts/lib/Tree'
 import { Validation, success, failure } from 'fp-ts/lib/Validation'
 import { array, sort, empty } from 'fp-ts/lib/Array'
 import { ordString, contramap } from 'fp-ts/lib/Ord'
-import { Option } from 'fp-ts/lib/Option'
+import { Option, tryCatch } from 'fp-ts/lib/Option'
 import { fromFoldable } from 'fp-ts/lib/Record'
 import { tuple, identity } from 'fp-ts/lib/function'
 import { toArray } from 'fp-ts/lib/Foldable2v'
 import { checkSources } from './check'
+import { fold, getArrayMonoid } from 'fp-ts/lib/Monoid'
 
 function writeFileSync(path: string, content: string): Validation<Array<string>, IO<void>> {
   try {
@@ -30,19 +31,50 @@ function getOutpuPath(outDir: string, node: parser.Node): string {
   )
 }
 
-function getExamples(nodes: Array<parser.Node>): Record<string, string> {
-  const toArray = (prefix: string, x: { name: string; example: Option<string> }): Array<[string, string]> =>
-    x.example.foldL(
+function getProjectName(): Option<string> {
+  return tryCatch(() => require('../package.json').name)
+}
+
+export function getExamples(nodes: Array<parser.Node>): Record<string, string> {
+  const projectName = getProjectName()
+
+  function replaceProjectName(source: string): string {
+    return projectName.fold(source, projectName => {
+      const root = new RegExp(`from '${projectName}'`, 'g')
+      const module = new RegExp(`from '${projectName}/lib/`, 'g')
+      return source.replace(root, `from '../src`).replace(module, `from '../src/`)
+    })
+  }
+
+  function toArray(prefix: Array<string>, x: { name: string; example: Option<string> }): Array<[string, string]> {
+    return x.example.foldL(
       () => empty,
-      source => [tuple(prefix + '-' + x.name + '.ts', `import * as assert from 'assert'\n` + source)]
+      source => {
+        const name = prefix.join('-') + '-' + x.name + '.ts'
+        const code =
+          (source.indexOf('assert.') !== -1 ? `import * as assert from 'assert'\n` : '') + replaceProjectName(source)
+        return [tuple(name, code)]
+      }
     )
+  }
 
   const sources = array.chain(nodes, node => {
     switch (node.type) {
       case 'Index':
         return empty
       case 'Module':
-        return array.chain(node.functions, f => toArray(node.path.join('-'), f))
+        const foldArrayOfTuple = fold(getArrayMonoid<[string, string]>())
+        const methods = array.chain(node.classes, c =>
+          foldArrayOfTuple([
+            array.chain(c.methods, m => toArray(node.path, m)),
+            array.chain(c.staticMethods, sm => toArray(node.path, sm))
+          ])
+        )
+        const interfaces = array.chain(node.interfaces, i => toArray(node.path, i))
+        const typeAliases = array.chain(node.typeAliases, ta => toArray(node.path, ta))
+        const constants = array.chain(node.constants, c => toArray(node.path, c))
+        const functions = array.chain(node.functions, f => toArray(node.path, f))
+        return foldArrayOfTuple([methods, interfaces, typeAliases, constants, functions])
     }
   })
   return fromFoldable(array)(sources, identity)

@@ -32,8 +32,9 @@ export declare type Interface = {
     readonly since: Option<string>;
     readonly location: Location;
     readonly deprecated: boolean;
+    readonly example: Option<string>;
 };
-export declare function interface_(name: string, signature: string, description: Option<string>, since: Option<string>, location: Location, deprecated: boolean): Interface;
+export declare function interface_(name: string, signature: string, description: Option<string>, since: Option<string>, location: Location, deprecated: boolean, example: Option<string>): Interface;
 export declare type Func = {
     readonly name: string;
     readonly signatures: Array<string>;

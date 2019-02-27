@@ -124,7 +124,8 @@ export function location(from: number, to: number): Location {
     description :: Option string,
     since :: Option string,
     location :: Location,
-    deprecated :: boolean
+    deprecated :: boolean,
+    example :: Option string
   }
 
 */
@@ -135,6 +136,7 @@ export type Interface = {
   readonly since: Option<string>
   readonly location: Location
   readonly deprecated: boolean
+  readonly example: Option<string>
 }
 
 export function interface_(
@@ -143,9 +145,10 @@ export function interface_(
   description: Option<string>,
   since: Option<string>,
   location: Location,
-  deprecated: boolean
+  deprecated: boolean,
+  example: Option<string>
 ): Interface {
-  return { name, signature, description, since, location, deprecated }
+  return { name, signature, description, since, location, deprecated, example }
 }
 
 /*
@@ -470,16 +473,9 @@ function getAnnotationInfo(
 
 function parseInterfaceDeclaration(id: ast.InterfaceDeclaration): Validation<Array<string>, Interface> {
   const annotation = getAnnotation(id.getJsDocs())
-  const { description, since, deprecated } = getAnnotationInfo(annotation)
+  const { description, since, deprecated, example } = getAnnotationInfo(annotation)
   const signature = id.getText()
-  return success({
-    name: id.getName(),
-    signature,
-    description,
-    since,
-    location: getLocation(id),
-    deprecated
-  })
+  return success(interface_(id.getName(), signature, description, since, getLocation(id), deprecated, example))
 }
 
 export function getInterfaces(sourceFile: ast.SourceFile): Validation<Array<string>, Array<Interface>> {

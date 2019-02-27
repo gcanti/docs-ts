@@ -8,5 +8,5 @@ nav_order: 7
 **Signature** (function)
 
 ```ts
-export function indexStrMap<A = never>(): Index<StrMap<A>, string, A>
+export function indexStrMap<A = never>(): Index<StrMap<A>, string, A> { ... }
 ```

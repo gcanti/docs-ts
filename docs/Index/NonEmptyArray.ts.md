@@ -8,5 +8,5 @@ nav_order: 6
 **Signature** (function)
 
 ```ts
-export function indexNonEmptyArray<A = never>(): Index<NonEmptyArray<A>, number, A>
+export function indexNonEmptyArray<A = never>(): Index<NonEmptyArray<A>, number, A> { ... }
 ```

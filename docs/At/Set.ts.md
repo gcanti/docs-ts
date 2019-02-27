@@ -8,5 +8,5 @@ nav_order: 1
 **Signature** (function)
 
 ```ts
-export function atSet<A = never>(setoid: Setoid<A>): At<Set<A>, A, boolean>
+export function atSet<A = never>(setoid: Setoid<A>): At<Set<A>, A, boolean> { ... }
 ```

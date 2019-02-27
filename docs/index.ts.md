@@ -49,7 +49,11 @@ create a Traversal from a Traversable
 **Signature** (function)
 
 ```ts
+export function fromTraversable<T extends URIS3>(T: Traversable3<T>): <U, L, A>() => Traversal<Type3<T, U, L, A>, A>
+export function fromTraversable<T extends URIS2>(T: Traversable2<T>): <L, A>() => Traversal<Type2<T, L, A>, A>
+export function fromTraversable<T extends URIS>(T: Traversable1<T>): <A>() => Traversal<Type<T, A>, A>
 export function fromTraversable<T>(T: Traversable<T>): <A>() => Traversal<HKT<T, A>, A>
+export function fromTraversable<T>(T: Traversable<T>): <A>() => Traversal<HKT<T, A>, A> { ... }
 ```
 
 **Example**
@@ -91,7 +95,11 @@ create a Fold from a Foldable
 **Signature** (function)
 
 ```ts
+export function fromFoldable<F extends URIS3>(F: Foldable3<F>): <U, L, A>() => Fold<Type3<F, U, L, A>, A>
+export function fromFoldable<F extends URIS2>(F: Foldable2<F>): <L, A>() => Fold<Type2<F, L, A>, A>
+export function fromFoldable<F extends URIS>(F: Foldable1<F>): <A>() => Fold<Type<F, A>, A>
 export function fromFoldable<F>(F: Foldable<F>): <A>() => Fold<HKT<F, A>, A>
+export function fromFoldable<F>(F: Foldable<F>): <A>() => Fold<HKT<F, A>, A> { ... }
 ```
 
 # Iso
@@ -785,6 +793,8 @@ focus the items matched by a traversal to those that match a predicate
 **Signature** (method)
 
 ```ts
+filter<B extends A>(refinement: Refinement<A, B>): Traversal<S, B>
+filter(predicate: Predicate<A>): Traversal<S, A>
 filter(predicate: Predicate<A>): Traversal<S, A> { ... }
 ```
 
@@ -1158,6 +1168,8 @@ find the first target of a Fold matching the predicate
 **Signature** (method)
 
 ```ts
+find<B extends A>(p: Refinement<A, B>): (s: S) => Option<B>
+find(p: Predicate<A>): (s: S) => Option<A>
 find(p: Predicate<A>): (s: S) => Option<A> { ... }
 ```
 

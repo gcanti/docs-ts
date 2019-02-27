@@ -152,7 +152,7 @@ export function interface_(
 
   data Func = Func {
     name :: string,
-    signature :: string,
+    signatures :: Array string,
     description :: Option string,
     since :: Option string,
     location :: Location,
@@ -163,7 +163,7 @@ export function interface_(
 */
 export type Func = {
   readonly name: string
-  readonly signature: string
+  readonly signatures: Array<string>
   readonly description: Option<string>
   readonly since: Option<string>
   readonly location: Location
@@ -173,21 +173,21 @@ export type Func = {
 
 export function func(
   name: string,
-  signature: string,
+  signatures: Array<string>,
   description: Option<string>,
   since: Option<string>,
   location: Location,
   deprecated: boolean,
   example: Option<string>
 ): Func {
-  return { name, signature, description, since, location, deprecated, example }
+  return { name, signatures, description, since, location, deprecated, example }
 }
 
 /*
 
   data Method = Method {
     name :: string,
-    signature :: string,
+    signatures :: Array string,
     description :: Option string,
     since :: Option string,
     location :: Location,
@@ -198,7 +198,7 @@ export function func(
 */
 export type Method = {
   readonly name: string
-  readonly signature: string
+  readonly signatures: Array<string>
   readonly description: Option<string>
   readonly since: Option<string>
   readonly location: Location
@@ -208,14 +208,14 @@ export type Method = {
 
 export function method(
   name: string,
-  signature: string,
+  signatures: Array<string>,
   description: Option<string>,
   since: Option<string>,
   location: Location,
   deprecated: boolean,
   example: Option<string>
 ): Method {
-  return { name, signature, description, since, location, deprecated, example }
+  return { name, signatures, description, since, location, deprecated, example }
 }
 
 /*
@@ -407,7 +407,7 @@ export function getInterfaces(sourceFile: ast.SourceFile): Validation<Array<stri
 function getFunctionDeclarationSignature(f: ast.FunctionDeclaration): string {
   const text = f.getText()
   const end = text.indexOf('{')
-  return `${text.substring(0, end === -1 ? text.length : end).trim()}`
+  return `${text.substring(0, end === -1 ? text.length : end).trim()} { ... }`
 }
 
 const indexOf = (big: string, small: string) => {
@@ -434,20 +434,14 @@ function getFunctionDeclarationAnnotation(fd: ast.FunctionDeclaration): doctrine
 function parseFunctionDeclaration(moduleName: string, fd: ast.FunctionDeclaration): Validation<Array<string>, Func> {
   const annotation = getFunctionDeclarationAnnotation(fd)
   const { description, since, deprecated, example } = getAnnotationInfo(annotation)
+  const overloads = fd.getOverloads()
   const signature = getFunctionDeclarationSignature(fd)
+  const signatures = overloads.length === 0 ? [signature] : [...overloads.map(fd => fd.getText()), signature]
   const name = fd.getName()
   if (name === undefined || name.trim() === '') {
     return failure([`Missing function name in module ${moduleName}`])
   } else {
-    return success({
-      name,
-      signature,
-      description,
-      since,
-      location: getLocation(fd),
-      deprecated,
-      example
-    })
+    return success(func(name, signatures, description, since, getLocation(fd), deprecated, example))
   }
 }
 
@@ -455,17 +449,9 @@ function parseVariableDeclaration(vd: ast.VariableDeclaration): Validation<Array
   const vs: any = vd.getParent().getParent()
   const annotation = getAnnotation(vs.getJsDocs())
   const { description, since, deprecated, example } = getAnnotationInfo(annotation)
-  const signature = getFunctionVariableDeclarationSignature(vd)
+  const signatures = [getFunctionVariableDeclarationSignature(vd)]
   const name = vd.getName()
-  return success({
-    name,
-    signature,
-    description,
-    since,
-    location: getLocation(vd),
-    deprecated,
-    example
-  })
+  return success(func(name, signatures, description, since, getLocation(vd), deprecated, example))
 }
 
 export function getFunctions(moduleName: string, sourceFile: ast.SourceFile): Validation<Array<string>, Array<Func>> {
@@ -522,7 +508,8 @@ function parseMethod(md: ast.MethodDeclaration): Validation<Array<string>, Metho
   const annotation = overloads.length === 0 ? getAnnotation(md.getJsDocs()) : getAnnotation(overloads[0].getJsDocs())
   const { description, since, deprecated, example } = getAnnotationInfo(annotation)
   const signature = getMethodSignature(md)
-  return success(method(name, signature, description, since, getLocation(md), deprecated, example))
+  const signatures = overloads.length === 0 ? [signature] : [...overloads.map(md => md.getText()), signature]
+  return success(method(name, signatures, description, since, getLocation(md), deprecated, example))
 }
 
 function parseClass(moduleName: string, c: ast.ClassDeclaration): Validation<Array<string>, Class> {

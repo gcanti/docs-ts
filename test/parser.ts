@@ -133,7 +133,7 @@ export const sum = (a: number, b: number): number => a + b`
             to: 6
           },
           name: 'sum',
-          signature: 'export const sum = (a: number, b: number): number => ...',
+          signatures: ['export const sum = (a: number, b: number): number => ...'],
           since: some('1.0.0'),
           example: none
         }
@@ -162,7 +162,40 @@ export function sum(a: number, b: number): number { return a + b }`
             to: 6
           },
           name: 'sum',
-          signature: 'export function sum(a: number, b: number): number',
+          signatures: ['export function sum(a: number, b: number): number { ... }'],
+          since: some('1.0.0'),
+          example: none
+        }
+      ])
+    )
+  })
+
+  it('should handle overloadings', () => {
+    const sourceFile = getSourceFile(
+      'test',
+      `/**
+* a description...
+* @since 1.0.0
+* @deprecated
+*/
+export function sum(a: int, b: int): int
+export function sum(a: number, b: number): number { return a + b }`
+    )
+    assert.deepStrictEqual(
+      getFunctions('test', sourceFile),
+      success([
+        {
+          deprecated: true,
+          description: some('a description...'),
+          location: {
+            from: 7,
+            to: 7
+          },
+          name: 'sum',
+          signatures: [
+            'export function sum(a: int, b: int): int',
+            'export function sum(a: number, b: number): number { ... }'
+          ],
           since: some('1.0.0'),
           example: none
         }
@@ -226,7 +259,7 @@ export class Test {
                 to: 21
               },
               name: 'map',
-              signature: 'map(f: (a: string) => string): Test { ... }',
+              signatures: ['map(f: (a: string) => string): Test { ... }'],
               since: some('1.1.0'),
               example: none
             }
@@ -240,7 +273,82 @@ export class Test {
                 to: 12
               },
               name: 'f',
-              signature: 'static f() { ... }',
+              signatures: ['static f() { ... }'],
+              since: some('1.1.0'),
+              example: none
+            }
+          ]
+        }
+      ])
+    )
+  })
+
+  it('should handle method overloadings', () => {
+    const sourceFile = getSourceFile(
+      'test',
+      `/**
+ * a class description...
+ * @since 1.0.0
+ * @deprecated
+ */
+export class Test<A> {
+  /**
+   * a static method description...
+   * @since 1.1.0
+   * @deprecated
+   */
+  static f(x: number): number
+  static f(x: string): string {}
+  constructor(readonly value: A) { }
+  /**
+   * a method description...
+   * @since 1.1.0
+   * @deprecated
+   */
+  map(f: (a: number) => number): Test
+  map(f: (a: string) => string): Test {
+    return new Test(f(this.value))
+  }
+}`
+    )
+    assert.deepStrictEqual(
+      getClasses('test', sourceFile),
+      success([
+        {
+          deprecated: true,
+          description: some('a class description...'),
+          location: {
+            from: 6,
+            to: 24
+          },
+          name: 'Test',
+          signature: 'export class Test<A> {\n  constructor(readonly value: A) { }\n  ... \n}',
+          since: some('1.0.0'),
+          example: none,
+          methods: [
+            {
+              deprecated: true,
+              description: some('a method description...'),
+              location: {
+                from: 21,
+                to: 23
+              },
+              name: 'map',
+              signatures: ['map(f: (a: number) => number): Test', 'map(f: (a: string) => string): Test { ... }'],
+              since: some('1.1.0'),
+              example: none
+            }
+          ],
+          staticMethods: [
+            {
+              deprecated: true,
+              description: some('a static method description...'),
+              location: {
+                from: 13,
+                to: 13
+              },
+              name: 'f',
+              signatures: ['static f(x: number): number', 'static f(x: string): string { ... }'],
               since: some('1.1.0'),
               example: none
             }

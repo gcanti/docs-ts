@@ -57,6 +57,30 @@ Table of Contents
 - [UnknownRecordC](#unknownrecordc)
 - [ValidationError](#validationerror)
 - [VoidC](#voidc)
+- [Branded](#branded)
+- [~~Compact~~ (deprecated)](#compact-deprecated)
+- [Decode](#decode)
+- [Encode](#encode)
+- [~~Exact~~ (deprecated)](#exact-deprecated)
+- [HasProps](#hasprops)
+- [InputOf](#inputof)
+- [Int](#int)
+- [Is](#is)
+- [OutputOf](#outputof)
+- [OutputOfDictionary](#outputofdictionary)
+- [OutputOfPartialProps](#outputofpartialprops)
+- [OutputOfProps](#outputofprops)
+- [~~PropsOf~~ (deprecated)](#propsof-deprecated)
+- [~~Tagged~~ (deprecated)](#tagged-deprecated)
+- [~~TaggedIntersectionArgument~~ (deprecated)](#taggedintersectionargument-deprecated)
+- [~~TaggedProps~~ (deprecated)](#taggedprops-deprecated)
+- [TypeOf](#typeof)
+- [TypeOfDictionary](#typeofdictionary)
+- [TypeOfPartialProps](#typeofpartialprops)
+- [TypeOfProps](#typeofprops)
+- [Validate](#validate)
+- [Validation](#validation)
+- [~~mixed~~ (deprecated)](#mixed-deprecated)
 - [AnyArrayType](#anyarraytype)
 - [AnyDictionaryType](#anydictionarytype)
 - [~~AnyType~~ (deprecated)](#anytype-deprecated)
@@ -691,6 +715,279 @@ export interface VoidC extends VoidType {}
 ```
 
 Added in v1.5.3
+
+# Branded
+
+**Signature** (type alias)
+
+```ts
+export type Branded<A, B> = A & Brand<B>
+```
+
+Added in v1.8.1
+
+# ~~Compact~~ (deprecated)
+
+used in `intersection` as a workaround for #234
+
+**Signature** (type alias)
+
+```ts
+export type Compact<A> = { [K in keyof A]: A[K] }
+```
+
+Added in v1.4.2
+
+# Decode
+
+**Signature** (type alias)
+
+```ts
+export type Decode<I, A> = (i: I) => Validation<A>
+```
+
+Added in v1.0.0
+
+# Encode
+
+**Signature** (type alias)
+
+```ts
+export type Encode<A, O> = (a: A) => O
+```
+
+Added in v1.0.0
+
+# ~~Exact~~ (deprecated)
+
+**Signature** (type alias)
+
+```ts
+export type Exact<T, X extends T> = T &
+  { [K in ({ [K in keyof X]: K } & { [K in keyof T]: never } & { [key: string]: never })[keyof X]]?: never }
+```
+
+Added in v1.1.0
+
+# HasProps
+
+**Signature** (type alias)
+
+```ts
+export type HasProps =
+  | HasPropsRefinement
+  | HasPropsReadonly
+  | HasPropsIntersection
+  | InterfaceType<any, any, any, any>
+  | StrictType<any, any, any, any>
+  | PartialType<any, any, any, any>
+```
+
+Added in v1.1.0
+
+# InputOf
+
+**Signature** (type alias)
+
+```ts
+export type InputOf<C extends Any> = C['_I']
+```
+
+Added in v1.0.0
+
+# Int
+
+**Signature** (type alias)
+
+```ts
+export type Int = Branded<number, IntBrand>
+```
+
+Added in v1.8.1
+
+# Is
+
+**Signature** (type alias)
+
+```ts
+export type Is<A> = (u: unknown) => u is A
+```
+
+Added in v1.0.0
+
+# OutputOf
+
+**Signature** (type alias)
+
+```ts
+export type OutputOf<C extends Any> = C['_O']
+```
+
+Added in v1.0.0
+
+# OutputOfDictionary
+
+**Signature** (type alias)
+
+```ts
+export type OutputOfDictionary<D extends Any, C extends Any> = { [K in OutputOf<D>]: OutputOf<C> }
+```
+
+Added in v1.0.0
+
+# OutputOfPartialProps
+
+**Signature** (type alias)
+
+```ts
+export type OutputOfPartialProps<P extends AnyProps> = { [K in keyof P]?: OutputOf<P[K]> }
+```
+
+Added in v1.0.0
+
+# OutputOfProps
+
+**Signature** (type alias)
+
+```ts
+export type OutputOfProps<P extends AnyProps> = { [K in keyof P]: OutputOf<P[K]> }
+```
+
+Added in v1.0.0
+
+# ~~PropsOf~~ (deprecated)
+
+**Signature** (type alias)
+
+```ts
+export type PropsOf<T extends { props: any }> = T['props']
+```
+
+Added in v1.0.0
+
+# ~~Tagged~~ (deprecated)
+
+**Signature** (type alias)
+
+```ts
+export type Tagged<Tag extends string, A = any, O = A> =
+  | InterfaceType<TaggedProps<Tag>, A, O>
+  | StrictType<TaggedProps<Tag>, A, O>
+  | TaggedRefinement<Tag, A, O>
+  | TaggedUnion<Tag, A, O>
+  | TaggedIntersection<Tag, A, O>
+  | TaggedExact<Tag, A, O>
+  | RecursiveType<any, A, O>
+```
+
+Added in v1.3.0
+
+# ~~TaggedIntersectionArgument~~ (deprecated)
+
+**Signature** (type alias)
+
+```ts
+export type TaggedIntersectionArgument<Tag extends string> =
+  | [Tagged<Tag>]
+  | [Tagged<Tag>, Mixed]
+  | [Mixed, Tagged<Tag>]
+  | [Tagged<Tag>, Mixed, Mixed]
+  | [Mixed, Tagged<Tag>, Mixed]
+  | [Mixed, Mixed, Tagged<Tag>]
+  | [Tagged<Tag>, Mixed, Mixed, Mixed]
+  | [Mixed, Tagged<Tag>, Mixed, Mixed]
+  | [Mixed, Mixed, Tagged<Tag>, Mixed]
+  | [Mixed, Mixed, Mixed, Tagged<Tag>]
+  | [Tagged<Tag>, Mixed, Mixed, Mixed, Mixed]
+  | [Mixed, Tagged<Tag>, Mixed, Mixed, Mixed]
+  | [Mixed, Mixed, Tagged<Tag>, Mixed, Mixed]
+  | [Mixed, Mixed, Mixed, Tagged<Tag>, Mixed]
+  | [Mixed, Mixed, Mixed, Mixed, Tagged<Tag>]
+```
+
+Added in v1.3.0
+
+# ~~TaggedProps~~ (deprecated)
+
+**Signature** (type alias)
+
+```ts
+export type TaggedProps<Tag extends string> = { [K in Tag]: LiteralType<any> }
+```
+
+Added in v1.3.0
+
+# TypeOf
+
+**Signature** (type alias)
+
+```ts
+export type TypeOf<C extends Any> = C['_A']
+```
+
+Added in v1.0.0
+
+# TypeOfDictionary
+
+**Signature** (type alias)
+
+```ts
+export type TypeOfDictionary<D extends Any, C extends Any> = { [K in TypeOf<D>]: TypeOf<C> }
+```
+
+Added in v1.0.0
+
+# TypeOfPartialProps
+
+**Signature** (type alias)
+
+```ts
+export type TypeOfPartialProps<P extends AnyProps> = { [K in keyof P]?: TypeOf<P[K]> }
+```
+
+Added in v1.0.0
+
+# TypeOfProps
+
+**Signature** (type alias)
+
+```ts
+export type TypeOfProps<P extends AnyProps> = { [K in keyof P]: TypeOf<P[K]> }
+```
+
+Added in v1.0.0
+
+# Validate
+
+**Signature** (type alias)
+
+```ts
+export type Validate<I, A> = (i: I, context: Context) => Validation<A>
+```
+
+Added in v1.0.0
+
+# Validation
+
+**Signature** (type alias)
+
+```ts
+export type Validation<A> = Either<Errors, A>
+```
+
+Added in v1.0.0
+
+# ~~mixed~~ (deprecated)
+
+Use `unknown` instead
+
+**Signature** (type alias)
+
+```ts
+export type mixed = unknown
+```
+
+Added in v1.0.0
 
 # AnyArrayType
 

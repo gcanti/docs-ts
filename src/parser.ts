@@ -260,6 +260,41 @@ export function class_(
 }
 
 /*
+
+  data TypeAlias = TypeAlias {
+    name :: string,
+    signatures :: Array string,
+    description :: Option string,
+    since :: Option string,
+    location :: Location,
+    deprecated :: boolean,
+    example :: Option string
+  }
+
+*/
+export type TypeAlias = {
+  readonly name: string
+  readonly signature: string
+  readonly description: Option<string>
+  readonly since: Option<string>
+  readonly location: Location
+  readonly deprecated: boolean
+  readonly example: Option<string>
+}
+
+export function typeAlias(
+  name: string,
+  signature: string,
+  description: Option<string>,
+  since: Option<string>,
+  location: Location,
+  deprecated: boolean,
+  example: Option<string>
+): TypeAlias {
+  return { name, signature, description, since, location, deprecated, example }
+}
+
+/*
   data Node =
       Index {
         path :: Array string,
@@ -268,6 +303,7 @@ export function class_(
     | Module {
       path :: Array string,
       interfaces :: Array Interface,
+      typeAliases :: Array TypeAlias,
       functions :: Array Func,
       classes :: Array Class
     }
@@ -282,6 +318,7 @@ export type Node =
       readonly type: 'Module'
       readonly path: Array<string>
       readonly interfaces: Array<Interface>
+      readonly typeAliases: Array<TypeAlias>
       readonly functions: Array<Func>
       readonly classes: Array<Class>
     }
@@ -293,22 +330,29 @@ export function index(path: Array<string>, children: Array<string>): Node {
 export function module(
   path: Array<string>,
   interfaces: Array<Interface>,
+  typeAliases: Array<TypeAlias>,
   functions: Array<Func>,
   classes: Array<Class>
 ): Node {
-  return { type: 'Module', path, interfaces, functions, classes }
+  return { type: 'Module', path, interfaces, typeAliases, functions, classes }
 }
 
 export function fold<R>(
   fa: Node,
   onIndex: (path: Array<string>, children: Array<string>) => R,
-  onModule: (path: Array<string>, interfaces: Array<Interface>, functions: Array<Func>, classes: Array<Class>) => R
+  onModule: (
+    path: Array<string>,
+    interfaces: Array<Interface>,
+    typeAliases: Array<TypeAlias>,
+    functions: Array<Func>,
+    classes: Array<Class>
+  ) => R
 ): R {
   switch (fa.type) {
     case 'Index':
       return onIndex(fa.path, fa.children)
     case 'Module':
-      return onModule(fa.path, fa.interfaces, fa.functions, fa.classes)
+      return onModule(fa.path, fa.interfaces, fa.typeAliases, fa.functions, fa.classes)
   }
 }
 
@@ -485,6 +529,28 @@ export function getFunctions(moduleName: string, sourceFile: ast.SourceFile): Va
   return monoidFunc.concat(functionDeclarations, variableDeclarations).map(funcs => funcs.sort(byName.compare))
 }
 
+function getTypeAliasesAnnotation(ta: ast.TypeAliasDeclaration): doctrine.Annotation {
+  return getAnnotation(ta.getJsDocs())
+}
+
+function parseTypeAliasDeclaration(ta: ast.TypeAliasDeclaration): Validation<Array<string>, TypeAlias> {
+  const annotation = getTypeAliasesAnnotation(ta)
+  const { description, since, deprecated, example } = getAnnotationInfo(annotation)
+  const signature = ta.getText()
+  const name = ta.getName()
+  return success(typeAlias(name, signature, description, since, getLocation(ta), deprecated, example))
+}
+
+export function getTypeAliases(sourceFile: ast.SourceFile): Validation<Array<string>, Array<TypeAlias>> {
+  const exportedTypeAliasDeclarations = sourceFile
+    .getTypeAliases()
+    .filter(ta => ta.isExported() && !isInternal(getTypeAliasesAnnotation(ta)))
+
+  return array
+    .traverse(monadValidation)(exportedTypeAliasDeclarations, ta => parseTypeAliasDeclaration(ta))
+    .map(typeAliases => typeAliases.sort(byName.compare))
+}
+
 function getTypeParameters(typeParameters: Array<ast.TypeParameterDeclaration>): string {
   return typeParameters.length === 0 ? '' : '<' + typeParameters.map(p => p.getName()).join(', ') + '>'
 }
@@ -549,6 +615,9 @@ export function parse(file: File, source: string): Validation<Array<string>, Nod
   return sequenceT(monadValidation)(
     getInterfaces(sourceFile),
     getFunctions(moduleName, sourceFile),
+    getTypeAliases(sourceFile),
     getClasses(moduleName, sourceFile)
-  ).map(([interfaces, functions, classes]) => module(file.path, interfaces, functions, classes))
+  ).map(([interfaces, functions, typeAliases, classes]) =>
+    module(file.path, interfaces, typeAliases, functions, classes)
+  )
 }

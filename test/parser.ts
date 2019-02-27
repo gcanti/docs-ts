@@ -10,7 +10,8 @@ import {
   getClasses,
   getFunctions,
   getInterfaces,
-  getSourceFile
+  getSourceFile,
+  getTypeAliases
 } from '../src/parser'
 
 describe('fromPaths', () => {
@@ -196,6 +197,37 @@ export function sum(a: number, b: number): number { return a + b }`
             'export function sum(a: int, b: int): int',
             'export function sum(a: number, b: number): number { ... }'
           ],
+          since: some('1.0.0'),
+          example: none
+        }
+      ])
+    )
+  })
+})
+
+describe('getTypeAliases', () => {
+  it('should return a `TypeAlias`', () => {
+    const sourceFile = getSourceFile(
+      'test',
+      `/**
+* a description...
+* @since 1.0.0
+* @deprecated
+*/
+export type Option<A> = None<A> | Some<A>`
+    )
+    assert.deepStrictEqual(
+      getTypeAliases(sourceFile),
+      success([
+        {
+          deprecated: true,
+          description: some('a description...'),
+          location: {
+            from: 6,
+            to: 6
+          },
+          name: 'Option',
+          signature: 'export type Option<A> = None<A> | Some<A>',
           since: some('1.0.0'),
           example: none
         }

@@ -1,6 +1,6 @@
 import * as prettier from 'prettier'
 import { Option } from 'fp-ts/lib/Option'
-import { Class, Node, fold, Func, Interface, Method } from './parser'
+import { Class, Node, fold, Func, Interface, Method, TypeAlias } from './parser'
 import * as path from 'path'
 
 export const CRLF = '\n\n'
@@ -43,6 +43,15 @@ function printInterface(i: Interface): string {
   return s
 }
 
+function printTypeAlias(ta: TypeAlias): string {
+  let s = h1(handleDeprecated(ta.name, ta.deprecated))
+  s += printDescription(ta.description)
+  s += printSignature(ta.signature, 'type alias')
+  s += printSince(ta.since)
+  s += CRLF
+  return s
+}
+
 function printFunction(f: Func): string {
   let s = h1(handleDeprecated(f.name, f.deprecated))
   s += printDescription(f.description)
@@ -53,7 +62,7 @@ function printFunction(f: Func): string {
   return s
 }
 
-type SignatureType = 'function' | 'static function' | 'method' | 'interface' | 'class'
+type SignatureType = 'function' | 'static function' | 'method' | 'interface' | 'class' | 'type alias'
 
 function printSignature(signature: string, type: SignatureType): string {
   return CRLF + bold('Signature') + ` (${type})` + CRLF + ts(signature)
@@ -122,10 +131,11 @@ export function run(node: Node): string {
             .join('\n') + '\n'
         )
       },
-      (_p, interfaces, functions, classes) => {
+      (_p, interfaces, typeAliases, functions, classes) => {
         return (
           doctoc() +
           interfaces.map(i => printInterface(i)).join('') +
+          typeAliases.map(i => printTypeAlias(i)).join('') +
           classes.map(c => printClass(c)).join('') +
           functions.map(f => printFunction(f)).join('')
         )

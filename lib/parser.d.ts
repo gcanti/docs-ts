@@ -66,6 +66,16 @@ export declare type Class = {
     readonly staticMethods: Array<Method>;
 };
 export declare function class_(name: string, signature: string, description: Option<string>, since: Option<string>, location: Location, deprecated: boolean, example: Option<string>, methods: Array<Method>, staticMethods: Array<Method>): Class;
+export declare type TypeAlias = {
+    readonly name: string;
+    readonly signature: string;
+    readonly description: Option<string>;
+    readonly since: Option<string>;
+    readonly location: Location;
+    readonly deprecated: boolean;
+    readonly example: Option<string>;
+};
+export declare function typeAlias(name: string, signature: string, description: Option<string>, since: Option<string>, location: Location, deprecated: boolean, example: Option<string>): TypeAlias;
 export declare type Node = {
     readonly type: 'Index';
     readonly path: Array<string>;
@@ -74,12 +84,13 @@ export declare type Node = {
     readonly type: 'Module';
     readonly path: Array<string>;
     readonly interfaces: Array<Interface>;
+    readonly typeAliases: Array<TypeAlias>;
     readonly functions: Array<Func>;
     readonly classes: Array<Class>;
 };
 export declare function index(path: Array<string>, children: Array<string>): Node;
-export declare function module(path: Array<string>, interfaces: Array<Interface>, functions: Array<Func>, classes: Array<Class>): Node;
-export declare function fold<R>(fa: Node, onIndex: (path: Array<string>, children: Array<string>) => R, onModule: (path: Array<string>, interfaces: Array<Interface>, functions: Array<Func>, classes: Array<Class>) => R): R;
+export declare function module(path: Array<string>, interfaces: Array<Interface>, typeAliases: Array<TypeAlias>, functions: Array<Func>, classes: Array<Class>): Node;
+export declare function fold<R>(fa: Node, onIndex: (path: Array<string>, children: Array<string>) => R, onModule: (path: Array<string>, interfaces: Array<Interface>, typeAliases: Array<TypeAlias>, functions: Array<Func>, classes: Array<Class>) => R): R;
 export declare const monadValidation: import("fp-ts/lib/Monad").Monad2C<"Validation", string[]>;
 export declare function fromForest(forest: Forest<File>): Validation<Array<string>, Forest<Node>>;
 export declare function run(pattern: string): Validation<Array<string>, Forest<Node>>;
@@ -87,6 +98,7 @@ export declare function getSourceFile(name: string, source: string): ast.SourceF
 export declare function getModuleName(p: Array<string>): string;
 export declare function getInterfaces(sourceFile: ast.SourceFile): Validation<Array<string>, Array<Interface>>;
 export declare function getFunctions(moduleName: string, sourceFile: ast.SourceFile): Validation<Array<string>, Array<Func>>;
+export declare function getTypeAliases(sourceFile: ast.SourceFile): Validation<Array<string>, Array<TypeAlias>>;
 export declare function getClasses(moduleName: string, sourceFile: ast.SourceFile): Validation<Array<string>, Array<Class>>;
 export declare function parse(file: File, source: string): Validation<Array<string>, Node>;
 export {};

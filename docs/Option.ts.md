@@ -9,6 +9,8 @@ Table of Contents
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
 
+- [Option](#option)
+- [URI](#uri)
 - [None](#none)
   - [map](#map)
   - [mapNullable](#mapnullable)
@@ -74,6 +76,105 @@ Table of Contents
 - [tryCatch](#trycatch)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
+# Option
+
+If you have worked with JavaScript at all in the past, it is very likely that you have come across a `TypeError` at
+some time (other languages will throw similarly named errors in such a case). Usually this happens because some
+method returns `null` or `undefined` when you were not expecting it and thus not dealing with that possibility in
+your client code.
+
+```ts
+const as: Array<string> = []
+as[0].trim() // throws TypeError: Cannot read property 'trim' of undefined
+```
+
+fp-ts models the absence of values through the `Option` datatype similar to how Scala, Haskell and other FP languages
+handle optional values. A value of `null` or `undefined` is often abused to represent an absent optional value.
+
+`Option<A>` is a container for an optional value of type `A`. If the value of type `A` is present, the `Option<A>` is
+an instance of `Some<A>`, containing the present value of type `A`. If the value is absent, the `Option<A>` is an
+instance of `None<A>`.
+
+An option could be looked at as a collection or foldable structure with either one or zero elements.
+Another way to look at option is: it represents the effect of a possibly failing computation.
+
+```ts
+import { Option, some, none } from 'fp-ts/lib/Option'
+
+const someValue: Option<string> = some('foo')
+const emptyValue: Option<string> = none
+```
+
+Let's write a function that may or not give us a string, thus returning `Option<string>`
+
+```ts
+const head = (as: Array<string>): Option<string> => {
+  return as.length > 0 ? some(as[0]) : none
+}
+```
+
+Using `getOrElse` we can provide a default value `"No value"` when the optional argument `None` does not exist:
+
+```ts
+const value1 = head(['foo', 'bar']) // some('foo)
+const value2 = head([]) // none
+value1.getOrElse('No value') // 'foo'
+value2.getOrElse('No value') // 'No value'
+```
+
+Checking whether option has value:
+
+```ts
+value1.isNone() // false
+value2.isNone() // true
+```
+
+We can pattern match using the `fold` method
+
+```ts
+const number: Option<number> = some(3)
+const noNumber: Option<number> = none
+number.fold(1, n => n * 3) // 9
+noNumber.fold(1, n => n * 3) // 1
+```
+
+You can chain several possibly failing computations using the `chain` method
+
+```ts
+const inverse = (n: number): Option<number> => {
+  return n === 0 ? none : some(1 / n)
+}
+
+number.chain(inverse) // 1/3
+noNumber.chain(inverse) // none
+some(0).chain(inverse) // none
+```
+
+Computing over independent values
+
+```ts
+const sum = (a: number) => (b: number): number => a + b
+const sumLifted = (oa: Option<number>, ob: Option<number>): Option<number> => ob.ap(oa.map(sum))
+sumLifted(some(1), some(2)) // some(3)
+sumLifted(some(1), none) // none
+```
+
+**Signature** (type alias)
+
+```ts
+export type Option<A> = None<A> | Some<A>
+```
+
+Added in v1.0.0
+
+# URI
+
+**Signature** (type alias)
+
+```ts
+export type URI = typeof URI
+```
 
 # None
 

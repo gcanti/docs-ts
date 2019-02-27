@@ -36,24 +36,24 @@ export declare type Interface = {
 export declare function interface_(name: string, signature: string, description: Option<string>, since: Option<string>, location: Location, deprecated: boolean): Interface;
 export declare type Func = {
     readonly name: string;
-    readonly signature: string;
+    readonly signatures: Array<string>;
     readonly description: Option<string>;
     readonly since: Option<string>;
     readonly location: Location;
     readonly deprecated: boolean;
     readonly example: Option<string>;
 };
-export declare function func(name: string, signature: string, description: Option<string>, since: Option<string>, location: Location, deprecated: boolean, example: Option<string>): Func;
+export declare function func(name: string, signatures: Array<string>, description: Option<string>, since: Option<string>, location: Location, deprecated: boolean, example: Option<string>): Func;
 export declare type Method = {
     readonly name: string;
-    readonly signature: string;
+    readonly signatures: Array<string>;
     readonly description: Option<string>;
     readonly since: Option<string>;
     readonly location: Location;
     readonly deprecated: boolean;
     readonly example: Option<string>;
 };
-export declare function method(name: string, signature: string, description: Option<string>, since: Option<string>, location: Location, deprecated: boolean, example: Option<string>): Method;
+export declare function method(name: string, signatures: Array<string>, description: Option<string>, since: Option<string>, location: Location, deprecated: boolean, example: Option<string>): Method;
 export declare type Class = {
     readonly name: string;
     readonly signature: string;
@@ -63,8 +63,9 @@ export declare type Class = {
     readonly deprecated: boolean;
     readonly example: Option<string>;
     readonly methods: Array<Method>;
+    readonly staticMethods: Array<Method>;
 };
-export declare function class_(name: string, signature: string, description: Option<string>, since: Option<string>, location: Location, deprecated: boolean, example: Option<string>, methods: Array<Method>): Class;
+export declare function class_(name: string, signature: string, description: Option<string>, since: Option<string>, location: Location, deprecated: boolean, example: Option<string>, methods: Array<Method>, staticMethods: Array<Method>): Class;
 export declare type Node = {
     readonly type: 'Index';
     readonly path: Array<string>;

@@ -5,7 +5,7 @@ nav_order: 3
 
 # \_right
 
-**Signature**
+**Signature** (function)
 
 ```ts
 export const _right = <L, A>(): Prism<Either<L, A>, A> => ...
@@ -13,7 +13,7 @@ export const _right = <L, A>(): Prism<Either<L, A>, A> => ...
 
 # \_left
 
-**Signature**
+**Signature** (function)
 
 ```ts
 export const _left = <L, A>(): Prism<Either<L, A>, L> => ...

@@ -5,7 +5,7 @@ nav_order: 7
 
 # indexStrMap
 
-**Signature**
+**Signature** (function)
 
 ```ts
 export function indexStrMap<A = never>(): Index<StrMap<A>, string, A>

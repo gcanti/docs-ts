@@ -5,7 +5,7 @@ nav_order: 6
 
 # indexNonEmptyArray
 
-**Signature**
+**Signature** (function)
 
 ```ts
 export function indexNonEmptyArray<A = never>(): Index<NonEmptyArray<A>, number, A>

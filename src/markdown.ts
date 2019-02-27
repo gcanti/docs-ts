@@ -37,7 +37,7 @@ function handleDeprecated(s: string, deprecated: boolean): string {
 function printInterface(i: Interface): string {
   let s = h1(i.name)
   s += printDescription(i.description)
-  s += printSignature(i.signature)
+  s += printSignature(i.signature, 'interface')
   s += printSince(i.since)
   s += CRLF
   return s
@@ -46,15 +46,17 @@ function printInterface(i: Interface): string {
 function printFunction(f: Func): string {
   let s = h1(f.name)
   s += printDescription(f.description)
-  s += printSignature(f.signature)
+  s += printSignature(f.signature, 'function')
   s += printExample(f.example)
   s += printSince(f.since)
   s += CRLF
   return s
 }
 
-function printSignature(signature: string): string {
-  return CRLF + bold('Signature') + CRLF + ts(signature)
+type SignatureType = 'function' | 'static function' | 'method' | 'interface' | 'class'
+
+function printSignature(signature: string, type: SignatureType): string {
+  return CRLF + bold('Signature') + ` (${type})` + CRLF + ts(signature)
 }
 
 function printDescription(description: Option<string>): string {
@@ -72,7 +74,7 @@ function printSince(since: Option<string>): string {
 function printMethod(m: Method): string {
   let s = h2(handleDeprecated(m.name, m.deprecated))
   s += printDescription(m.description)
-  s += printSignature(m.signature)
+  s += printSignature(m.signature, 'method')
   s += printExample(m.example)
   s += printSince(m.since)
   s += CRLF
@@ -82,7 +84,7 @@ function printMethod(m: Method): string {
 function printClass(c: Class): string {
   let s = h1(c.name)
   s += printDescription(c.description)
-  s += printSignature(c.signature)
+  s += printSignature(c.signature, 'class')
   s += printExample(c.example)
   s += printSince(c.since)
   s += CRLF

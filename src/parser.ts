@@ -368,7 +368,12 @@ function getExample(annotation: doctrine.Annotation): Option<string> {
 
 function getAnnotationInfo(
   annotation: doctrine.Annotation
-): { description: Option<string>; since: Option<string>; deprecated: boolean; example: Option<string> } {
+): {
+  description: Option<string>
+  since: Option<string>
+  deprecated: boolean
+  example: Option<string>
+} {
   return {
     description: getDescription(annotation),
     since: getSince(annotation),

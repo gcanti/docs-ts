@@ -35,7 +35,7 @@ export function main(pattern: string, outDir: string): IO<void> {
   function writeNode(node: parser.Node): Validation<Array<string>, IO<void>> {
     switch (node.type) {
       case 'Index':
-        return success(log(`Skipping index ${node.path.join('/')}`))
+        return success(log(`Detected directory ${node.path.join('/')}`))
       case 'Module':
         const header = markdown.header(node.path.slice(1).join('/'), counter++)
         return writeFileSync(getOutpuPath(outDir, node), header + markdown.run(node))

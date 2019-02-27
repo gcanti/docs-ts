@@ -228,7 +228,8 @@ export function method(
     location :: Location,
     deprecated :: boolean,
     example :: Option string,
-    methods :: Array Method
+    methods :: Array Method,
+    staticMethods :: Array Method
   }
 
 */
@@ -241,6 +242,7 @@ export type Class = {
   readonly deprecated: boolean
   readonly example: Option<string>
   readonly methods: Array<Method>
+  readonly staticMethods: Array<Method>
 }
 
 export function class_(
@@ -251,9 +253,10 @@ export function class_(
   location: Location,
   deprecated: boolean,
   example: Option<string>,
-  methods: Array<Method>
+  methods: Array<Method>,
+  staticMethods: Array<Method>
 ): Class {
-  return { name, signature, description, since, location, deprecated, example, methods }
+  return { name, signature, description, since, location, deprecated, example, methods, staticMethods }
 }
 
 /*
@@ -531,8 +534,12 @@ function parseClass(moduleName: string, c: ast.ClassDeclaration): Validation<Arr
     const { description, since, deprecated, example } = getAnnotationInfo(annotation)
     const signature = getClassDeclarationSignature(c)
     const methods = array.traverse(monadValidation)(c.getInstanceMethods(), parseMethod)
-    return methods.map(methods =>
-      class_(name, signature, description, since, getLocation(c), deprecated, example, methods)
+    const staticMethods = array.traverse(monadValidation)(c.getStaticMethods(), parseMethod)
+    return monadValidation.ap(
+      methods.map(methods => (staticMethods: Array<Method>) =>
+        class_(name, signature, description, since, getLocation(c), deprecated, example, methods, staticMethods)
+      ),
+      staticMethods
     )
   }
 }

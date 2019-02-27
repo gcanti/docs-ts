@@ -186,6 +186,12 @@ describe('getClasses', () => {
  * @deprecated
  */
 export class Test {
+  /**
+   * a static method description...
+   * @since 1.1.0
+   * @deprecated
+   */
+  static f() {}
   constructor(readonly value: string) { }
   /**
    * a method description...
@@ -205,7 +211,7 @@ export class Test {
           description: some('a class description...'),
           location: {
             from: 6,
-            to: 16
+            to: 22
           },
           name: 'Test',
           signature: 'export class Test {\n  constructor(readonly value: string) { }\n  ... \n}',
@@ -216,11 +222,25 @@ export class Test {
               deprecated: true,
               description: some('a method description...'),
               location: {
-                from: 13,
-                to: 15
+                from: 19,
+                to: 21
               },
               name: 'map',
               signature: 'map(f: (a: string) => string): Test { ... }',
+              since: some('1.1.0'),
+              example: none
+            }
+          ],
+          staticMethods: [
+            {
+              deprecated: true,
+              description: some('a static method description...'),
+              location: {
+                from: 12,
+                to: 12
+              },
+              name: 'f',
+              signature: 'static f() { ... }',
               since: some('1.1.0'),
               example: none
             }

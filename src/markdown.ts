@@ -35,7 +35,7 @@ function handleDeprecated(s: string, deprecated: boolean): string {
 }
 
 function printInterface(i: Interface): string {
-  let s = h1(i.name)
+  let s = h1(handleDeprecated(i.name, i.deprecated))
   s += printDescription(i.description)
   s += printSignature(i.signature, 'interface')
   s += printSince(i.since)
@@ -44,7 +44,7 @@ function printInterface(i: Interface): string {
 }
 
 function printFunction(f: Func): string {
-  let s = h1(f.name)
+  let s = h1(handleDeprecated(f.name, f.deprecated))
   s += printDescription(f.description)
   s += printSignatures(f.signatures, 'function')
   s += printExample(f.example)
@@ -86,7 +86,7 @@ function printMethod(m: Method): string {
 }
 
 function printClass(c: Class): string {
-  let s = h1(c.name)
+  let s = h1(handleDeprecated(c.name, c.deprecated))
   s += printDescription(c.description)
   s += printSignature(c.signature, 'class')
   s += printExample(c.example)
@@ -126,8 +126,8 @@ export function run(node: Node): string {
         return (
           doctoc() +
           interfaces.map(i => printInterface(i)).join('') +
-          functions.map(f => printFunction(f)).join('') +
-          classes.map(c => printClass(c)).join('')
+          classes.map(c => printClass(c)).join('') +
+          functions.map(f => printFunction(f)).join('')
         )
       }
     ),

@@ -99,7 +99,9 @@ function printClass(c: Class): string {
 }
 
 function doctoc(): string {
-  return `<!-- START doctoc -->
+  return `Table of Contents
+
+<!-- START doctoc -->
 <!-- END doctoc -->
 `
 }

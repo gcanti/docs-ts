@@ -3,7 +3,7 @@ import { sequenceT } from 'fp-ts/lib/Apply'
 import { array } from 'fp-ts/lib/Array'
 import { getArrayMonoid } from 'fp-ts/lib/Monoid'
 import { fromNullable, none, Option, some } from 'fp-ts/lib/Option'
-import { ordString } from 'fp-ts/lib/Ord'
+import { ordString, contramap } from 'fp-ts/lib/Ord'
 import { isEmpty } from 'fp-ts/lib/Record'
 import { getTraversableComposition } from 'fp-ts/lib/Traversable2v'
 import { Forest, Tree, tree } from 'fp-ts/lib/Tree'
@@ -401,7 +401,9 @@ function parseInterfaceDeclaration(id: ast.InterfaceDeclaration): Validation<Arr
 
 export function getInterfaces(sourceFile: ast.SourceFile): Validation<Array<string>, Array<Interface>> {
   const exportedInterfaceDeclarations = sourceFile.getInterfaces().filter(id => id.isExported())
-  return array.traverse(monadValidation)(exportedInterfaceDeclarations, parseInterfaceDeclaration)
+  return array
+    .traverse(monadValidation)(exportedInterfaceDeclarations, parseInterfaceDeclaration)
+    .map(interfaces => interfaces.sort(byName.compare))
 }
 
 function getFunctionDeclarationSignature(f: ast.FunctionDeclaration): string {
@@ -454,6 +456,8 @@ function parseVariableDeclaration(vd: ast.VariableDeclaration): Validation<Array
   return success(func(name, signatures, description, since, getLocation(vd), deprecated, example))
 }
 
+const byName = contramap((x: { name: string }) => x.name, ordString)
+
 export function getFunctions(moduleName: string, sourceFile: ast.SourceFile): Validation<Array<string>, Array<Func>> {
   const exportedFunctionDeclarations = sourceFile
     .getFunctions()
@@ -478,7 +482,7 @@ export function getFunctions(moduleName: string, sourceFile: ast.SourceFile): Va
   const variableDeclarations = array.traverse(monadValidation)(exportedVariableDeclarations, parseVariableDeclaration)
 
   const monoidFunc = getMonoid(monoidFailure, getArrayMonoid<Func>())
-  return monoidFunc.concat(functionDeclarations, variableDeclarations)
+  return monoidFunc.concat(functionDeclarations, variableDeclarations).map(funcs => funcs.sort(byName.compare))
 }
 
 function getTypeParameters(typeParameters: Array<ast.TypeParameterDeclaration>): string {
@@ -534,7 +538,9 @@ function parseClass(moduleName: string, c: ast.ClassDeclaration): Validation<Arr
 export function getClasses(moduleName: string, sourceFile: ast.SourceFile): Validation<Array<string>, Array<Class>> {
   const exportedClasses = sourceFile.getClasses().filter(c => c.isExported())
 
-  return array.traverse(monadValidation)(exportedClasses, cd => parseClass(moduleName, cd))
+  return array
+    .traverse(monadValidation)(exportedClasses, cd => parseClass(moduleName, cd))
+    .map(classes => classes.sort(byName.compare))
 }
 
 export function parse(file: File, source: string): Validation<Array<string>, Node> {

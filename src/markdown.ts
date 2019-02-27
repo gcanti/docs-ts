@@ -92,6 +92,7 @@ function printClass(c: Class): string {
   s += printExample(c.example)
   s += printSince(c.since)
   s += CRLF
+  s += c.staticMethods.map(printMethod).join(CRLF)
   s += c.methods.map(printMethod).join(CRLF)
   s += CRLF
   return s

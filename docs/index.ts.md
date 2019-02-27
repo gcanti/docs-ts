@@ -42,6 +42,20 @@ export interface ModifyF<S, A> {
 }
 ```
 
+# fromFoldable
+
+create a Fold from a Foldable
+
+**Signature** (function)
+
+```ts
+export function fromFoldable<F extends URIS3>(F: Foldable3<F>): <U, L, A>() => Fold<Type3<F, U, L, A>, A>
+export function fromFoldable<F extends URIS2>(F: Foldable2<F>): <L, A>() => Fold<Type2<F, L, A>, A>
+export function fromFoldable<F extends URIS>(F: Foldable1<F>): <A>() => Fold<Type<F, A>, A>
+export function fromFoldable<F>(F: Foldable<F>): <A>() => Fold<HKT<F, A>, A>
+export function fromFoldable<F>(F: Foldable<F>): <A>() => Fold<HKT<F, A>, A> { ... }
+```
+
 # fromTraversable
 
 create a Traversal from a Traversable
@@ -88,18 +102,269 @@ const newModel = composedTraversal.modify(text =>
 // { tweets: [ { text: 'dlrow olleh' }, { text: 'raboof' } ] }
 ```
 
-# fromFoldable
+# At
 
-create a Fold from a Foldable
-
-**Signature** (function)
+**Signature** (class)
 
 ```ts
-export function fromFoldable<F extends URIS3>(F: Foldable3<F>): <U, L, A>() => Fold<Type3<F, U, L, A>, A>
-export function fromFoldable<F extends URIS2>(F: Foldable2<F>): <L, A>() => Fold<Type2<F, L, A>, A>
-export function fromFoldable<F extends URIS>(F: Foldable1<F>): <A>() => Fold<Type<F, A>, A>
-export function fromFoldable<F>(F: Foldable<F>): <A>() => Fold<HKT<F, A>, A>
-export function fromFoldable<F>(F: Foldable<F>): <A>() => Fold<HKT<F, A>, A> { ... }
+export class At<S, I, A> {
+  constructor(readonly at: (i: I) => Lens<S, A>) {}
+  ...
+}
+```
+
+## fromIso
+
+lift an instance of `At` using an `Iso`
+
+**Signature** (method)
+
+```ts
+fromIso<T>(iso: Iso<T, S>): At<T, I, A> { ... }
+```
+
+# Fold
+
+**Signature** (class)
+
+```ts
+export class Fold<S, A> {
+  constructor(readonly foldMap: <M>(M: Monoid<M>) => (f: (a: A) => M) => (s: S) => M) {
+    this.getAll = foldMap(getArrayMonoid<A>())(a => [a])
+    this.exist = foldMap(monoidAny)
+    this.all = foldMap(monoidAll)
+    this.foldMapFirst = foldMap(getFirstMonoid())
+  }
+  ...
+}
+```
+
+## compose
+
+compose a Fold with a Fold
+
+**Signature** (method)
+
+```ts
+compose<B>(ab: Fold<A, B>): Fold<S, B> { ... }
+```
+
+## composeFold
+
+**Signature** (method)
+
+```ts
+composeFold<B>(ab: Fold<A, B>): Fold<S, B> { ... }
+```
+
+## composeGetter
+
+compose a Fold with a Getter
+
+**Signature** (method)
+
+```ts
+composeGetter<B>(ab: Getter<A, B>): Fold<S, B> { ... }
+```
+
+## composeTraversal
+
+compose a Fold with a Traversal
+
+**Signature** (method)
+
+```ts
+composeTraversal<B>(ab: Traversal<A, B>): Fold<S, B> { ... }
+```
+
+## composeOptional
+
+compose a Fold with a Optional
+
+**Signature** (method)
+
+```ts
+composeOptional<B>(ab: Optional<A, B>): Fold<S, B> { ... }
+```
+
+## composeLens
+
+compose a Fold with a Lens
+
+**Signature** (method)
+
+```ts
+composeLens<B>(ab: Lens<A, B>): Fold<S, B> { ... }
+```
+
+## composePrism
+
+compose a Fold with a Prism
+
+**Signature** (method)
+
+```ts
+composePrism<B>(ab: Prism<A, B>): Fold<S, B> { ... }
+```
+
+## composeIso
+
+compose a Fold with a Iso
+
+**Signature** (method)
+
+```ts
+composeIso<B>(ab: Iso<A, B>): Fold<S, B> { ... }
+```
+
+## find
+
+find the first target of a Fold matching the predicate
+
+**Signature** (method)
+
+```ts
+find<B extends A>(p: Refinement<A, B>): (s: S) => Option<B>
+find(p: Predicate<A>): (s: S) => Option<A>
+find(p: Predicate<A>): (s: S) => Option<A> { ... }
+```
+
+## headOption
+
+get the first target of a Fold
+
+**Signature** (method)
+
+```ts
+headOption(s: S): Option<A> { ... }
+```
+
+# Getter
+
+**Signature** (class)
+
+```ts
+export class Getter<S, A> {
+  constructor(readonly get: (s: S) => A) {}
+  ...
+}
+```
+
+## asFold
+
+view a Getter as a Fold
+
+**Signature** (method)
+
+```ts
+asFold(): Fold<S, A> { ... }
+```
+
+## compose
+
+compose a Getter with a Getter
+
+**Signature** (method)
+
+```ts
+compose<B>(ab: Getter<A, B>): Getter<S, B> { ... }
+```
+
+## composeGetter
+
+**Signature** (method)
+
+```ts
+composeGetter<B>(ab: Getter<A, B>): Getter<S, B> { ... }
+```
+
+## composeFold
+
+compose a Getter with a Fold
+
+**Signature** (method)
+
+```ts
+composeFold<B>(ab: Fold<A, B>): Fold<S, B> { ... }
+```
+
+## composeLens
+
+compose a Getter with a Lens
+
+**Signature** (method)
+
+```ts
+composeLens<B>(ab: Lens<A, B>): Getter<S, B> { ... }
+```
+
+## composeIso
+
+compose a Getter with a Iso
+
+**Signature** (method)
+
+```ts
+composeIso<B>(ab: Iso<A, B>): Getter<S, B> { ... }
+```
+
+## composeTraversal
+
+compose a Getter with a Optional
+
+**Signature** (method)
+
+```ts
+composeTraversal<B>(ab: Traversal<A, B>): Fold<S, B> { ... }
+```
+
+## composeOptional
+
+compose a Getter with a Optional
+
+**Signature** (method)
+
+```ts
+composeOptional<B>(ab: Optional<A, B>): Fold<S, B> { ... }
+```
+
+## composePrism
+
+compose a Getter with a Prism
+
+**Signature** (method)
+
+```ts
+composePrism<B>(ab: Prism<A, B>): Fold<S, B> { ... }
+```
+
+# Index
+
+**Signature** (class)
+
+```ts
+export class Index<S, I, A> {
+  constructor(readonly index: (i: I) => Optional<S, A>) {}
+  ...
+}
+```
+
+## fromAt
+
+**Signature** (method)
+
+```ts
+static fromAt<T, J, B>(at: At<T, J, Option<B>>): Index<T, J, B> { ... }
+```
+
+## fromIso
+
+lift an instance of `Index` using an `Iso`
+
+**Signature** (method)
+
+```ts
+fromIso<T>(iso: Iso<T, S>): Index<T, I, A> { ... }
 ```
 
 # Iso
@@ -300,6 +565,153 @@ export class Lens<S, A> {
 }
 ```
 
+## fromPath
+
+**Signature** (method)
+
+```ts
+static fromPath<S>(): LensFromPath<S>
+static fromPath<
+    S,
+    K1 extends keyof S,
+    K2 extends keyof S[K1],
+    K3 extends keyof S[K1][K2],
+    K4 extends keyof S[K1][K2][K3],
+    K5 extends keyof S[K1][K2][K3][K4]
+  >(path: [K1, K2, K3, K4, K5]): Lens<S, S[K1][K2][K3][K4][K5]>
+static fromPath<
+    S,
+    K1 extends keyof S,
+    K2 extends keyof S[K1],
+    K3 extends keyof S[K1][K2],
+    K4 extends keyof S[K1][K2][K3]
+  >(path: [K1, K2, K3, K4]): Lens<S, S[K1][K2][K3][K4]>
+static fromPath<S, K1 extends keyof S, K2 extends keyof S[K1], K3 extends keyof S[K1][K2]>(
+    path: [K1, K2, K3]
+  ): Lens<S, S[K1][K2][K3]>
+static fromPath<S, K1 extends keyof S, K2 extends keyof S[K1]>(path: [K1, K2]): Lens<S, S[K1][K2]>
+static fromPath<S, K1 extends keyof S>(path: [K1]): Lens<S, S[K1]>
+static fromPath(): any { ... }
+```
+
+**Example**
+
+```ts
+import { Lens } from 'monocle-ts'
+
+type Person = {
+  name: string
+  age: number
+  address: {
+    city: string
+  }
+}
+
+const city = Lens.fromPath<Person>()(['address', 'city'])
+
+const person: Person = { name: 'Giulio', age: 43, address: { city: 'Milan' } }
+
+console.log(city.get(person)) // Milan
+console.log(city.set('London')(person)) // { name: 'Giulio', age: 43, address: { city: 'London' } }
+```
+
+## fromProp
+
+generate a lens from a type and a prop
+
+**Signature** (method)
+
+```ts
+static fromProp<S>(): <P extends keyof S>(prop: P) => Lens<S, S[P]>
+static fromProp<S, P extends keyof S>(prop: P): Lens<S, S[P]>
+static fromProp(): any { ... }
+```
+
+**Example**
+
+```ts
+import { Lens } from 'monocle-ts'
+
+type Person = {
+  name: string
+  age: number
+}
+
+const age = Lens.fromProp<Person>()('age')
+// or (deprecated)
+// const age = Lens.fromProp<Person, 'age'>('age')
+
+const person: Person = { name: 'Giulio', age: 43 }
+
+console.log(age.get(person)) // 43
+console.log(age.set(44)(person)) // { name: 'Giulio', age: 44 }
+```
+
+## fromProps
+
+generate a lens from a type and an array of props
+
+**Signature** (method)
+
+```ts
+static fromProps<S>(): <P extends keyof S>(props: Array<P>) => Lens<S, { ... }
+```
+
+**Example**
+
+```ts
+import { Lens } from 'monocle-ts'
+
+interface Person {
+  name: string
+  age: number
+  rememberMe: boolean
+}
+
+const lens = Lens.fromProps<Person>()(['name', 'age'])
+
+const person: Person = { name: 'Giulio', age: 44, rememberMe: true }
+
+console.log(lens.get(person)) // { name: 'Giulio', age: 44 }
+console.log(lens.set({ name: 'Guido', age: 47 })(person)) // { name: 'Guido', age: 47, rememberMe: true }
+```
+
+## fromNullableProp
+
+generate a lens from a type and a prop whose type is nullable
+
+**Signature** (method)
+
+```ts
+static fromNullableProp<S>(): <A extends S[K], K extends keyof S>(k: K, defaultValue: A) => Lens<S, NonNullable<S[K]>>
+static fromNullableProp<S, A extends S[K], K extends keyof S>(k: K, defaultValue: A): Lens<S, NonNullable<S[K]>>
+static fromNullableProp(): any { ... }
+```
+
+**Example**
+
+```ts
+import { Lens } from 'monocle-ts'
+
+interface Outer {
+  inner?: Inner
+}
+
+interface Inner {
+  value: number
+  foo: string
+}
+
+const inner = Lens.fromNullableProp<Outer>()('inner', { value: 0, foo: 'foo' })
+const value = Lens.fromProp<Inner>()('value')
+const lens = inner.compose(value)
+
+console.log(lens.set(1)({})) // { inner: { value: 1, foo: 'foo' } }
+console.log(lens.get({})) // 0
+console.log(lens.set(1)({ inner: { value: 1, foo: 'bar' } })) // { inner: { value: 1, foo: 'bar' } }
+console.log(lens.get({ inner: { value: 1, foo: 'bar' } })) // 1
+```
+
 ## modify
 
 **Signature** (method)
@@ -446,6 +858,245 @@ compose a Lens with a Prism
 composePrism<B>(ab: Prism<A, B>): Optional<S, B> { ... }
 ```
 
+# Optional
+
+**Signature** (class)
+
+```ts
+export class Optional<S, A> {
+  constructor(readonly getOption: (s: S) => Option<A>, readonly set: (a: A) => (s: S) => S) {}
+  ...
+}
+```
+
+## fromNullableProp
+
+**Signature** (method)
+
+```ts
+static fromNullableProp<S>(): <K extends keyof S>(k: K) => Optional<S, NonNullable<S[K]>>
+static fromNullableProp<S, A extends S[K], K extends keyof S>(k: K): Optional<S, NonNullable<S[K]>>
+static fromNullableProp(): any { ... }
+```
+
+**Example**
+
+```ts
+import { Optional, Lens } from 'monocle-ts'
+
+interface Phone {
+  number: string
+}
+interface Employment {
+  phone?: Phone
+}
+interface Info {
+  employment?: Employment
+}
+interface Response {
+  info?: Info
+}
+
+const info = Optional.fromNullableProp<Response>()('info')
+const employment = Optional.fromNullableProp<Info>()('employment')
+const phone = Optional.fromNullableProp<Employment>()('phone')
+const number = Lens.fromProp<Phone>()('number')
+const numberFromResponse = info
+  .compose(employment)
+  .compose(phone)
+  .composeLens(number)
+
+const response1: Response = {
+  info: {
+    employment: {
+      phone: {
+        number: '555-1234'
+      }
+    }
+  }
+}
+const response2: Response = {
+  info: {
+    employment: {}
+  }
+}
+
+numberFromResponse.getOption(response1) // some('555-1234')
+numberFromResponse.getOption(response2) // none
+```
+
+## fromOptionProp
+
+**Signature** (method)
+
+```ts
+static fromOptionProp<S>(): <P extends OptionPropertyNames<S>>(prop: P) => Optional<S, OptionPropertyType<S, P>>
+static fromOptionProp<S>(prop: OptionPropertyNames<S>): Optional<S, OptionPropertyType<S, typeof prop>>
+static fromOptionProp(): any { ... }
+```
+
+**Example**
+
+```ts
+import { Optional, Lens } from 'monocle-ts'
+
+interface Phone {
+  number: string
+}
+interface Employment {
+  phone: Option<Phone>
+}
+interface Info {
+  employment: Option<Employment>
+}
+interface Response {
+  info: Option<Info>
+}
+
+const info = Optional.fromOptionProp<Response>('info')
+const employment = Optional.fromOptionProp<Info>('employment')
+const phone = Optional.fromOptionProp<Employment>('phone')
+const number = Lens.fromProp<Phone>()('number')
+const numberFromResponse = info
+  .compose(employment)
+  .compose(phone)
+  .composeLens(number)
+```
+
+## modify
+
+**Signature** (method)
+
+```ts
+modify(f: (a: A) => A): (s: S) => S { ... }
+```
+
+## modifyOption
+
+**Signature** (method)
+
+```ts
+modifyOption(f: (a: A) => A): (s: S) => Option<S> { ... }
+```
+
+## asTraversal
+
+view a Optional as a Traversal
+
+**Signature** (method)
+
+```ts
+asTraversal(): Traversal<S, A> { ... }
+```
+
+## asFold
+
+view an Optional as a Fold
+
+**Signature** (method)
+
+```ts
+asFold(): Fold<S, A> { ... }
+```
+
+## asSetter
+
+view an Optional as a Setter
+
+**Signature** (method)
+
+```ts
+asSetter(): Setter<S, A> { ... }
+```
+
+## compose
+
+compose a Optional with a Optional
+
+**Signature** (method)
+
+```ts
+compose<B>(ab: Optional<A, B>): Optional<S, B> { ... }
+```
+
+## composeOptional
+
+**Signature** (method)
+
+```ts
+composeOptional<B>(ab: Optional<A, B>): Optional<S, B> { ... }
+```
+
+## composeTraversal
+
+compose an Optional with a Traversal
+
+**Signature** (method)
+
+```ts
+composeTraversal<B>(ab: Traversal<A, B>): Traversal<S, B> { ... }
+```
+
+## composeFold
+
+compose an Optional with a Fold
+
+**Signature** (method)
+
+```ts
+composeFold<B>(ab: Fold<A, B>): Fold<S, B> { ... }
+```
+
+## composeSetter
+
+compose an Optional with a Setter
+
+**Signature** (method)
+
+```ts
+composeSetter<B>(ab: Setter<A, B>): Setter<S, B> { ... }
+```
+
+## composeLens
+
+compose an Optional with a Lens
+
+**Signature** (method)
+
+```ts
+composeLens<B>(ab: Lens<A, B>): Optional<S, B> { ... }
+```
+
+## composePrism
+
+compose an Optional with a Prism
+
+**Signature** (method)
+
+```ts
+composePrism<B>(ab: Prism<A, B>): Optional<S, B> { ... }
+```
+
+## composeIso
+
+compose an Optional with a Iso
+
+**Signature** (method)
+
+```ts
+composeIso<B>(ab: Iso<A, B>): Optional<S, B> { ... }
+```
+
+## composeGetter
+
+compose an Optional with a Getter
+
+**Signature** (method)
+
+```ts
+composeGetter<B>(ab: Getter<A, B>): Fold<S, B> { ... }
+```
+
 # Prism
 
 **Signature** (class)
@@ -455,6 +1106,34 @@ export class Prism<S, A> {
   constructor(readonly getOption: (s: S) => Option<A>, readonly reverseGet: (a: A) => S) {}
   ...
 }
+```
+
+## fromPredicate
+
+**Signature** (method)
+
+```ts
+static fromPredicate<S, A extends S>(refinement: Refinement<S, A>): Prism<S, A>
+static fromPredicate<A>(predicate: Predicate<A>): Prism<A, A>
+static fromPredicate<A>(predicate: Predicate<A>): Prism<A, A> { ... }
+```
+
+## ~~fromRefinement~~ (deprecated)
+
+Use `fromPredicate` instead
+
+**Signature** (method)
+
+```ts
+static fromRefinement<S, A extends S>(refinement: Refinement<S, A>): Prism<S, A> { ... }
+```
+
+## some
+
+**Signature** (method)
+
+```ts
+static some<A>(): Prism<Option<A>, A> { ... }
 ```
 
 ## modify
@@ -611,104 +1290,36 @@ compose a Prism with a Getter
 composeGetter<B>(ab: Getter<A, B>): Fold<S, B> { ... }
 ```
 
-# Optional
+# Setter
 
 **Signature** (class)
 
 ```ts
-export class Optional<S, A> {
-  constructor(readonly getOption: (s: S) => Option<A>, readonly set: (a: A) => (s: S) => S) {}
+export class Setter<S, A> {
+  constructor(readonly modify: (f: (a: A) => A) => (s: S) => S) {}
   ...
 }
 ```
 
-## modify
+## set
 
 **Signature** (method)
 
 ```ts
-modify(f: (a: A) => A): (s: S) => S { ... }
-```
-
-## modifyOption
-
-**Signature** (method)
-
-```ts
-modifyOption(f: (a: A) => A): (s: S) => Option<S> { ... }
-```
-
-## asTraversal
-
-view a Optional as a Traversal
-
-**Signature** (method)
-
-```ts
-asTraversal(): Traversal<S, A> { ... }
-```
-
-## asFold
-
-view an Optional as a Fold
-
-**Signature** (method)
-
-```ts
-asFold(): Fold<S, A> { ... }
-```
-
-## asSetter
-
-view an Optional as a Setter
-
-**Signature** (method)
-
-```ts
-asSetter(): Setter<S, A> { ... }
+set(a: A): (s: S) => S { ... }
 ```
 
 ## compose
 
-compose a Optional with a Optional
+compose a Setter with a Setter
 
 **Signature** (method)
 
 ```ts
-compose<B>(ab: Optional<A, B>): Optional<S, B> { ... }
-```
-
-## composeOptional
-
-**Signature** (method)
-
-```ts
-composeOptional<B>(ab: Optional<A, B>): Optional<S, B> { ... }
-```
-
-## composeTraversal
-
-compose an Optional with a Traversal
-
-**Signature** (method)
-
-```ts
-composeTraversal<B>(ab: Traversal<A, B>): Traversal<S, B> { ... }
-```
-
-## composeFold
-
-compose an Optional with a Fold
-
-**Signature** (method)
-
-```ts
-composeFold<B>(ab: Fold<A, B>): Fold<S, B> { ... }
+compose<B>(ab: Setter<A, B>): Setter<S, B> { ... }
 ```
 
 ## composeSetter
-
-compose an Optional with a Setter
 
 **Signature** (method)
 
@@ -716,44 +1327,54 @@ compose an Optional with a Setter
 composeSetter<B>(ab: Setter<A, B>): Setter<S, B> { ... }
 ```
 
-## composeLens
+## composeTraversal
 
-compose an Optional with a Lens
+compose a Setter with a Traversal
 
 **Signature** (method)
 
 ```ts
-composeLens<B>(ab: Lens<A, B>): Optional<S, B> { ... }
+composeTraversal<B>(ab: Traversal<A, B>): Setter<S, B> { ... }
+```
+
+## composeOptional
+
+compose a Setter with a Optional
+
+**Signature** (method)
+
+```ts
+composeOptional<B>(ab: Optional<A, B>): Setter<S, B> { ... }
+```
+
+## composeLens
+
+compose a Setter with a Lens
+
+**Signature** (method)
+
+```ts
+composeLens<B>(ab: Lens<A, B>): Setter<S, B> { ... }
 ```
 
 ## composePrism
 
-compose an Optional with a Prism
+compose a Setter with a Prism
 
 **Signature** (method)
 
 ```ts
-composePrism<B>(ab: Prism<A, B>): Optional<S, B> { ... }
+composePrism<B>(ab: Prism<A, B>): Setter<S, B> { ... }
 ```
 
 ## composeIso
 
-compose an Optional with a Iso
+compose a Setter with a Iso
 
 **Signature** (method)
 
 ```ts
-composeIso<B>(ab: Iso<A, B>): Optional<S, B> { ... }
-```
-
-## composeGetter
-
-compose an Optional with a Getter
-
-**Signature** (method)
-
-```ts
-composeGetter<B>(ab: Getter<A, B>): Fold<S, B> { ... }
+composeIso<B>(ab: Iso<A, B>): Setter<S, B> { ... }
 ```
 
 # Traversal
@@ -924,348 +1545,4 @@ compose a Traversal with a Getter
 
 ```ts
 composeGetter<B>(ab: Getter<A, B>): Fold<S, B> { ... }
-```
-
-# At
-
-**Signature** (class)
-
-```ts
-export class At<S, I, A> {
-  constructor(readonly at: (i: I) => Lens<S, A>) {}
-  ...
-}
-```
-
-## fromIso
-
-lift an instance of `At` using an `Iso`
-
-**Signature** (method)
-
-```ts
-fromIso<T>(iso: Iso<T, S>): At<T, I, A> { ... }
-```
-
-# Index
-
-**Signature** (class)
-
-```ts
-export class Index<S, I, A> {
-  constructor(readonly index: (i: I) => Optional<S, A>) {}
-  ...
-}
-```
-
-## fromIso
-
-lift an instance of `Index` using an `Iso`
-
-**Signature** (method)
-
-```ts
-fromIso<T>(iso: Iso<T, S>): Index<T, I, A> { ... }
-```
-
-# Getter
-
-**Signature** (class)
-
-```ts
-export class Getter<S, A> {
-  constructor(readonly get: (s: S) => A) {}
-  ...
-}
-```
-
-## asFold
-
-view a Getter as a Fold
-
-**Signature** (method)
-
-```ts
-asFold(): Fold<S, A> { ... }
-```
-
-## compose
-
-compose a Getter with a Getter
-
-**Signature** (method)
-
-```ts
-compose<B>(ab: Getter<A, B>): Getter<S, B> { ... }
-```
-
-## composeGetter
-
-**Signature** (method)
-
-```ts
-composeGetter<B>(ab: Getter<A, B>): Getter<S, B> { ... }
-```
-
-## composeFold
-
-compose a Getter with a Fold
-
-**Signature** (method)
-
-```ts
-composeFold<B>(ab: Fold<A, B>): Fold<S, B> { ... }
-```
-
-## composeLens
-
-compose a Getter with a Lens
-
-**Signature** (method)
-
-```ts
-composeLens<B>(ab: Lens<A, B>): Getter<S, B> { ... }
-```
-
-## composeIso
-
-compose a Getter with a Iso
-
-**Signature** (method)
-
-```ts
-composeIso<B>(ab: Iso<A, B>): Getter<S, B> { ... }
-```
-
-## composeTraversal
-
-compose a Getter with a Optional
-
-**Signature** (method)
-
-```ts
-composeTraversal<B>(ab: Traversal<A, B>): Fold<S, B> { ... }
-```
-
-## composeOptional
-
-compose a Getter with a Optional
-
-**Signature** (method)
-
-```ts
-composeOptional<B>(ab: Optional<A, B>): Fold<S, B> { ... }
-```
-
-## composePrism
-
-compose a Getter with a Prism
-
-**Signature** (method)
-
-```ts
-composePrism<B>(ab: Prism<A, B>): Fold<S, B> { ... }
-```
-
-# Fold
-
-**Signature** (class)
-
-```ts
-export class Fold<S, A> {
-  constructor(readonly foldMap: <M>(M: Monoid<M>) => (f: (a: A) => M) => (s: S) => M) {
-    this.getAll = foldMap(getArrayMonoid<A>())(a => [a])
-    this.exist = foldMap(monoidAny)
-    this.all = foldMap(monoidAll)
-    this.foldMapFirst = foldMap(getFirstMonoid())
-  }
-  ...
-}
-```
-
-## compose
-
-compose a Fold with a Fold
-
-**Signature** (method)
-
-```ts
-compose<B>(ab: Fold<A, B>): Fold<S, B> { ... }
-```
-
-## composeFold
-
-**Signature** (method)
-
-```ts
-composeFold<B>(ab: Fold<A, B>): Fold<S, B> { ... }
-```
-
-## composeGetter
-
-compose a Fold with a Getter
-
-**Signature** (method)
-
-```ts
-composeGetter<B>(ab: Getter<A, B>): Fold<S, B> { ... }
-```
-
-## composeTraversal
-
-compose a Fold with a Traversal
-
-**Signature** (method)
-
-```ts
-composeTraversal<B>(ab: Traversal<A, B>): Fold<S, B> { ... }
-```
-
-## composeOptional
-
-compose a Fold with a Optional
-
-**Signature** (method)
-
-```ts
-composeOptional<B>(ab: Optional<A, B>): Fold<S, B> { ... }
-```
-
-## composeLens
-
-compose a Fold with a Lens
-
-**Signature** (method)
-
-```ts
-composeLens<B>(ab: Lens<A, B>): Fold<S, B> { ... }
-```
-
-## composePrism
-
-compose a Fold with a Prism
-
-**Signature** (method)
-
-```ts
-composePrism<B>(ab: Prism<A, B>): Fold<S, B> { ... }
-```
-
-## composeIso
-
-compose a Fold with a Iso
-
-**Signature** (method)
-
-```ts
-composeIso<B>(ab: Iso<A, B>): Fold<S, B> { ... }
-```
-
-## find
-
-find the first target of a Fold matching the predicate
-
-**Signature** (method)
-
-```ts
-find<B extends A>(p: Refinement<A, B>): (s: S) => Option<B>
-find(p: Predicate<A>): (s: S) => Option<A>
-find(p: Predicate<A>): (s: S) => Option<A> { ... }
-```
-
-## headOption
-
-get the first target of a Fold
-
-**Signature** (method)
-
-```ts
-headOption(s: S): Option<A> { ... }
-```
-
-# Setter
-
-**Signature** (class)
-
-```ts
-export class Setter<S, A> {
-  constructor(readonly modify: (f: (a: A) => A) => (s: S) => S) {}
-  ...
-}
-```
-
-## set
-
-**Signature** (method)
-
-```ts
-set(a: A): (s: S) => S { ... }
-```
-
-## compose
-
-compose a Setter with a Setter
-
-**Signature** (method)
-
-```ts
-compose<B>(ab: Setter<A, B>): Setter<S, B> { ... }
-```
-
-## composeSetter
-
-**Signature** (method)
-
-```ts
-composeSetter<B>(ab: Setter<A, B>): Setter<S, B> { ... }
-```
-
-## composeTraversal
-
-compose a Setter with a Traversal
-
-**Signature** (method)
-
-```ts
-composeTraversal<B>(ab: Traversal<A, B>): Setter<S, B> { ... }
-```
-
-## composeOptional
-
-compose a Setter with a Optional
-
-**Signature** (method)
-
-```ts
-composeOptional<B>(ab: Optional<A, B>): Setter<S, B> { ... }
-```
-
-## composeLens
-
-compose a Setter with a Lens
-
-**Signature** (method)
-
-```ts
-composeLens<B>(ab: Lens<A, B>): Setter<S, B> { ... }
-```
-
-## composePrism
-
-compose a Setter with a Prism
-
-**Signature** (method)
-
-```ts
-composePrism<B>(ab: Prism<A, B>): Setter<S, B> { ... }
-```
-
-## composeIso
-
-compose a Setter with a Iso
-
-**Signature** (method)
-
-```ts
-composeIso<B>(ab: Iso<A, B>): Setter<S, B> { ... }
 ```

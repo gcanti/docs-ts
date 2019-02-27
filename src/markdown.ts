@@ -1,6 +1,6 @@
 import * as prettier from 'prettier'
 import { Option } from 'fp-ts/lib/Option'
-import { Class, Node, fold, Func, Interface, Method, TypeAlias } from './parser'
+import { Class, Node, fold, Func, Interface, Method, TypeAlias, Constant } from './parser'
 import * as path from 'path'
 
 export const CRLF = '\n\n'
@@ -52,6 +52,15 @@ function printTypeAlias(ta: TypeAlias): string {
   return s
 }
 
+function printConstant(c: Constant): string {
+  let s = h1(handleDeprecated(c.name, c.deprecated))
+  s += printDescription(c.description)
+  s += printSignature(c.signature, 'constant')
+  s += printSince(c.since)
+  s += CRLF
+  return s
+}
+
 function printFunction(f: Func): string {
   let s = h1(handleDeprecated(f.name, f.deprecated))
   s += printDescription(f.description)
@@ -62,7 +71,7 @@ function printFunction(f: Func): string {
   return s
 }
 
-type SignatureType = 'function' | 'static function' | 'method' | 'interface' | 'class' | 'type alias'
+type SignatureType = 'function' | 'static function' | 'method' | 'interface' | 'class' | 'type alias' | 'constant'
 
 function printSignature(signature: string, type: SignatureType): string {
   return CRLF + bold('Signature') + ` (${type})` + CRLF + ts(signature)
@@ -131,12 +140,13 @@ export function run(node: Node): string {
             .join('\n') + '\n'
         )
       },
-      (_p, interfaces, typeAliases, functions, classes) => {
+      (_p, interfaces, typeAliases, functions, classes, constants) => {
         return (
           doctoc() +
           interfaces.map(i => printInterface(i)).join('') +
           typeAliases.map(i => printTypeAlias(i)).join('') +
           classes.map(c => printClass(c)).join('') +
+          constants.map(c => printConstant(c)).join('') +
           functions.map(f => printFunction(f)).join('')
         )
       }

@@ -59,6 +59,10 @@ Table of Contents
   - [exists](#exists-1)
   - [filter](#filter-1)
   - [refine](#refine)
+- [URI](#uri-1)
+- [none](#none)
+- [option](#option)
+- [some](#some)
 - [fromEither](#fromeither)
 - [fromNullable](#fromnullable)
 - [fromPredicate](#frompredicate)
@@ -713,6 +717,52 @@ filter(p: Predicate<A>): Option<A> { ... }
 ```ts
 refine<B extends A>(refinement: Refinement<A, B>): Option<B> { ... }
 ```
+
+# URI
+
+**Signature** (constant)
+
+```ts
+export const URI = ...
+```
+
+# none
+
+**Signature** (constant)
+
+```ts
+export const none: Option<never> = ...
+```
+
+Added in v1.0.0
+
+# option
+
+**Signature** (constant)
+
+```ts
+export const option: Monad1<URI> &
+  Foldable2v1<URI> &
+  Plus1<URI> &
+  Traversable2v1<URI> &
+  Alternative1<URI> &
+  Extend1<URI> &
+  Compactable1<URI> &
+  Filterable1<URI> &
+  Witherable1<URI> = ...
+```
+
+Added in v1.0.0
+
+# some
+
+**Signature** (constant)
+
+```ts
+export const some = ...
+```
+
+Added in v1.0.0
 
 # fromEither
 

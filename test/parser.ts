@@ -11,7 +11,8 @@ import {
   getFunctions,
   getInterfaces,
   getSourceFile,
-  getTypeAliases
+  getTypeAliases,
+  getConstants
 } from '../src/parser'
 
 describe('fromPaths', () => {
@@ -228,6 +229,37 @@ export type Option<A> = None<A> | Some<A>`
           },
           name: 'Option',
           signature: 'export type Option<A> = None<A> | Some<A>',
+          since: some('1.0.0'),
+          example: none
+        }
+      ])
+    )
+  })
+})
+
+describe('getConstants', () => {
+  it('should return a `Constant`', () => {
+    const sourceFile = getSourceFile(
+      'test',
+      `/**
+* a description...
+* @since 1.0.0
+* @deprecated
+*/
+export const setoidString: Setoid<string> = setoidStrict`
+    )
+    assert.deepStrictEqual(
+      getConstants(sourceFile),
+      success([
+        {
+          deprecated: true,
+          description: some('a description...'),
+          location: {
+            from: 6,
+            to: 6
+          },
+          name: 'setoidString',
+          signature: 'export const setoidString: Setoid<string> = ...',
           since: some('1.0.0'),
           example: none
         }

@@ -295,6 +295,41 @@ export function typeAlias(
 }
 
 /*
+
+  data Constant = Constant {
+    name :: string,
+    signature :: string,
+    description :: Option string,
+    since :: Option string,
+    location :: Location,
+    deprecated :: boolean,
+    example :: Option string
+  }
+
+*/
+export type Constant = {
+  readonly name: string
+  readonly signature: string
+  readonly description: Option<string>
+  readonly since: Option<string>
+  readonly location: Location
+  readonly deprecated: boolean
+  readonly example: Option<string>
+}
+
+export function constant(
+  name: string,
+  signature: string,
+  description: Option<string>,
+  since: Option<string>,
+  location: Location,
+  deprecated: boolean,
+  example: Option<string>
+): Constant {
+  return { name, signature, description, since, location, deprecated, example }
+}
+
+/*
   data Node =
       Index {
         path :: Array string,
@@ -305,7 +340,8 @@ export function typeAlias(
       interfaces :: Array Interface,
       typeAliases :: Array TypeAlias,
       functions :: Array Func,
-      classes :: Array Class
+      classes :: Array Class,
+      constants :: Array Constant
     }
 */
 export type Node =
@@ -321,6 +357,7 @@ export type Node =
       readonly typeAliases: Array<TypeAlias>
       readonly functions: Array<Func>
       readonly classes: Array<Class>
+      readonly constants: Array<Constant>
     }
 
 export function index(path: Array<string>, children: Array<string>): Node {
@@ -332,9 +369,10 @@ export function module(
   interfaces: Array<Interface>,
   typeAliases: Array<TypeAlias>,
   functions: Array<Func>,
-  classes: Array<Class>
+  classes: Array<Class>,
+  constants: Array<Constant>
 ): Node {
-  return { type: 'Module', path, interfaces, typeAliases, functions, classes }
+  return { type: 'Module', path, interfaces, typeAliases, functions, classes, constants }
 }
 
 export function fold<R>(
@@ -345,14 +383,15 @@ export function fold<R>(
     interfaces: Array<Interface>,
     typeAliases: Array<TypeAlias>,
     functions: Array<Func>,
-    classes: Array<Class>
+    classes: Array<Class>,
+    constants: Array<Constant>
   ) => R
 ): R {
   switch (fa.type) {
     case 'Index':
       return onIndex(fa.path, fa.children)
     case 'Module':
-      return onModule(fa.path, fa.interfaces, fa.typeAliases, fa.functions, fa.classes)
+      return onModule(fa.path, fa.interfaces, fa.typeAliases, fa.functions, fa.classes, fa.constants)
   }
 }
 
@@ -491,7 +530,7 @@ function parseFunctionDeclaration(moduleName: string, fd: ast.FunctionDeclaratio
   }
 }
 
-function parseVariableDeclaration(vd: ast.VariableDeclaration): Validation<Array<string>, Func> {
+function parseFunctionVariableDeclaration(vd: ast.VariableDeclaration): Validation<Array<string>, Func> {
   const vs: any = vd.getParent().getParent()
   const annotation = getAnnotation(vs.getJsDocs())
   const { description, since, deprecated, example } = getAnnotationInfo(annotation)
@@ -523,7 +562,10 @@ export function getFunctions(moduleName: string, sourceFile: ast.SourceFile): Va
     )
   })
 
-  const variableDeclarations = array.traverse(monadValidation)(exportedVariableDeclarations, parseVariableDeclaration)
+  const variableDeclarations = array.traverse(monadValidation)(
+    exportedVariableDeclarations,
+    parseFunctionVariableDeclaration
+  )
 
   const monoidFunc = getMonoid(monoidFailure, getArrayMonoid<Func>())
   return monoidFunc.concat(functionDeclarations, variableDeclarations).map(funcs => funcs.sort(byName.compare))
@@ -549,6 +591,39 @@ export function getTypeAliases(sourceFile: ast.SourceFile): Validation<Array<str
   return array
     .traverse(monadValidation)(exportedTypeAliasDeclarations, ta => parseTypeAliasDeclaration(ta))
     .map(typeAliases => typeAliases.sort(byName.compare))
+}
+
+function getConstantVariableDeclarationSignature(vd: ast.VariableDeclaration): string {
+  const text = vd.getText()
+  const end = text.indexOf(' = ')
+  return `export const ${text.substring(0, end)} = ...`
+}
+
+function parseConstantVariableDeclaration(vd: ast.VariableDeclaration): Validation<Array<string>, Constant> {
+  const vs: any = vd.getParent().getParent()
+  const annotation = getAnnotation(vs.getJsDocs())
+  const { description, since, deprecated, example } = getAnnotationInfo(annotation)
+  const signature = getConstantVariableDeclarationSignature(vd)
+  const name = vd.getName()
+  return success(constant(name, signature, description, since, getLocation(vd), deprecated, example))
+}
+
+export function getConstants(sourceFile: ast.SourceFile): Validation<Array<string>, Array<Constant>> {
+  const exportedVariableDeclarations = sourceFile.getVariableDeclarations().filter(vd => {
+    const vs: ast.VariableStatement = vd.getParent().getParent()
+    const annotation = getAnnotation(vs.getJsDocs())
+    const initializer = vd.getInitializer()
+    return (
+      !isInternal(annotation) &&
+      initializer !== undefined &&
+      vs.isExported() &&
+      !ast.TypeGuards.isFunctionLikeDeclaration(initializer)
+    )
+  })
+
+  return array
+    .traverse(monadValidation)(exportedVariableDeclarations, parseConstantVariableDeclaration)
+    .map(constants => constants.sort(byName.compare))
 }
 
 function getTypeParameters(typeParameters: Array<ast.TypeParameterDeclaration>): string {
@@ -616,8 +691,9 @@ export function parse(file: File, source: string): Validation<Array<string>, Nod
     getInterfaces(sourceFile),
     getFunctions(moduleName, sourceFile),
     getTypeAliases(sourceFile),
-    getClasses(moduleName, sourceFile)
-  ).map(([interfaces, functions, typeAliases, classes]) =>
-    module(file.path, interfaces, typeAliases, functions, classes)
+    getClasses(moduleName, sourceFile),
+    getConstants(sourceFile)
+  ).map(([interfaces, functions, typeAliases, classes, constants]) =>
+    module(file.path, interfaces, typeAliases, functions, classes, constants)
   )
 }

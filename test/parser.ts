@@ -70,7 +70,8 @@ export interface A {}`
           },
           name: 'A',
           signature: 'export interface A {}',
-          since: some('1.0.0')
+          since: some('1.0.0'),
+          example: none
         }
       ])
     )

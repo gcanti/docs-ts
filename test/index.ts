@@ -8,12 +8,12 @@ describe('getExamples', () => {
   const f2 = func('f2', [], none, none, location(0, 0), false, some(`import * as parser from 'docs-ts/lib/parser'`))
   const m = module(['src', 'index.ts'], [], [], [f1, f2], [], [])
 
-  it.only('should load the project name', () => {
-    assert.deepStrictEqual(getExamples([m]), {
+  it('should load the project name', () => {
+    assert.deepStrictEqual(getExamples([m], 'docs-ts'), {
       // tslint:disable-next-line: quotemark
-      'src-index.ts-f1.ts': "import * as assert from 'assert'\nimport * as docs from '../src",
+      'src-index.ts-f1.ts': "import * as docs from '../src'",
       // tslint:disable-next-line: quotemark
-      'src-index.ts-f2.ts': "import * as assert from 'assert'\nimport * as parser from '../src/parser'"
+      'src-index.ts-f2.ts': "import * as parser from '../src/parser'"
     })
   })
 })

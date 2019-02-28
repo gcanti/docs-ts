@@ -36,7 +36,7 @@ aux_links:
 6. add `docs.ts`
 
 ```ts
-import { main } from './src'
+import { main } from 'docs-ts'
 const pkg = require('./package.json')
 
 const srcDir = 'src/**/*.ts'

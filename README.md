@@ -33,6 +33,8 @@ aux_links:
     - '//github.com/gcanti/<name>'
 ```
 
+**Note**. Remember to change the `<name>`
+
 6. add `docs.ts`
 
 ```ts

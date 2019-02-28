@@ -14,6 +14,7 @@ import { tuple, identity } from 'fp-ts/lib/function'
 import { toArray } from 'fp-ts/lib/Foldable2v'
 import { check, defaultOptions } from './check'
 import { fold, getArrayMonoid } from 'fp-ts/lib/Monoid'
+import * as ts from 'typescript'
 
 function writeFileSync(path: string, content: string): Validation<Array<string>, IO<void>> {
   try {
@@ -64,8 +65,11 @@ export function getExamples(nodes: Array<parser.Node>): Record<string, string> {
   return fromFoldable(array)(sources, identity)
 }
 
-export function checkExamples(examples: Record<string, string>): Validation<Array<string>, void> {
-  const failures = check(examples, defaultOptions)
+export function checkExamples(
+  examples: Record<string, string>,
+  options: ts.CompilerOptions
+): Validation<Array<string>, void> {
+  const failures = check(examples, options)
   if (failures.length > 0) {
     return failure(failures.map(f => f.message))
   } else {
@@ -73,7 +77,7 @@ export function checkExamples(examples: Record<string, string>): Validation<Arra
   }
 }
 
-export function mangleExamples(examples: Record<string, string>, projectName?: string): Record<string, string> {
+export function mangleExamples(examples: Record<string, string>, projectName: string): Record<string, string> {
   function replaceProjectName(source: string): string {
     const root = new RegExp(`from '${projectName}'`, 'g')
     const module = new RegExp(`from '${projectName}/lib/`, 'g')
@@ -82,12 +86,18 @@ export function mangleExamples(examples: Record<string, string>, projectName?: s
 
   return map(examples, source => {
     const prelude = source.indexOf('assert.') !== -1 ? `import * as assert from 'assert'\n` : ''
-    const mangledSource = projectName === undefined ? source : replaceProjectName(source)
+    const mangledSource = replaceProjectName(source)
     return prelude + mangledSource
   })
 }
 
-export function main(pattern: string, outDir: string, doTypeCheckExamples: boolean, projectName?: string): IO<void> {
+export function main(
+  pattern: string,
+  outDir: string,
+  doTypeCheckExamples: boolean,
+  projectName: string,
+  options: ts.CompilerOptions = defaultOptions
+): IO<void> {
   let counter = 1
 
   function writeNode(node: parser.Node): Validation<Array<string>, IO<void>> {
@@ -104,7 +114,7 @@ export function main(pattern: string, outDir: string, doTypeCheckExamples: boole
     .chain(parser.run(pattern), forest => {
       const nodes = array.chain(forest, t => toArray(tree)(t))
       const examples = mangleExamples(getExamples(nodes), projectName)
-      const check = doTypeCheckExamples ? checkExamples(examples) : success<Array<string>, void>(undefined)
+      const check = doTypeCheckExamples ? checkExamples(examples, options) : success<Array<string>, void>(undefined)
       return parser.monadParser.chain(check, () => {
         const sorted = sort(contramap((node: parser.Node) => node.path.join('/').toLowerCase(), ordString))(nodes)
         return array.traverse(parser.monadParser)(sorted, writeNode)

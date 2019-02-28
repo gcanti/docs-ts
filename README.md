@@ -43,13 +43,12 @@ const pkg = require('./package.json')
 const srcDir = 'src/**/*.ts'
 const outDir = 'docs'
 const doTypeCheckExamples = true
-const options = { ...defaultOptions }
+const options = { ...defaultOptions } // in case of overrides
 main(srcDir, outDir, doTypeCheckExamples, pkg.name, options).run()
 ```
 
 7. add to `package.json`
 
 ```json
-"doctoc": "doctoc docs",
-"docs": "rimraf rm -rf docs/**/*.md!docs/index.md && ts-node docs.ts && npm run doctoc"
+"docs": "rimraf rm -rf \"docs/!(index.md|_config.yml)\" && ts-node docs.ts && doctoc docs"
 ```

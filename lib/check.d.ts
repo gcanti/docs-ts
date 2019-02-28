@@ -5,4 +5,4 @@ export interface Failure {
     source: string;
     message: string;
 }
-export declare function checkSources(sources: Record<string, string>, options?: ts.CompilerOptions): Array<Failure>;
+export declare function check(sources: Record<string, string>, options: ts.CompilerOptions): Array<Failure>;

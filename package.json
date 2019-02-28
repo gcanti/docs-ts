@@ -31,7 +31,6 @@
   },
   "homepage": "https://github.com/gcanti/docs-ts",
   "dependencies": {
-    "@types/glob": "^7.1.1",
     "doctrine": "^3.0.0",
     "fp-ts": "^1.14.2",
     "fs-extra": "^7.0.1",
@@ -42,6 +41,7 @@
   "devDependencies": {
     "@types/doctrine": "0.0.3",
     "@types/fs-extra": "^5.0.5",
+    "@types/glob": "^7.1.1",
     "@types/jest": "^23.3.13",
     "@types/node": "^10.12.18",
     "@types/prettier": "^1.16.1",
@@ -53,8 +53,10 @@
     "ts-jest": "^23.10.5",
     "ts-node": "^8.0.2",
     "tslint": "^5.12.1",
-    "tslint-config-standard": "^8.0.1",
-    "typescript": "^3.3.3333"
+    "tslint-config-standard": "^8.0.1"
+  },
+  "peerDependencies": {
+    "typescript": "^3.3.1"
   },
   "tags": [],
   "keywords": []

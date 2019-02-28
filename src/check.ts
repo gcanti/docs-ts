@@ -1,14 +1,15 @@
 import * as ts from 'typescript'
 
 export function getProgram(source: Record<string, string>, options: ts.CompilerOptions): ts.Program {
-  const host = ts.createCompilerHost(options)
-  const originalGetSourceFile = host.getSourceFile
   const files: Array<string> = []
   const sourceFiles: Record<string, ts.SourceFile> = {}
   Object.keys(source).forEach(k => {
     files.push(k)
     sourceFiles[k] = ts.createSourceFile(k, source[k], ts.ScriptTarget.Latest)
   })
+
+  const host = ts.createCompilerHost(options)
+  const originalGetSourceFile = host.getSourceFile
   host.getSourceFile = (file, languageVersion) => {
     if (sourceFiles.hasOwnProperty(file)) {
       return sourceFiles[file]
@@ -39,10 +40,7 @@ export interface Failure {
   message: string
 }
 
-export function checkSources(
-  sources: Record<string, string>,
-  options: ts.CompilerOptions = defaultOptions
-): Array<Failure> {
+export function check(sources: Record<string, string>, options: ts.CompilerOptions): Array<Failure> {
   const program = getProgram(sources, options)
   const allDiagnostics = ts.getPreEmitDiagnostics(program)
   const failures: Array<Failure> = []

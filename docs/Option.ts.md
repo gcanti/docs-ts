@@ -3,12 +3,11 @@ title: Option.ts
 nav_order: 9
 ---
 
-Table of Contents
-
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
 
+- [Overview](#overview)
 - [Option](#option)
 - [URI](#uri)
 - [None](#none)
@@ -34,7 +33,7 @@ Table of Contents
   - [isSome](#issome)
   - [exists](#exists)
   - [filter](#filter)
-  - [~~refine~~ (deprecated)](#refine-deprecated)
+  - [~~refine~~](#refine)
 - [Some](#some)
   - [map](#map-1)
   - [mapNullable](#mapnullable-1)
@@ -66,7 +65,7 @@ Table of Contents
 - [fromEither](#fromeither)
 - [fromNullable](#fromnullable)
 - [fromPredicate](#frompredicate)
-- [~~fromRefinement~~ (deprecated)](#fromrefinement-deprecated)
+- [~~fromRefinement~~](#fromrefinement)
 - [getApplyMonoid](#getapplymonoid)
 - [getApplySemigroup](#getapplysemigroup)
 - [getFirstMonoid](#getfirstmonoid)
@@ -81,7 +80,7 @@ Table of Contents
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-# Option
+# Overview
 
 If you have worked with JavaScript at all in the past, it is very likely that you have come across a `TypeError` at
 some time (other languages will throw similarly named errors in such a case). Usually this happens because some
@@ -163,6 +162,8 @@ const sumLifted = (oa: Option<number>, ob: Option<number>): Option<number> => ob
 sumLifted(some(1), some(2)) // some(3)
 sumLifted(some(1), none) // none
 ```
+
+# Option
 
 **Signature** (type alias)
 
@@ -507,7 +508,7 @@ filter(p: Predicate<A>): Option<A>
 filter(p: Predicate<A>): Option<A> { ... }
 ```
 
-## ~~refine~~ (deprecated)
+## ~~refine~~
 
 Use {@link filter} instead.
 Returns this option refined as `Option<B>` if it is non empty and the `refinement` returns `true` when applied to
@@ -833,7 +834,7 @@ assert.deepStrictEqual(positive(1), some(1))
 
 Added in v1.0.0
 
-# ~~fromRefinement~~ (deprecated)
+# ~~fromRefinement~~
 
 Use {@link fromPredicate} instead.
 Refinement version of {@link fromPredicate}

@@ -12,7 +12,8 @@ import {
   getInterfaces,
   getSourceFile,
   getTypeAliases,
-  getConstants
+  getConstants,
+  getModuleDescription
 } from '../src/parser'
 
 describe('fromPaths', () => {
@@ -421,5 +422,37 @@ export class Test<A> {
         }
       ])
     )
+  })
+})
+
+describe('getModuleDescription', () => {
+  it('should return a file description', () => {
+    const sourceFile = getSourceFile(
+      'test',
+      `
+/**
+ * @since 1.0.0
+ */
+export const a: number = 1
+    `
+    )
+    assert.deepStrictEqual(getModuleDescription(sourceFile), none)
+  })
+
+  it('should return a file description', () => {
+    const sourceFile = getSourceFile(
+      'test',
+      `
+/**
+ * @file Manages the configuration settings for the widget
+ */
+
+/**
+ * @since 1.0.0
+ */
+export const a: number = 1
+    `
+    )
+    assert.deepStrictEqual(getModuleDescription(sourceFile), some('Manages the configuration settings for the widget'))
   })
 })

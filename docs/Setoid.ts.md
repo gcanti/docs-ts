@@ -3,8 +3,6 @@ title: Setoid.ts
 nav_order: 10
 ---
 
-Table of Contents
-
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
@@ -17,8 +15,8 @@ Table of Contents
 - [contramap](#contramap)
 - [fromEquals](#fromequals)
 - [getArraySetoid](#getarraysetoid)
-- [~~getProductSetoid~~ (deprecated)](#getproductsetoid-deprecated)
-- [~~getRecordSetoid~~ (deprecated)](#getrecordsetoid-deprecated)
+- [~~getProductSetoid~~](#getproductsetoid)
+- [~~getRecordSetoid~~](#getrecordsetoid)
 - [getStructSetoid](#getstructsetoid)
 - [getTupleSetoid](#gettuplesetoid)
 - [strictEqual](#strictequal)
@@ -117,7 +115,7 @@ export const getArraySetoid = <A>(S: Setoid<A>): Setoid<Array<A>> => ...
 
 Added in v1.0.0
 
-# ~~getProductSetoid~~ (deprecated)
+# ~~getProductSetoid~~
 
 Use {@link getTupleSetoid} instead
 
@@ -129,7 +127,7 @@ export const getProductSetoid = <A, B>(SA: Setoid<A>, SB: Setoid<B>): Setoid<[A,
 
 Added in v1.0.0
 
-# ~~getRecordSetoid~~ (deprecated)
+# ~~getRecordSetoid~~
 
 Use {@link getStructSetoid} instead
 

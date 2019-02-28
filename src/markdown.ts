@@ -2,18 +2,28 @@ import * as prettier from 'prettier'
 import { Option } from 'fp-ts/lib/Option'
 import { Class, Node, fold, Func, Interface, Method, TypeAlias, Constant } from './parser'
 import * as path from 'path'
+import { Validation, failure, success } from 'fp-ts/lib/Validation'
 
-export const CRLF = '\n\n'
-export const h1 = (title: string) => `# ${title}`
-export const h2 = (title: string) => `## ${title}`
-export const h3 = (title: string) => `### ${title}`
-export const fence = (language: string) => (code: string): string => '```' + language + '\n' + code + '\n' + '```'
-export const code = (code: string) => '`' + code + '`'
-export const link = (text: string, href: string) => `[${text}](${href})`
-export const ts = fence('ts')
-export const italic = (code: string) => '*' + code + '*'
-export const bold = (code: string) => '**' + code + '**'
-export const strike = (text: string) => '~~' + text + '~~'
+const CRLF = '\n\n'
+const h1 = (title: string) => `# ${title}`
+const h2 = (title: string) => `## ${title}`
+const fence = (language: string) => (code: string): string => '```' + language + '\n' + code + '\n' + '```'
+const code = (code: string) => '`' + code + '`'
+const link = (text: string, href: string) => `[${text}](${href})`
+const ts = fence('ts')
+const bold = (code: string) => '**' + code + '**'
+const strike = (text: string) => '~~' + text + '~~'
+
+const linkRe = /{@link\s+(.*?)}/g
+
+export function parseLink(s: string): Validation<Array<string>, RegExpMatchArray> {
+  const m = s.match(linkRe)
+  if (m === null) {
+    return failure([`Invalid link ${JSON.stringify(s)}`])
+  } else {
+    return success(m)
+  }
+}
 
 const prettierOptions: prettier.Options = {
   parser: 'markdown',
@@ -22,16 +32,8 @@ const prettierOptions: prettier.Options = {
   printWidth: 120
 }
 
-export function header(title: string, order: number): string {
-  let s = '---\n'
-  s += `title: ${title}\n`
-  s += `nav_order: ${order}\n`
-  s += '---\n\n'
-  return s
-}
-
 function handleDeprecated(s: string, deprecated: boolean): string {
-  return deprecated ? strike(s) + ' (deprecated)' : s
+  return deprecated ? strike(s) : s
 }
 
 function printInterface(i: Interface): string {
@@ -88,6 +90,10 @@ function printDescription(description: Option<string>): string {
   return description.fold('', s => CRLF + s)
 }
 
+function printModuleDescription(description: Option<string>): string {
+  return description.fold('', s => CRLF + h1('Overview') + CRLF + s + CRLF)
+}
+
 function printExample(example: Option<string>): string {
   return example.fold('', s => CRLF + bold('Example') + CRLF + ts(s))
 }
@@ -120,14 +126,23 @@ function printClass(c: Class): string {
 }
 
 function doctoc(): string {
-  return `Table of Contents
+  return `
 
 <!-- START doctoc -->
 <!-- END doctoc -->
+
 `
 }
 
-export function run(node: Node): string {
+export function printHeader(title: string, order: number): string {
+  let s = '---\n'
+  s += `title: ${title}\n`
+  s += `nav_order: ${order}\n`
+  s += '---\n\n'
+  return s
+}
+
+export function printNode(node: Node): string {
   return prettier.format(
     fold(
       node,
@@ -143,9 +158,10 @@ export function run(node: Node): string {
             .join('\n') + '\n'
         )
       },
-      (_p, interfaces, typeAliases, functions, classes, constants) => {
+      (_p, description, interfaces, typeAliases, functions, classes, constants) => {
         return (
           doctoc() +
+          printModuleDescription(description) +
           interfaces.map(i => printInterface(i)).join('') +
           typeAliases.map(i => printTypeAlias(i)).join('') +
           classes.map(c => printClass(c)).join('') +

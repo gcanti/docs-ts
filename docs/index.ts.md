@@ -3,8 +3,6 @@ title: index.ts
 nav_order: 4
 ---
 
-Table of Contents
-
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
@@ -95,7 +93,7 @@ Table of Contents
   - [composeGetter](#composegetter-4)
 - [Prism](#prism)
   - [fromPredicate](#frompredicate)
-  - [~~fromRefinement~~ (deprecated)](#fromrefinement-deprecated)
+  - [~~fromRefinement~~](#fromrefinement)
   - [some](#some)
   - [modify](#modify-3)
   - [modifyOption](#modifyoption-1)
@@ -1197,7 +1195,7 @@ static fromPredicate<A>(predicate: Predicate<A>): Prism<A, A>
 static fromPredicate<A>(predicate: Predicate<A>): Prism<A, A> { ... }
 ```
 
-## ~~fromRefinement~~ (deprecated)
+## ~~fromRefinement~~
 
 Use `fromPredicate` instead
 

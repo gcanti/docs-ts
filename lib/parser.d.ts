@@ -16,77 +16,48 @@ export declare type File = {
 };
 export declare function directory(path: Array<string>, children: Array<string>): File;
 export declare function file(path: Array<string>): File;
-export declare function foldFile<R>(fa: File, onDirectory: (path: Array<string>, children: Array<string>) => R, onFile: (path: Array<string>) => R): R;
 export declare function fromDir(dir: Dir): Forest<File>;
-export declare function fromPattern(pattern: string): Forest<File>;
-export declare function readFileSync(path: string): Validation<Array<string>, string>;
-export declare type Location = {
+declare type Parser<A> = Validation<Array<string>, A>;
+export interface Location {
     readonly from: number;
     readonly to: number;
-};
+}
 export declare function location(from: number, to: number): Location;
-export declare type Interface = {
+export interface Documentable {
     readonly name: string;
-    readonly signature: string;
     readonly description: Option<string>;
     readonly since: Option<string>;
     readonly location: Location;
     readonly deprecated: boolean;
     readonly example: Option<string>;
-};
-export declare function interface_(name: string, signature: string, description: Option<string>, since: Option<string>, location: Location, deprecated: boolean, example: Option<string>): Interface;
-export declare type Func = {
-    readonly name: string;
+}
+export declare function documentable(name: string, description: Option<string>, since: Option<string>, location: Location, deprecated: boolean, example: Option<string>): Documentable;
+export interface Interface extends Documentable {
+    signature: string;
+}
+export declare function interface_(documentable: Documentable, signature: string): Interface;
+export interface Func extends Documentable {
     readonly signatures: Array<string>;
-    readonly description: Option<string>;
-    readonly since: Option<string>;
-    readonly location: Location;
-    readonly deprecated: boolean;
-    readonly example: Option<string>;
-};
-export declare function func(name: string, signatures: Array<string>, description: Option<string>, since: Option<string>, location: Location, deprecated: boolean, example: Option<string>): Func;
-export declare type Method = {
-    readonly name: string;
+}
+export declare function func(documentable: Documentable, signatures: Array<string>): Func;
+export interface Method extends Documentable {
     readonly signatures: Array<string>;
-    readonly description: Option<string>;
-    readonly since: Option<string>;
-    readonly location: Location;
-    readonly deprecated: boolean;
-    readonly example: Option<string>;
-};
-export declare function method(name: string, signatures: Array<string>, description: Option<string>, since: Option<string>, location: Location, deprecated: boolean, example: Option<string>): Method;
-export declare type Class = {
-    readonly name: string;
+}
+export declare function method(documentable: Documentable, signatures: Array<string>): Method;
+export interface Class extends Documentable {
     readonly signature: string;
-    readonly description: Option<string>;
-    readonly since: Option<string>;
-    readonly location: Location;
-    readonly deprecated: boolean;
-    readonly example: Option<string>;
     readonly methods: Array<Method>;
     readonly staticMethods: Array<Method>;
-};
-export declare function class_(name: string, signature: string, description: Option<string>, since: Option<string>, location: Location, deprecated: boolean, example: Option<string>, methods: Array<Method>, staticMethods: Array<Method>): Class;
-export declare type TypeAlias = {
-    readonly name: string;
+}
+export declare function class_(documentable: Documentable, signature: string, methods: Array<Method>, staticMethods: Array<Method>): Class;
+export interface TypeAlias extends Documentable {
     readonly signature: string;
-    readonly description: Option<string>;
-    readonly since: Option<string>;
-    readonly location: Location;
-    readonly deprecated: boolean;
-    readonly example: Option<string>;
-};
-export declare function typeAlias(name: string, signature: string, description: Option<string>, since: Option<string>, location: Location, deprecated: boolean, example: Option<string>): TypeAlias;
-export declare type Constant = {
-    readonly name: string;
+}
+export declare function typeAlias(documentable: Documentable, signature: string): TypeAlias;
+export interface Constant extends Documentable {
     readonly signature: string;
-    readonly description: Option<string>;
-    readonly since: Option<string>;
-    readonly location: Location;
-    readonly deprecated: boolean;
-    readonly example: Option<string>;
-};
-export declare function constant(name: string, signature: string, description: Option<string>, since: Option<string>, location: Location, deprecated: boolean, example: Option<string>): Constant;
+}
+export declare function constant(documentable: Documentable, signature: string): Constant;
 export declare type Node = {
     readonly type: 'Index';
     readonly path: Array<string>;
@@ -94,6 +65,7 @@ export declare type Node = {
 } | {
     readonly type: 'Module';
     readonly path: Array<string>;
+    readonly description: Option<string>;
     readonly interfaces: Array<Interface>;
     readonly typeAliases: Array<TypeAlias>;
     readonly functions: Array<Func>;
@@ -101,17 +73,18 @@ export declare type Node = {
     readonly constants: Array<Constant>;
 };
 export declare function index(path: Array<string>, children: Array<string>): Node;
-export declare function module(path: Array<string>, interfaces: Array<Interface>, typeAliases: Array<TypeAlias>, functions: Array<Func>, classes: Array<Class>, constants: Array<Constant>): Node;
-export declare function fold<R>(fa: Node, onIndex: (path: Array<string>, children: Array<string>) => R, onModule: (path: Array<string>, interfaces: Array<Interface>, typeAliases: Array<TypeAlias>, functions: Array<Func>, classes: Array<Class>, constants: Array<Constant>) => R): R;
-export declare const monadValidation: import("fp-ts/lib/Monad").Monad2C<"Validation", string[]>;
-export declare function fromForest(forest: Forest<File>): Validation<Array<string>, Forest<Node>>;
-export declare function run(pattern: string): Validation<Array<string>, Forest<Node>>;
+export declare function module(path: Array<string>, description: Option<string>, interfaces: Array<Interface>, typeAliases: Array<TypeAlias>, functions: Array<Func>, classes: Array<Class>, constants: Array<Constant>): Node;
+export declare function fold<R>(fa: Node, onIndex: (path: Array<string>, children: Array<string>) => R, onModule: (path: Array<string>, description: Option<string>, interfaces: Array<Interface>, typeAliases: Array<TypeAlias>, functions: Array<Func>, classes: Array<Class>, constants: Array<Constant>) => R): R;
+export declare const monadParser: import("fp-ts/lib/Monad").Monad2C<"Validation", string[]>;
+export declare function fromForest(forest: Forest<File>): Parser<Forest<Node>>;
+export declare function run(pattern: string): Parser<Forest<Node>>;
 export declare function getSourceFile(name: string, source: string): ast.SourceFile;
 export declare function getModuleName(p: Array<string>): string;
-export declare function getInterfaces(sourceFile: ast.SourceFile): Validation<Array<string>, Array<Interface>>;
-export declare function getFunctions(moduleName: string, sourceFile: ast.SourceFile): Validation<Array<string>, Array<Func>>;
-export declare function getTypeAliases(sourceFile: ast.SourceFile): Validation<Array<string>, Array<TypeAlias>>;
-export declare function getConstants(sourceFile: ast.SourceFile): Validation<Array<string>, Array<Constant>>;
-export declare function getClasses(moduleName: string, sourceFile: ast.SourceFile): Validation<Array<string>, Array<Class>>;
-export declare function parse(file: File, source: string): Validation<Array<string>, Node>;
+export declare function getInterfaces(sourceFile: ast.SourceFile): Parser<Array<Interface>>;
+export declare function getFunctions(moduleName: string, sourceFile: ast.SourceFile): Parser<Array<Func>>;
+export declare function getTypeAliases(sourceFile: ast.SourceFile): Parser<Array<TypeAlias>>;
+export declare function getConstants(sourceFile: ast.SourceFile): Parser<Array<Constant>>;
+export declare function getClasses(moduleName: string, sourceFile: ast.SourceFile): Parser<Array<Class>>;
+export declare function getModuleDescription(sourceFile: ast.SourceFile): Option<string>;
+export declare function parse(file: File, source: string): Parser<Node>;
 export {};

@@ -3,14 +3,12 @@ title: io-ts.ts
 nav_order: 8
 ---
 
-Table of Contents
-
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
 
 - [Any](#any)
-- [~~AnyC~~ (deprecated)](#anyc-deprecated)
+- [~~AnyC~~](#anyc)
 - [AnyProps](#anyprops)
 - [ArrayC](#arrayc)
 - [BooleanC](#booleanc)
@@ -31,22 +29,22 @@ Table of Contents
 - [KeyofC](#keyofc)
 - [LiteralC](#literalc)
 - [Mixed](#mixed)
-- [~~NeverC~~ (deprecated)](#neverc-deprecated)
+- [~~NeverC~~](#neverc)
 - [NullC](#nullc)
 - [NumberC](#numberc)
-- [~~ObjectC~~ (deprecated)](#objectc-deprecated)
+- [~~ObjectC~~](#objectc)
 - [PartialC](#partialc)
 - [Props](#props)
 - [ReadonlyArrayC](#readonlyarrayc)
 - [ReadonlyC](#readonlyc)
 - [RecordC](#recordc)
-- [~~RefinementC~~ (deprecated)](#refinementc-deprecated)
-- [~~StrictC~~ (deprecated)](#strictc-deprecated)
+- [~~RefinementC~~](#refinementc)
+- [~~StrictC~~](#strictc)
 - [StringC](#stringc)
-- [~~TaggedExact~~ (deprecated)](#taggedexact-deprecated)
-- [~~TaggedIntersection~~ (deprecated)](#taggedintersection-deprecated)
-- [~~TaggedRefinement~~ (deprecated)](#taggedrefinement-deprecated)
-- [~~TaggedUnion~~ (deprecated)](#taggedunion-deprecated)
+- [~~TaggedExact~~](#taggedexact)
+- [~~TaggedIntersection~~](#taggedintersection)
+- [~~TaggedRefinement~~](#taggedrefinement)
+- [~~TaggedUnion~~](#taggedunion)
 - [TaggedUnionC](#taggedunionc)
 - [TupleC](#tuplec)
 - [TypeC](#typec)
@@ -58,10 +56,10 @@ Table of Contents
 - [ValidationError](#validationerror)
 - [VoidC](#voidc)
 - [Branded](#branded)
-- [~~Compact~~ (deprecated)](#compact-deprecated)
+- [~~Compact~~](#compact)
 - [Decode](#decode)
 - [Encode](#encode)
-- [~~Exact~~ (deprecated)](#exact-deprecated)
+- [~~Exact~~](#exact)
 - [HasProps](#hasprops)
 - [InputOf](#inputof)
 - [Int](#int)
@@ -70,20 +68,20 @@ Table of Contents
 - [OutputOfDictionary](#outputofdictionary)
 - [OutputOfPartialProps](#outputofpartialprops)
 - [OutputOfProps](#outputofprops)
-- [~~PropsOf~~ (deprecated)](#propsof-deprecated)
-- [~~Tagged~~ (deprecated)](#tagged-deprecated)
-- [~~TaggedIntersectionArgument~~ (deprecated)](#taggedintersectionargument-deprecated)
-- [~~TaggedProps~~ (deprecated)](#taggedprops-deprecated)
+- [~~PropsOf~~](#propsof)
+- [~~Tagged~~](#tagged)
+- [~~TaggedIntersectionArgument~~](#taggedintersectionargument)
+- [~~TaggedProps~~](#taggedprops)
 - [TypeOf](#typeof)
 - [TypeOfDictionary](#typeofdictionary)
 - [TypeOfPartialProps](#typeofpartialprops)
 - [TypeOfProps](#typeofprops)
 - [Validate](#validate)
 - [Validation](#validation)
-- [~~mixed~~ (deprecated)](#mixed-deprecated)
+- [~~mixed~~](#mixed)
 - [AnyArrayType](#anyarraytype)
 - [AnyDictionaryType](#anydictionarytype)
-- [~~AnyType~~ (deprecated)](#anytype-deprecated)
+- [~~AnyType~~](#anytype)
 - [ArrayType](#arraytype)
 - [BooleanType](#booleantype)
 - [DictionaryType](#dictionarytype)
@@ -93,16 +91,16 @@ Table of Contents
 - [IntersectionType](#intersectiontype)
 - [KeyofType](#keyoftype)
 - [LiteralType](#literaltype)
-- [~~NeverType~~ (deprecated)](#nevertype-deprecated)
+- [~~NeverType~~](#nevertype)
 - [NullType](#nulltype)
 - [NumberType](#numbertype)
-- [~~ObjectType~~ (deprecated)](#objecttype-deprecated)
+- [~~ObjectType~~](#objecttype)
 - [PartialType](#partialtype)
 - [ReadonlyArrayType](#readonlyarraytype)
 - [ReadonlyType](#readonlytype)
 - [RecursiveType](#recursivetype)
 - [RefinementType](#refinementtype)
-- [~~StrictType~~ (deprecated)](#stricttype-deprecated)
+- [~~StrictType~~](#stricttype)
 - [StringType](#stringtype)
 - [TaggedUnionType](#taggeduniontype)
 - [TupleType](#tupletype)
@@ -115,34 +113,34 @@ Table of Contents
 - [UnionType](#uniontype)
 - [UnknownType](#unknowntype)
 - [VoidType](#voidtype)
-- [~~Dictionary~~ (deprecated)](#dictionary-deprecated)
+- [~~Dictionary~~](#dictionary)
 - [Function](#function)
 - [Int](#int-1)
-- [~~Integer~~ (deprecated)](#integer-deprecated)
+- [~~Integer~~](#integer)
 - [UnknownArray](#unknownarray)
 - [UnknownRecord](#unknownrecord)
-- [~~any~~ (deprecated)](#any-deprecated)
+- [~~any~~](#any)
 - [boolean](#boolean)
-- [~~dictionary~~ (deprecated)](#dictionary-deprecated)
-- [~~never~~ (deprecated)](#never-deprecated)
+- [~~dictionary~~](#dictionary)
+- [~~never~~](#never)
 - [nullType](#nulltype)
 - [number](#number)
-- [~~object~~ (deprecated)](#object-deprecated)
+- [~~object~~](#object)
 - [string](#string)
 - [unknown](#unknown)
 - [voidType](#voidtype)
-- [~~alias~~ (deprecated)](#alias-deprecated)
+- [~~alias~~](#alias)
 - [appendContext](#appendcontext)
 - [array](#array)
 - [brand](#brand)
-- [~~clean~~ (deprecated)](#clean-deprecated)
+- [~~clean~~](#clean)
 - [exact](#exact)
 - [failure](#failure)
 - [failures](#failures)
 - [getContextEntry](#getcontextentry)
-- [~~getDefaultContext~~ (deprecated)](#getdefaultcontext-deprecated)
+- [~~getDefaultContext~~](#getdefaultcontext)
 - [getFunctionName](#getfunctionname)
-- [~~getValidationError~~ (deprecated)](#getvalidationerror-deprecated)
+- [~~getValidationError~~](#getvalidationerror)
 - [identity](#identity)
 - [intersection](#intersection)
 - [keyof](#keyof)
@@ -152,7 +150,7 @@ Table of Contents
 - [readonlyArray](#readonlyarray)
 - [record](#record)
 - [recursion](#recursion)
-- [~~refinement~~ (deprecated)](#refinement-deprecated)
+- [~~refinement~~](#refinement)
 - [strict](#strict)
 - [success](#success)
 - [taggedUnion](#taggedunion)
@@ -172,7 +170,7 @@ export interface Any extends Type<any, any, any> {}
 
 Added in v1.0.0
 
-# ~~AnyC~~ (deprecated)
+# ~~AnyC~~
 
 **Signature** (interface)
 
@@ -421,7 +419,7 @@ export interface Mixed extends Type<any, any, unknown> {}
 
 Added in v1.0.0
 
-# ~~NeverC~~ (deprecated)
+# ~~NeverC~~
 
 **Signature** (interface)
 
@@ -451,7 +449,7 @@ export interface NumberC extends NumberType {}
 
 Added in v1.5.3
 
-# ~~ObjectC~~ (deprecated)
+# ~~ObjectC~~
 
 **Signature** (interface)
 
@@ -522,7 +520,7 @@ export interface RecordC<D extends Mixed, C extends Mixed>
 
 Added in v1.5.3
 
-# ~~RefinementC~~ (deprecated)
+# ~~RefinementC~~
 
 Use `BrandC` instead
 
@@ -534,7 +532,7 @@ export interface RefinementC<C extends Any> extends RefinementType<C, TypeOf<C>,
 
 Added in v1.5.3
 
-# ~~StrictC~~ (deprecated)
+# ~~StrictC~~
 
 **Signature** (interface)
 
@@ -555,7 +553,7 @@ export interface StringC extends StringType {}
 
 Added in v1.5.3
 
-# ~~TaggedExact~~ (deprecated)
+# ~~TaggedExact~~
 
 **Signature** (interface)
 
@@ -565,7 +563,7 @@ export interface TaggedExact<Tag extends string, A, O = A> extends ExactType<Tag
 
 Added in v1.3.0
 
-# ~~TaggedIntersection~~ (deprecated)
+# ~~TaggedIntersection~~
 
 **Signature** (interface)
 
@@ -576,7 +574,7 @@ export interface TaggedIntersection<Tag extends string, A, O = A>
 
 Added in v1.3.0
 
-# ~~TaggedRefinement~~ (deprecated)
+# ~~TaggedRefinement~~
 
 **Signature** (interface)
 
@@ -586,7 +584,7 @@ export interface TaggedRefinement<Tag extends string, A, O = A> extends Refineme
 
 Added in v1.3.0
 
-# ~~TaggedUnion~~ (deprecated)
+# ~~TaggedUnion~~
 
 **Signature** (interface)
 
@@ -742,7 +740,7 @@ export type Branded<A, B> = A & Brand<B>
 
 Added in v1.8.1
 
-# ~~Compact~~ (deprecated)
+# ~~Compact~~
 
 used in `intersection` as a workaround for #234
 
@@ -774,7 +772,7 @@ export type Encode<A, O> = (a: A) => O
 
 Added in v1.0.0
 
-# ~~Exact~~ (deprecated)
+# ~~Exact~~
 
 **Signature** (type alias)
 
@@ -871,7 +869,7 @@ export type OutputOfProps<P extends AnyProps> = { [K in keyof P]: OutputOf<P[K]>
 
 Added in v1.0.0
 
-# ~~PropsOf~~ (deprecated)
+# ~~PropsOf~~
 
 **Signature** (type alias)
 
@@ -881,7 +879,7 @@ export type PropsOf<T extends { props: any }> = T['props']
 
 Added in v1.0.0
 
-# ~~Tagged~~ (deprecated)
+# ~~Tagged~~
 
 **Signature** (type alias)
 
@@ -898,7 +896,7 @@ export type Tagged<Tag extends string, A = any, O = A> =
 
 Added in v1.3.0
 
-# ~~TaggedIntersectionArgument~~ (deprecated)
+# ~~TaggedIntersectionArgument~~
 
 **Signature** (type alias)
 
@@ -923,7 +921,7 @@ export type TaggedIntersectionArgument<Tag extends string> =
 
 Added in v1.3.0
 
-# ~~TaggedProps~~ (deprecated)
+# ~~TaggedProps~~
 
 **Signature** (type alias)
 
@@ -993,7 +991,7 @@ export type Validation<A> = Either<Errors, A>
 
 Added in v1.0.0
 
-# ~~mixed~~ (deprecated)
+# ~~mixed~~
 
 Use `unknown` instead
 
@@ -1040,7 +1038,7 @@ export class AnyDictionaryType {
 
 Added in v1.0.0
 
-# ~~AnyType~~ (deprecated)
+# ~~AnyType~~
 
 **Signature** (class)
 
@@ -1244,7 +1242,7 @@ export class LiteralType<V> {
 
 Added in v1.0.0
 
-# ~~NeverType~~ (deprecated)
+# ~~NeverType~~
 
 **Signature** (class)
 
@@ -1302,7 +1300,7 @@ export class NumberType {
 
 Added in v1.0.0
 
-# ~~ObjectType~~ (deprecated)
+# ~~ObjectType~~
 
 **Signature** (class)
 
@@ -1423,7 +1421,7 @@ export class RefinementType<C, A, O, I> {
 
 Added in v1.0.0
 
-# ~~StrictType~~ (deprecated)
+# ~~StrictType~~
 
 **Signature** (class)
 
@@ -1637,7 +1635,7 @@ export class VoidType {
 
 Added in v1.2.0
 
-# ~~Dictionary~~ (deprecated)
+# ~~Dictionary~~
 
 Use `UnknownRecord` instead
 
@@ -1671,7 +1669,7 @@ export const Int = ...
 
 Added in v1.8.1
 
-# ~~Integer~~ (deprecated)
+# ~~Integer~~
 
 Use `Int` instead
 
@@ -1703,7 +1701,7 @@ export const UnknownRecord: UnknownRecordC = ...
 
 Added in v1.7.1
 
-# ~~any~~ (deprecated)
+# ~~any~~
 
 Use `unknown` instead
 
@@ -1725,7 +1723,7 @@ export const boolean: BooleanC = ...
 
 Added in v1.0.0
 
-# ~~dictionary~~ (deprecated)
+# ~~dictionary~~
 
 Use `record` instead
 
@@ -1737,7 +1735,7 @@ export const dictionary: typeof record = ...
 
 Added in v1.0.0
 
-# ~~never~~ (deprecated)
+# ~~never~~
 
 **Signature** (constant)
 
@@ -1765,7 +1763,7 @@ export const number: NumberC = ...
 
 Added in v1.0.0
 
-# ~~object~~ (deprecated)
+# ~~object~~
 
 Use `UnknownRecord` instead
 
@@ -1805,7 +1803,7 @@ Added in v1.5.0
 export const voidType: VoidC = ...
 ```
 
-# ~~alias~~ (deprecated)
+# ~~alias~~
 
 Keeps the codec "kind"
 
@@ -1881,7 +1879,7 @@ export const brand = <C extends Any, N extends string, B extends { readonly [K i
 
 Added in v1.8.1
 
-# ~~clean~~ (deprecated)
+# ~~clean~~
 
 Drops the codec "kind"
 
@@ -1935,7 +1933,7 @@ export const getContextEntry = (key: string, decoder: Decoder<any, any>): Contex
 
 Added in v1.0.0
 
-# ~~getDefaultContext~~ (deprecated)
+# ~~getDefaultContext~~
 
 **Signature** (function)
 
@@ -1955,7 +1953,7 @@ export const getFunctionName = (f: Function): string => ...
 
 Added in v1.0.0
 
-# ~~getValidationError~~ (deprecated)
+# ~~getValidationError~~
 
 **Signature** (function)
 
@@ -2093,7 +2091,7 @@ export const recursion = <A, O = A, I = unknown, C extends Type<A, O, I> = Type<
 
 Added in v1.0.0
 
-# ~~refinement~~ (deprecated)
+# ~~refinement~~
 
 Use `brand` instead
 

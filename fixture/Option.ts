@@ -1,33 +1,5 @@
-import { Alternative1 } from './Alternative'
-import { Applicative } from './Applicative'
-import { Compactable1, Separated } from './Compactable'
-import { Either } from './Either'
-import { Extend1 } from './Extend'
-import { Filterable1 } from './Filterable'
-import { Foldable2v1 } from './Foldable2v'
-import { identity, Lazy, not, Predicate, Refinement, toString } from './function'
-import { HKT } from './HKT'
-import { Monad1 } from './Monad'
-import { getDualMonoid, Monoid } from './Monoid'
-import { Ord, fromCompare } from './Ord'
-import { Plus1 } from './Plus'
-import { Semigroup } from './Semigroup'
-import { Setoid, fromEquals } from './Setoid'
-import { Traversable2v1 } from './Traversable2v'
-import { Witherable1 } from './Witherable'
-
-declare module './HKT' {
-  interface URI2HKT<A> {
-    Option: Option<A>
-  }
-}
-
-export const URI = 'Option'
-
-export type URI = typeof URI
-
 /**
- * If you have worked with JavaScript at all in the past, it is very likely that you have come across a `TypeError` at
+ * @file If you have worked with JavaScript at all in the past, it is very likely that you have come across a `TypeError` at
  * some time (other languages will throw similarly named errors in such a case). Usually this happens because some
  * method returns `null` or `undefined` when you were not expecting it and thus not dealing with that possibility in
  * your client code.
@@ -108,7 +80,39 @@ export type URI = typeof URI
  * sumLifted(some(1), some(2)) // some(3)
  * sumLifted(some(1), none) // none
  * ```
- *
+ */
+import { Alternative1 } from './Alternative'
+import { Applicative } from './Applicative'
+import { Compactable1, Separated } from './Compactable'
+import { Either } from './Either'
+import { Extend1 } from './Extend'
+import { Filterable1 } from './Filterable'
+import { Foldable2v1 } from './Foldable2v'
+import { identity, Lazy, not, Predicate, Refinement, toString } from './function'
+import { HKT } from './HKT'
+import { Monad1 } from './Monad'
+import { getDualMonoid, Monoid } from './Monoid'
+import { Ord, fromCompare } from './Ord'
+import { Plus1 } from './Plus'
+import { Semigroup } from './Semigroup'
+import { Setoid, fromEquals } from './Setoid'
+import { Traversable2v1 } from './Traversable2v'
+import { Witherable1 } from './Witherable'
+
+/**
+ * @since 1.0.0
+ */
+declare module './HKT' {
+  interface URI2HKT<A> {
+    Option: Option<A>
+  }
+}
+
+export const URI = 'Option'
+
+export type URI = typeof URI
+
+/**
  * @data
  * @constructor None
  * @constructor Some

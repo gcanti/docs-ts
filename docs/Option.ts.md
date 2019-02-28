@@ -187,7 +187,7 @@ export type URI = typeof URI
 
 ```ts
 export class None<A> {
-  private constructor() {}
+  private constructor() { ... }
   ...
 }
 ```
@@ -528,7 +528,7 @@ Added in v1.3.0
 
 ```ts
 export class Some<A> {
-  constructor(readonly value: A) {}
+  constructor(readonly value: A) { ... }
   ...
 }
 ```

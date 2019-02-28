@@ -1,13 +1,10 @@
 import * as assert from 'assert'
 import { getExamples, mangleExamples } from '../src'
-import { module, func, location, documentable } from '../src/parser'
+import { module, func, documentable } from '../src/parser'
 import { some, none } from 'fp-ts/lib/Option'
 
-const f1 = func(documentable('f1', none, none, location(0, 0), false, some(`import * as docs from 'mylibrary'`)), [])
-const f2 = func(
-  documentable('f2', none, none, location(0, 0), false, some(`import * as parser from 'mylibrary/lib/parser'`)),
-  []
-)
+const f1 = func(documentable('f1', none, none, false, some(`import * as docs from 'mylibrary'`)), [])
+const f2 = func(documentable('f2', none, none, false, some(`import * as parser from 'mylibrary/lib/parser'`)), [])
 const m = module(['src', 'index.ts'], none, [], [], [f1, f2], [], [])
 
 describe('getExamples', () => {

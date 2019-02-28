@@ -1009,9 +1009,7 @@ Added in v1.0.0
 
 ```ts
 export class AnyArrayType {
-  constructor() {
-    super('UnknownArray', Array.isArray, (u, c) => (this.is(u) ? success(u) : failure(u, c)), identity)
-  }
+  constructor() { ... }
   ...
 }
 ```
@@ -1024,14 +1022,7 @@ Added in v1.0.0
 
 ```ts
 export class AnyDictionaryType {
-  constructor() {
-    super(
-      'UnknownRecord',
-      (u): u is { [key: string]: unknown } => u !== null && typeof u === 'object',
-      (u, c) => (this.is(u) ? success(u) : failure(u, c)),
-      identity
-    )
-  }
+  constructor() { ... }
   ...
 }
 ```
@@ -1044,9 +1035,7 @@ Added in v1.0.0
 
 ```ts
 export class AnyType {
-  constructor() {
-    super('any', (_): _ is any => true, success, identity)
-  }
+  constructor() { ... }
   ...
 }
 ```
@@ -1065,9 +1054,7 @@ export class ArrayType<C, A, O, I> {
     validate: ArrayType<C, A, O, I>['validate'],
     encode: ArrayType<C, A, O, I>['encode'],
     readonly type: C
-  ) {
-    super(name, is, validate, encode)
-  }
+  ) { ... }
   ...
 }
 ```
@@ -1080,14 +1067,7 @@ Added in v1.0.0
 
 ```ts
 export class BooleanType {
-  constructor() {
-    super(
-      'boolean',
-      (u): u is boolean => typeof u === 'boolean',
-      (u, c) => (this.is(u) ? success(u) : failure(u, c)),
-      identity
-    )
-  }
+  constructor() { ... }
   ...
 }
 ```
@@ -1107,9 +1087,7 @@ export class DictionaryType<D, C, A, O, I> {
     encode: DictionaryType<D, C, A, O, I>['encode'],
     readonly domain: D,
     readonly codomain: C
-  ) {
-    super(name, is, validate, encode)
-  }
+  ) { ... }
   ...
 }
 ```
@@ -1128,9 +1106,7 @@ export class ExactType<C, A, O, I> {
     validate: ExactType<C, A, O, I>['validate'],
     encode: ExactType<C, A, O, I>['encode'],
     readonly type: C
-  ) {
-    super(name, is, validate, encode)
-  }
+  ) { ... }
   ...
 }
 ```
@@ -1143,15 +1119,7 @@ Added in v1.1.0
 
 ```ts
 export class FunctionType {
-  constructor() {
-    super(
-      'Function',
-      // tslint:disable-next-line:strict-type-predicates
-      (u): u is Function => typeof u === 'function',
-      (u, c) => (this.is(u) ? success(u) : failure(u, c)),
-      identity
-    )
-  }
+  constructor() { ... }
   ...
 }
 ```
@@ -1170,9 +1138,7 @@ export class InterfaceType<P, A, O, I> {
     validate: InterfaceType<P, A, O, I>['validate'],
     encode: InterfaceType<P, A, O, I>['encode'],
     readonly props: P
-  ) {
-    super(name, is, validate, encode)
-  }
+  ) { ... }
   ...
 }
 ```
@@ -1191,9 +1157,7 @@ export class IntersectionType<CS, A, O, I> {
     validate: IntersectionType<CS, A, O, I>['validate'],
     encode: IntersectionType<CS, A, O, I>['encode'],
     readonly types: CS
-  ) {
-    super(name, is, validate, encode)
-  }
+  ) { ... }
   ...
 }
 ```
@@ -1212,9 +1176,7 @@ export class KeyofType<D> {
     validate: KeyofType<D>['validate'],
     encode: KeyofType<D>['encode'],
     readonly keys: D
-  ) {
-    super(name, is, validate, encode)
-  }
+  ) { ... }
   ...
 }
 ```
@@ -1233,9 +1195,7 @@ export class LiteralType<V> {
     validate: LiteralType<V>['validate'],
     encode: LiteralType<V>['encode'],
     readonly value: V
-  ) {
-    super(name, is, validate, encode)
-  }
+  ) { ... }
   ...
 }
 ```
@@ -1248,17 +1208,7 @@ Added in v1.0.0
 
 ```ts
 export class NeverType {
-  constructor() {
-    super(
-      'never',
-      (_): _ is never => false,
-      (u, c) => failure(u, c),
-      /* istanbul ignore next */
-      () => {
-        throw new Error('cannot encode never')
-      }
-    )
-  }
+  constructor() { ... }
   ...
 }
 ```
@@ -1271,9 +1221,7 @@ Added in v1.0.0
 
 ```ts
 export class NullType {
-  constructor() {
-    super('null', (u): u is null => u === null, (u, c) => (this.is(u) ? success(u) : failure(u, c)), identity)
-  }
+  constructor() { ... }
   ...
 }
 ```
@@ -1286,14 +1234,7 @@ Added in v1.0.0
 
 ```ts
 export class NumberType {
-  constructor() {
-    super(
-      'number',
-      (u): u is number => typeof u === 'number',
-      (u, c) => (this.is(u) ? success(u) : failure(u, c)),
-      identity
-    )
-  }
+  constructor() { ... }
   ...
 }
 ```
@@ -1306,9 +1247,7 @@ Added in v1.0.0
 
 ```ts
 export class ObjectType {
-  constructor() {
-    super('object', UnknownRecord.is, UnknownRecord.validate, identity)
-  }
+  constructor() { ... }
   ...
 }
 ```
@@ -1327,9 +1266,7 @@ export class PartialType<P, A, O, I> {
     validate: PartialType<P, A, O, I>['validate'],
     encode: PartialType<P, A, O, I>['encode'],
     readonly props: P
-  ) {
-    super(name, is, validate, encode)
-  }
+  ) { ... }
   ...
 }
 ```
@@ -1348,9 +1285,7 @@ export class ReadonlyArrayType<C, A, O, I> {
     validate: ReadonlyArrayType<C, A, O, I>['validate'],
     encode: ReadonlyArrayType<C, A, O, I>['encode'],
     readonly type: C
-  ) {
-    super(name, is, validate, encode)
-  }
+  ) { ... }
   ...
 }
 ```
@@ -1369,9 +1304,7 @@ export class ReadonlyType<C, A, O, I> {
     validate: ReadonlyType<C, A, O, I>['validate'],
     encode: ReadonlyType<C, A, O, I>['encode'],
     readonly type: C
-  ) {
-    super(name, is, validate, encode)
-  }
+  ) { ... }
   ...
 }
 ```
@@ -1390,9 +1323,7 @@ export class RecursiveType<C, A, O, I> {
     validate: RecursiveType<C, A, O, I>['validate'],
     encode: RecursiveType<C, A, O, I>['encode'],
     private runDefinition: () => C
-  ) {
-    super(name, is, validate, encode)
-  }
+  ) { ... }
   ...
 }
 ```
@@ -1412,9 +1343,7 @@ export class RefinementType<C, A, O, I> {
     encode: RefinementType<C, A, O, I>['encode'],
     readonly type: C,
     readonly predicate: Predicate<A>
-  ) {
-    super(name, is, validate, encode)
-  }
+  ) { ... }
   ...
 }
 ```
@@ -1433,9 +1362,7 @@ export class StrictType<P, A, O, I> {
     validate: StrictType<P, A, O, I>['validate'],
     encode: StrictType<P, A, O, I>['encode'],
     readonly props: P
-  ) {
-    super(name, is, validate, encode)
-  }
+  ) { ... }
   ...
 }
 ```
@@ -1448,14 +1375,7 @@ Added in v1.0.0
 
 ```ts
 export class StringType {
-  constructor() {
-    super(
-      'string',
-      (u): u is string => typeof u === 'string',
-      (u, c) => (this.is(u) ? success(u) : failure(u, c)),
-      identity
-    )
-  }
+  constructor() { ... }
   ...
 }
 ```
@@ -1475,9 +1395,7 @@ export class TaggedUnionType<Tag, CS, A, O, I> {
     encode: TaggedUnionType<Tag, CS, A, O, I>['encode'],
     codecs: CS,
     readonly tag: Tag
-  ) {
-    super(name, is, validate, encode, codecs) /* istanbul ignore next */ // <= workaround for https://github.com/Microsoft/TypeScript/issues/13455
-  }
+  ) { ... }
   ...
 }
 ```
@@ -1496,9 +1414,7 @@ export class TupleType<CS, A, O, I> {
     validate: TupleType<CS, A, O, I>['validate'],
     encode: TupleType<CS, A, O, I>['encode'],
     readonly types: CS
-  ) {
-    super(name, is, validate, encode)
-  }
+  ) { ... }
   ...
 }
 ```
@@ -1520,7 +1436,7 @@ export class Type<A, O, I> {
     readonly validate: Validate<I, A>,
     /** converts a value of type A to a value of type O */
     readonly encode: Encode<A, O>
-  ) {}
+  ) { ... }
   ...
 }
 ```
@@ -1570,14 +1486,7 @@ decode(i: I): Validation<A> { ... }
 
 ```ts
 export class UndefinedType {
-  constructor() {
-    super(
-      'undefined',
-      (u): u is undefined => u === void 0,
-      (u, c) => (this.is(u) ? success(u) : failure(u, c)),
-      identity
-    )
-  }
+  constructor() { ... }
   ...
 }
 ```
@@ -1596,9 +1505,7 @@ export class UnionType<CS, A, O, I> {
     validate: UnionType<CS, A, O, I>['validate'],
     encode: UnionType<CS, A, O, I>['encode'],
     readonly types: CS
-  ) {
-    super(name, is, validate, encode)
-  }
+  ) { ... }
   ...
 }
 ```
@@ -1611,9 +1518,7 @@ Added in v1.0.0
 
 ```ts
 export class UnknownType {
-  constructor() {
-    super('unknown', (_): _ is unknown => true, success, identity)
-  }
+  constructor() { ... }
   ...
 }
 ```
@@ -1626,9 +1531,7 @@ Added in v1.5.0
 
 ```ts
 export class VoidType {
-  constructor() {
-    super('void', undefinedType.is, undefinedType.validate, identity)
-  }
+  constructor() { ... }
   ...
 }
 ```

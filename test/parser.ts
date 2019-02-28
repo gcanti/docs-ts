@@ -65,10 +65,6 @@ export interface A {}`
         {
           deprecated: true,
           description: some('a description...'),
-          location: {
-            from: 6,
-            to: 6
-          },
           name: 'A',
           signature: 'export interface A {}',
           since: some('1.0.0'),
@@ -132,10 +128,6 @@ export const sum = (a: number, b: number): number => a + b`
         {
           deprecated: true,
           description: some('a description...'),
-          location: {
-            from: 6,
-            to: 6
-          },
           name: 'sum',
           signatures: ['export const sum = (a: number, b: number): number => ...'],
           since: some('1.0.0'),
@@ -161,10 +153,6 @@ export function sum(a: number, b: number): number { return a + b }`
         {
           deprecated: true,
           description: some('a description...'),
-          location: {
-            from: 6,
-            to: 6
-          },
           name: 'sum',
           signatures: ['export function sum(a: number, b: number): number { ... }'],
           since: some('1.0.0'),
@@ -191,10 +179,6 @@ export function sum(a: number, b: number): number { return a + b }`
         {
           deprecated: true,
           description: some('a description...'),
-          location: {
-            from: 7,
-            to: 7
-          },
           name: 'sum',
           signatures: [
             'export function sum(a: int, b: int): int',
@@ -225,10 +209,6 @@ export type Option<A> = None<A> | Some<A>`
         {
           deprecated: true,
           description: some('a description...'),
-          location: {
-            from: 6,
-            to: 6
-          },
           name: 'Option',
           signature: 'export type Option<A> = None<A> | Some<A>',
           since: some('1.0.0'),
@@ -256,10 +236,6 @@ export const setoidString: Setoid<string> = setoidStrict`
         {
           deprecated: true,
           description: some('a description...'),
-          location: {
-            from: 6,
-            to: 6
-          },
           name: 'setoidString',
           signature: 'export const setoidString: Setoid<string> = ...',
           since: some('1.0.0'),
@@ -274,6 +250,25 @@ describe('getClasses', () => {
   it('should raise an error if the class is anonymous', () => {
     const sourceFile = getSourceFile('test', `export class {}`)
     assert.deepStrictEqual(getClasses('test', sourceFile), failure(['Missing class name in module test']))
+  })
+
+  it('should skip the constructor body', () => {
+    const sourceFile = getSourceFile('test', `export class C { constructor() { ... } }`)
+    assert.deepStrictEqual(
+      getClasses('test', sourceFile),
+      success([
+        {
+          deprecated: false,
+          description: none,
+          example: none,
+          methods: [],
+          name: 'C',
+          signature: 'export class C {\n  constructor() { ... }\n  ... \n}',
+          since: none,
+          staticMethods: []
+        }
+      ])
+    )
   })
 
   it('should return a `Class`', () => {
@@ -308,22 +303,14 @@ export class Test {
         {
           deprecated: true,
           description: some('a class description...'),
-          location: {
-            from: 6,
-            to: 22
-          },
           name: 'Test',
-          signature: 'export class Test {\n  constructor(readonly value: string) { }\n  ... \n}',
+          signature: 'export class Test {\n  constructor(readonly value: string) { ... }\n  ... \n}',
           since: some('1.0.0'),
           example: none,
           methods: [
             {
               deprecated: true,
               description: some('a method description...'),
-              location: {
-                from: 19,
-                to: 21
-              },
               name: 'map',
               signatures: ['map(f: (a: string) => string): Test { ... }'],
               since: some('1.1.0'),
@@ -334,10 +321,6 @@ export class Test {
             {
               deprecated: true,
               description: some('a static method description...'),
-              location: {
-                from: 12,
-                to: 12
-              },
               name: 'f',
               signatures: ['static f() { ... }'],
               since: some('1.1.0'),
@@ -383,22 +366,14 @@ export class Test<A> {
         {
           deprecated: true,
           description: some('a class description...'),
-          location: {
-            from: 6,
-            to: 24
-          },
           name: 'Test',
-          signature: 'export class Test<A> {\n  constructor(readonly value: A) { }\n  ... \n}',
+          signature: 'export class Test<A> {\n  constructor(readonly value: A) { ... }\n  ... \n}',
           since: some('1.0.0'),
           example: none,
           methods: [
             {
               deprecated: true,
               description: some('a method description...'),
-              location: {
-                from: 21,
-                to: 23
-              },
               name: 'map',
               signatures: ['map(f: (a: number) => number): Test', 'map(f: (a: string) => string): Test { ... }'],
               since: some('1.1.0'),
@@ -409,10 +384,6 @@ export class Test<A> {
             {
               deprecated: true,
               description: some('a static method description...'),
-              location: {
-                from: 13,
-                to: 13
-              },
               name: 'f',
               signatures: ['static f(x: number): number', 'static f(x: string): string { ... }'],
               since: some('1.1.0'),

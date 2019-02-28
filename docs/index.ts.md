@@ -185,7 +185,7 @@ export interface ModifyF<S, A> {
 
 ```ts
 export class At<S, I, A> {
-  constructor(readonly at: (i: I) => Lens<S, A>) {}
+  constructor(readonly at: (i: I) => Lens<S, A>) { ... }
   ...
 }
 ```
@@ -206,12 +206,7 @@ fromIso<T>(iso: Iso<T, S>): At<T, I, A> { ... }
 
 ```ts
 export class Fold<S, A> {
-  constructor(readonly foldMap: <M>(M: Monoid<M>) => (f: (a: A) => M) => (s: S) => M) {
-    this.getAll = foldMap(getArrayMonoid<A>())(a => [a])
-    this.exist = foldMap(monoidAny)
-    this.all = foldMap(monoidAll)
-    this.foldMapFirst = foldMap(getFirstMonoid())
-  }
+  constructor(readonly foldMap: <M>(M: Monoid<M>) => (f: (a: A) => M) => (s: S) => M) { ... }
   ...
 }
 ```
@@ -322,7 +317,7 @@ headOption(s: S): Option<A> { ... }
 
 ```ts
 export class Getter<S, A> {
-  constructor(readonly get: (s: S) => A) {}
+  constructor(readonly get: (s: S) => A) { ... }
   ...
 }
 ```
@@ -421,7 +416,7 @@ composePrism<B>(ab: Prism<A, B>): Fold<S, B> { ... }
 
 ```ts
 export class Index<S, I, A> {
-  constructor(readonly index: (i: I) => Optional<S, A>) {}
+  constructor(readonly index: (i: I) => Optional<S, A>) { ... }
   ...
 }
 ```
@@ -450,7 +445,7 @@ fromIso<T>(iso: Iso<T, S>): Index<T, I, A> { ... }
 
 ```ts
 export class Iso<S, A> {
-  constructor(readonly get: (s: S) => A, readonly reverseGet: (a: A) => S) {}
+  constructor(readonly get: (s: S) => A, readonly reverseGet: (a: A) => S) { ... }
   ...
 }
 ```
@@ -637,7 +632,7 @@ composeSetter<B>(ab: Setter<A, B>): Setter<S, B> { ... }
 
 ```ts
 export class Lens<S, A> {
-  constructor(readonly get: (s: S) => A, readonly set: (a: A) => (s: S) => S) {}
+  constructor(readonly get: (s: S) => A, readonly set: (a: A) => (s: S) => S) { ... }
   ...
 }
 ```
@@ -941,7 +936,7 @@ composePrism<B>(ab: Prism<A, B>): Optional<S, B> { ... }
 
 ```ts
 export class Optional<S, A> {
-  constructor(readonly getOption: (s: S) => Option<A>, readonly set: (a: A) => (s: S) => S) {}
+  constructor(readonly getOption: (s: S) => Option<A>, readonly set: (a: A) => (s: S) => S) { ... }
   ...
 }
 ```
@@ -1180,7 +1175,7 @@ composeGetter<B>(ab: Getter<A, B>): Fold<S, B> { ... }
 
 ```ts
 export class Prism<S, A> {
-  constructor(readonly getOption: (s: S) => Option<A>, readonly reverseGet: (a: A) => S) {}
+  constructor(readonly getOption: (s: S) => Option<A>, readonly reverseGet: (a: A) => S) { ... }
   ...
 }
 ```
@@ -1373,7 +1368,7 @@ composeGetter<B>(ab: Getter<A, B>): Fold<S, B> { ... }
 
 ```ts
 export class Setter<S, A> {
-  constructor(readonly modify: (f: (a: A) => A) => (s: S) => S) {}
+  constructor(readonly modify: (f: (a: A) => A) => (s: S) => S) { ... }
   ...
 }
 ```
@@ -1463,7 +1458,7 @@ export class Traversal<S, A> {
   constructor(
     // Van Laarhoven representation
     readonly modifyF: ModifyF<S, A>
-  ) {}
+  ) { ... }
   ...
 }
 ```

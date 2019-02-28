@@ -80,20 +80,10 @@ function readFileSync(path: string): Parser<string> {
   }
 }
 
-export interface Location {
-  readonly from: number
-  readonly to: number
-}
-
-export function location(from: number, to: number): Location {
-  return { from, to }
-}
-
 export interface Documentable {
   readonly name: string
   readonly description: Option<string>
   readonly since: Option<string>
-  readonly location: Location
   readonly deprecated: boolean
   readonly example: Option<string>
 }
@@ -102,11 +92,10 @@ export function documentable(
   name: string,
   description: Option<string>,
   since: Option<string>,
-  location: Location,
   deprecated: boolean,
   example: Option<string>
 ): Documentable {
-  return { name, description, since, location, deprecated, example }
+  return { name, description, since, deprecated, example }
 }
 
 export interface Interface extends Documentable {
@@ -243,13 +232,6 @@ export function getModuleName(p: Array<string>): string {
   return path.parse(p[p.length - 1]).name
 }
 
-function getLocation(node: ast.Node): Location {
-  return {
-    from: node.getStartLineNumber(),
-    to: node.getEndLineNumber()
-  }
-}
-
 function getAnnotation(jsdocs: Array<ast.JSDoc>): doctrine.Annotation {
   const content = jsdocs.map(doc => doc.getText()).join('\n')
   return doctrine.parse(content, { unwrap: true })
@@ -299,9 +281,7 @@ function parseInterfaceDeclaration(id: ast.InterfaceDeclaration): Parser<Interfa
   const annotation = getAnnotation(id.getJsDocs())
   const { description, since, deprecated, example } = getAnnotationInfo(annotation)
   const signature = id.getText()
-  return success(
-    interface_(documentable(id.getName(), description, since, getLocation(id), deprecated, example), signature)
-  )
+  return success(interface_(documentable(id.getName(), description, since, deprecated, example), signature))
 }
 
 export function getInterfaces(sourceFile: ast.SourceFile): Parser<Array<Interface>> {
@@ -348,7 +328,7 @@ function parseFunctionDeclaration(moduleName: string, fd: ast.FunctionDeclaratio
   if (name === undefined || name.trim() === '') {
     return failure([`Missing function name in module ${moduleName}`])
   } else {
-    return success(func(documentable(name, description, since, getLocation(fd), deprecated, example), signatures))
+    return success(func(documentable(name, description, since, deprecated, example), signatures))
   }
 }
 
@@ -358,7 +338,7 @@ function parseFunctionVariableDeclaration(vd: ast.VariableDeclaration): Parser<F
   const { description, since, deprecated, example } = getAnnotationInfo(annotation)
   const signatures = [getFunctionVariableDeclarationSignature(vd)]
   const name = vd.getName()
-  return success(func(documentable(name, description, since, getLocation(vd), deprecated, example), signatures))
+  return success(func(documentable(name, description, since, deprecated, example), signatures))
 }
 
 const byName = contramap((x: { name: string }) => x.name, ordString)
@@ -402,7 +382,7 @@ function parseTypeAliasDeclaration(ta: ast.TypeAliasDeclaration): Parser<TypeAli
   const { description, since, deprecated, example } = getAnnotationInfo(annotation)
   const signature = ta.getText()
   const name = ta.getName()
-  return success(typeAlias(documentable(name, description, since, getLocation(ta), deprecated, example), signature))
+  return success(typeAlias(documentable(name, description, since, deprecated, example), signature))
 }
 
 export function getTypeAliases(sourceFile: ast.SourceFile): Parser<Array<TypeAlias>> {
@@ -427,7 +407,7 @@ function parseConstantVariableDeclaration(vd: ast.VariableDeclaration): Parser<C
   const { description, since, deprecated, example } = getAnnotationInfo(annotation)
   const signature = getConstantVariableDeclarationSignature(vd)
   const name = vd.getName()
-  return success(constant(documentable(name, description, since, getLocation(vd), deprecated, example), signature))
+  return success(constant(documentable(name, description, since, deprecated, example), signature))
 }
 
 export function getConstants(sourceFile: ast.SourceFile): Parser<Array<Constant>> {
@@ -452,12 +432,19 @@ function getTypeParameters(typeParameters: Array<ast.TypeParameterDeclaration>):
   return typeParameters.length === 0 ? '' : '<' + typeParameters.map(p => p.getName()).join(', ') + '>'
 }
 
+function getConstructorDeclarationSignature(c: ast.ConstructorDeclaration): string {
+  const text = c.getText()
+  const end = text.indexOf('{')
+  return `${text.substring(0, end === -1 ? text.length : end).trim()} { ... }`
+}
+
 function getClassDeclarationSignature(c: ast.ClassDeclaration): string {
   const dataName = c.getName()
   const typeParameters = getTypeParameters(c.getTypeParameters())
   const constructors = c.getConstructors()
   if (constructors.length > 0) {
-    return `export class ${dataName}${typeParameters} {\n  ${c.getConstructors()[0].getText()}\n  ... \n}`
+    const constructorSignature = getConstructorDeclarationSignature(constructors[0])
+    return `export class ${dataName}${typeParameters} {\n  ${constructorSignature}\n  ... \n}`
   } else {
     return `export class ${dataName}${typeParameters} { ... }`
   }
@@ -476,7 +463,7 @@ function parseMethod(md: ast.MethodDeclaration): Parser<Method> {
   const { description, since, deprecated, example } = getAnnotationInfo(annotation)
   const signature = getMethodSignature(md)
   const signatures = overloads.length === 0 ? [signature] : [...overloads.map(md => md.getText()), signature]
-  return success(method(documentable(name, description, since, getLocation(md), deprecated, example), signatures))
+  return success(method(documentable(name, description, since, deprecated, example), signatures))
 }
 
 function parseClass(moduleName: string, c: ast.ClassDeclaration): Parser<Class> {
@@ -491,12 +478,7 @@ function parseClass(moduleName: string, c: ast.ClassDeclaration): Parser<Class> 
     const staticMethods = array.traverse(monadParser)(c.getStaticMethods(), parseMethod)
     return monadParser.ap(
       methods.map(methods => (staticMethods: Array<Method>) =>
-        class_(
-          documentable(name, description, since, getLocation(c), deprecated, example),
-          signature,
-          methods,
-          staticMethods
-        )
+        class_(documentable(name, description, since, deprecated, example), signature, methods, staticMethods)
       ),
       staticMethods
     )

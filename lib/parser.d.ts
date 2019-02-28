@@ -18,20 +18,14 @@ export declare function directory(path: Array<string>, children: Array<string>):
 export declare function file(path: Array<string>): File;
 export declare function fromDir(dir: Dir): Forest<File>;
 declare type Parser<A> = Validation<Array<string>, A>;
-export interface Location {
-    readonly from: number;
-    readonly to: number;
-}
-export declare function location(from: number, to: number): Location;
 export interface Documentable {
     readonly name: string;
     readonly description: Option<string>;
     readonly since: Option<string>;
-    readonly location: Location;
     readonly deprecated: boolean;
     readonly example: Option<string>;
 }
-export declare function documentable(name: string, description: Option<string>, since: Option<string>, location: Location, deprecated: boolean, example: Option<string>): Documentable;
+export declare function documentable(name: string, description: Option<string>, since: Option<string>, deprecated: boolean, example: Option<string>): Documentable;
 export interface Interface extends Documentable {
     signature: string;
 }

@@ -160,8 +160,8 @@ export function printNode(node: Node): string {
       },
       (_p, description, interfaces, typeAliases, functions, classes, constants) => {
         return (
-          doctoc() +
           printModuleDescription(description) +
+          doctoc() +
           interfaces.map(i => printInterface(i)).join('') +
           typeAliases.map(i => printTypeAlias(i)).join('') +
           classes.map(c => printClass(c)).join('') +

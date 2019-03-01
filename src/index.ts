@@ -12,7 +12,7 @@ import { Option } from 'fp-ts/lib/Option'
 import { fromFoldable, map } from 'fp-ts/lib/Record'
 import { tuple, identity } from 'fp-ts/lib/function'
 import { toArray } from 'fp-ts/lib/Foldable2v'
-import { check, defaultOptions } from './check'
+import { check } from './check'
 import { fold, getArrayMonoid } from 'fp-ts/lib/Monoid'
 import * as ts from 'typescript'
 
@@ -91,13 +91,15 @@ export function mangleExamples(examples: Record<string, string>, projectName: st
   })
 }
 
-export function main(
-  pattern: string,
-  outDir: string,
-  doTypeCheckExamples: boolean,
-  projectName: string,
-  options: ts.CompilerOptions = defaultOptions
-): IO<void> {
+export function main(): IO<void> {
+  const projectName = require(path.join(process.cwd(), 'package.json')).name
+  const pattern = 'src/**/*.ts'
+  const outDir = 'docs'
+  const unParsedConfig = ts.readConfigFile('tsconfig.json', ts.sys.readFile).config
+  const { options } = ts.parseJsonConfigFileContent(unParsedConfig, ts.sys, process.cwd())
+  options.noEmit = true
+  const doTypeCheckExamples = true
+
   let counter = 1
 
   function writeNode(node: parser.Node): Validation<Array<string>, IO<void>> {

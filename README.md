@@ -1,9 +1,9 @@
-# Usage
+# Setup and usage
 
 1. `npm i gcanti/docs-ts -D`
 
-2. add to `package.json`
+2. run
 
-```json
-"docs": "docs-ts"
+```sh
+npx docs-ts
 ```

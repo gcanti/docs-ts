@@ -3,17 +3,11 @@ title: markdown.ts
 nav_order: 5
 ---
 
-<!-- START doctoc generated TOC please keep comment here to allow auto update -->
-<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
-
+**Table of contents**
 
 - [parseLink (function)](#parselink-function)
 - [printHeader (function)](#printheader-function)
-- [printModule (function)](#printmodule-function)
-
-<!-- END doctoc generated TOC please keep comment here to allow auto update -->
-
-# parseLink (function)
+- [printModule (function)](#printmodule-function)# parseLink (function)
 
 **Signature**
 

@@ -19,7 +19,7 @@
     "dtslint": "dtslint dtslint",
     "mocha": "mocha -r ts-node/register test/*.ts",
     "doctoc": "doctoc docs",
-    "docs": "ts-node docs.ts && npm run doctoc"
+    "docs": "ts-node docs.ts"
   },
   "repository": {
     "type": "git",
@@ -36,6 +36,7 @@
     "fp-ts": "^1.14.2",
     "fs-extra": "^7.0.1",
     "glob": "^7.1.3",
+    "markdown-toc": "^1.2.0",
     "prettier": "^1.16.4",
     "ts-simple-ast": "^21.0.4"
   },

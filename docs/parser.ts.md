@@ -3,9 +3,7 @@ title: parser.ts
 nav_order: 6
 ---
 
-<!-- START doctoc generated TOC please keep comment here to allow auto update -->
-<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
-
+**Table of contents**
 
 - [Class (interface)](#class-interface)
 - [Constant (interface)](#constant-interface)
@@ -18,7 +16,7 @@ nav_order: 6
 - [TypeAlias (interface)](#typealias-interface)
 - [Parser (type alias)](#parser-type-alias)
 - [monadParser (constant)](#monadparser-constant)
-- [class\_ (function)](#class%5C_-function)
+- [class\_ (function)](#class_-function)
 - [constant (function)](#constant-function)
 - [documentable (function)](#documentable-function)
 - [func (function)](#func-function)
@@ -30,16 +28,12 @@ nav_order: 6
 - [getModuleName (function)](#getmodulename-function)
 - [getSourceFile (function)](#getsourcefile-function)
 - [getTypeAliases (function)](#gettypealiases-function)
-- [interface\_ (function)](#interface%5C_-function)
+- [interface\_ (function)](#interface_-function)
 - [method (function)](#method-function)
 - [module (function)](#module-function)
 - [parse (function)](#parse-function)
 - [run (function)](#run-function)
-- [typeAlias (function)](#typealias-function)
-
-<!-- END doctoc generated TOC please keep comment here to allow auto update -->
-
-# Class (interface)
+- [typeAlias (function)](#typealias-function)# Class (interface)
 
 **Signature**
 

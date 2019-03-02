@@ -2,6 +2,7 @@ import * as prettier from 'prettier'
 import { Option } from 'fp-ts/lib/Option'
 import { Class, Func, Interface, Method, TypeAlias, Constant, Module } from './parser'
 import { Validation, failure, success } from 'fp-ts/lib/Validation'
+const toc = require('markdown-toc')
 
 const CRLF = '\n\n'
 const h1 = (title: string) => `# ${title}`
@@ -120,15 +121,6 @@ function printSince(since: Option<string>): string {
   return since.fold('', s => CRLF + `Added in v${s}`)
 }
 
-function doctoc(): string {
-  return `
-
-<!-- START doctoc -->
-<!-- END doctoc -->
-
-`
-}
-
 export function printHeader(title: string, order: number): string {
   let s = '---\n'
   s += `title: ${title}\n`
@@ -139,14 +131,14 @@ export function printHeader(title: string, order: number): string {
 
 export function printModule(module: Module, counter: number): string {
   const header = printHeader(module.path.slice(1).join('/'), counter)
-  const s =
-    header +
-    printModuleDescription(module.description) +
-    doctoc() +
+  const md =
     module.interfaces.map(i => printInterface(i)).join('') +
     module.typeAliases.map(i => printTypeAlias(i)).join('') +
     module.classes.map(c => printClass(c)).join('') +
     module.constants.map(c => printConstant(c)).join('') +
     module.functions.map(f => printFunction(f)).join('')
-  return prettier.format(s, prettierOptions)
+
+  const result =
+    header + printModuleDescription(module.description) + bold('Table of contents') + CRLF + toc(md).content + md
+  return prettier.format(result, prettierOptions)
 }

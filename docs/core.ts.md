@@ -3,19 +3,13 @@ title: core.ts
 nav_order: 3
 ---
 
-<!-- START doctoc generated TOC please keep comment here to allow auto update -->
-<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
-
+**Table of contents**
 
 - [MonadApp (interface)](#monadapp-interface)
 - [MonadFileSystem (interface)](#monadfilesystem-interface)
 - [MonadLog (interface)](#monadlog-interface)
 - [MonadProject (interface)](#monadproject-interface)
-- [main (function)](#main-function)
-
-<!-- END doctoc generated TOC please keep comment here to allow auto update -->
-
-# MonadApp (interface)
+- [main (function)](#main-function)# MonadApp (interface)
 
 App capabilities
 

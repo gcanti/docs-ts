@@ -7,13 +7,13 @@ nav_order: 4
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
 
-- [main](#main)
+- [main (constant)](#main-constant)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-# main
+# main (constant)
 
-**Signature** (constant)
+**Signature**
 
 ```ts
 export const main: IO<void> = ...

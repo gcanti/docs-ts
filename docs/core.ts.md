@@ -7,27 +7,27 @@ nav_order: 3
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
 
-- [MonadApp](#monadapp)
-- [MonadFileSystem](#monadfilesystem)
-- [MonadLog](#monadlog)
-- [MonadProject](#monadproject)
-- [main](#main)
+- [MonadApp (interface)](#monadapp-interface)
+- [MonadFileSystem (interface)](#monadfilesystem-interface)
+- [MonadLog (interface)](#monadlog-interface)
+- [MonadProject (interface)](#monadproject-interface)
+- [main (function)](#main-function)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-# MonadApp
+# MonadApp (interface)
 
 App capabilities
 
-**Signature** (interface)
+**Signature**
 
 ```ts
 export interface MonadApp extends MonadFileSystem, MonadProject, MonadLog {}
 ```
 
-# MonadFileSystem
+# MonadFileSystem (interface)
 
-**Signature** (interface)
+**Signature**
 
 ```ts
 export interface MonadFileSystem {
@@ -38,9 +38,9 @@ export interface MonadFileSystem {
 }
 ```
 
-# MonadLog
+# MonadLog (interface)
 
-**Signature** (interface)
+**Signature**
 
 ```ts
 export interface MonadLog {
@@ -48,9 +48,9 @@ export interface MonadLog {
 }
 ```
 
-# MonadProject
+# MonadProject (interface)
 
-**Signature** (interface)
+**Signature**
 
 ```ts
 export interface MonadProject {
@@ -60,9 +60,9 @@ export interface MonadProject {
 }
 ```
 
-# main
+# main (function)
 
-**Signature** (function)
+**Signature**
 
 ```ts
 export function main(M: MonadApp): IO<void> { ... }

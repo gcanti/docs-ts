@@ -34,9 +34,9 @@ function handleDeprecated(s: string, deprecated: boolean): string {
 }
 
 function printInterface(i: Interface): string {
-  let s = h1(handleDeprecated(i.name, i.deprecated))
+  let s = h1(handleDeprecated(i.name, i.deprecated) + ' (interface)')
   s += printDescription(i.description)
-  s += printSignature(i.signature, 'interface')
+  s += printSignature(i.signature)
   s += printExample(i.example)
   s += printSince(i.since)
   s += CRLF
@@ -44,9 +44,9 @@ function printInterface(i: Interface): string {
 }
 
 function printTypeAlias(ta: TypeAlias): string {
-  let s = h1(handleDeprecated(ta.name, ta.deprecated))
+  let s = h1(handleDeprecated(ta.name, ta.deprecated) + ' (type alias)')
   s += printDescription(ta.description)
-  s += printSignature(ta.signature, 'type alias')
+  s += printSignature(ta.signature)
   s += printExample(ta.example)
   s += printSince(ta.since)
   s += CRLF
@@ -54,9 +54,9 @@ function printTypeAlias(ta: TypeAlias): string {
 }
 
 function printConstant(c: Constant): string {
-  let s = h1(handleDeprecated(c.name, c.deprecated))
+  let s = h1(handleDeprecated(c.name, c.deprecated) + ' (constant)')
   s += printDescription(c.description)
-  s += printSignature(c.signature, 'constant')
+  s += printSignature(c.signature)
   s += printExample(c.example)
   s += printSince(c.since)
   s += CRLF
@@ -64,23 +64,44 @@ function printConstant(c: Constant): string {
 }
 
 function printFunction(f: Func): string {
-  let s = h1(handleDeprecated(f.name, f.deprecated))
+  let s = h1(handleDeprecated(f.name, f.deprecated) + ' (function)')
   s += printDescription(f.description)
-  s += printSignatures(f.signatures, 'function')
+  s += printSignatures(f.signatures)
   s += printExample(f.example)
   s += printSince(f.since)
   s += CRLF
   return s
 }
 
-type SignatureType = 'function' | 'static function' | 'method' | 'interface' | 'class' | 'type alias' | 'constant'
-
-function printSignature(signature: string, type: SignatureType): string {
-  return CRLF + bold('Signature') + ` (${type})` + CRLF + ts(signature)
+function printMethod(m: Method): string {
+  let s = h2(handleDeprecated(m.name, m.deprecated) + ' (method)')
+  s += printDescription(m.description)
+  s += printSignatures(m.signatures)
+  s += printExample(m.example)
+  s += printSince(m.since)
+  s += CRLF
+  return s
 }
 
-function printSignatures(signature: Array<string>, type: SignatureType): string {
-  return CRLF + bold('Signature') + ` (${type})` + CRLF + ts(signature.join('\n'))
+function printClass(c: Class): string {
+  let s = h1(handleDeprecated(c.name, c.deprecated) + ' (class)')
+  s += printDescription(c.description)
+  s += printSignature(c.signature)
+  s += printExample(c.example)
+  s += printSince(c.since)
+  s += CRLF
+  s += c.staticMethods.map(printMethod).join(CRLF)
+  s += c.methods.map(printMethod).join(CRLF)
+  s += CRLF
+  return s
+}
+
+function printSignature(signature: string): string {
+  return CRLF + bold('Signature') + CRLF + ts(signature)
+}
+
+function printSignatures(signature: Array<string>): string {
+  return CRLF + bold('Signature') + CRLF + ts(signature.join('\n'))
 }
 
 function printDescription(description: Option<string>): string {
@@ -97,29 +118,6 @@ function printExample(example: Option<string>): string {
 
 function printSince(since: Option<string>): string {
   return since.fold('', s => CRLF + `Added in v${s}`)
-}
-
-function printMethod(m: Method): string {
-  let s = h2(handleDeprecated(m.name, m.deprecated))
-  s += printDescription(m.description)
-  s += printSignatures(m.signatures, 'method')
-  s += printExample(m.example)
-  s += printSince(m.since)
-  s += CRLF
-  return s
-}
-
-function printClass(c: Class): string {
-  let s = h1(handleDeprecated(c.name, c.deprecated))
-  s += printDescription(c.description)
-  s += printSignature(c.signature, 'class')
-  s += printExample(c.example)
-  s += printSince(c.since)
-  s += CRLF
-  s += c.staticMethods.map(printMethod).join(CRLF)
-  s += c.methods.map(printMethod).join(CRLF)
-  s += CRLF
-  return s
 }
 
 function doctoc(): string {

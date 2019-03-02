@@ -7,31 +7,31 @@ nav_order: 2
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
 
-- [defaultOptions](#defaultoptions)
-- [check](#check)
-- [getProgram](#getprogram)
+- [defaultOptions (constant)](#defaultoptions-constant)
+- [check (function)](#check-function)
+- [getProgram (function)](#getprogram-function)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-# defaultOptions
+# defaultOptions (constant)
 
-**Signature** (constant)
+**Signature**
 
 ```ts
 export const defaultOptions: ts.CompilerOptions = ...
 ```
 
-# check
+# check (function)
 
-**Signature** (function)
+**Signature**
 
 ```ts
 export function check(sources: Record<string, string>, options: ts.CompilerOptions): Array<string> { ... }
 ```
 
-# getProgram
+# getProgram (function)
 
-**Signature** (function)
+**Signature**
 
 ```ts
 export function getProgram(source: Record<string, string>, options: ts.CompilerOptions): ts.Program { ... }

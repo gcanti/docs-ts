@@ -7,41 +7,41 @@ nav_order: 6
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
 
-- [Class](#class)
-- [Constant](#constant)
-- [Documentable](#documentable)
-- [File](#file)
-- [Func](#func)
-- [Interface](#interface)
-- [Method](#method)
-- [Module](#module)
-- [TypeAlias](#typealias)
-- [Parser](#parser)
-- [monadParser](#monadparser)
-- [class\_](#class%5C_)
-- [constant](#constant)
-- [documentable](#documentable)
-- [func](#func)
-- [getClasses](#getclasses)
-- [getConstants](#getconstants)
-- [getFunctions](#getfunctions)
-- [getInterfaces](#getinterfaces)
-- [getModuleDescription](#getmoduledescription)
-- [getModuleName](#getmodulename)
-- [getSourceFile](#getsourcefile)
-- [getTypeAliases](#gettypealiases)
-- [interface\_](#interface%5C_)
-- [method](#method)
-- [module](#module)
-- [parse](#parse)
-- [run](#run)
-- [typeAlias](#typealias)
+- [Class (interface)](#class-interface)
+- [Constant (interface)](#constant-interface)
+- [Documentable (interface)](#documentable-interface)
+- [File (interface)](#file-interface)
+- [Func (interface)](#func-interface)
+- [Interface (interface)](#interface-interface)
+- [Method (interface)](#method-interface)
+- [Module (interface)](#module-interface)
+- [TypeAlias (interface)](#typealias-interface)
+- [Parser (type alias)](#parser-type-alias)
+- [monadParser (constant)](#monadparser-constant)
+- [class\_ (function)](#class%5C_-function)
+- [constant (function)](#constant-function)
+- [documentable (function)](#documentable-function)
+- [func (function)](#func-function)
+- [getClasses (function)](#getclasses-function)
+- [getConstants (function)](#getconstants-function)
+- [getFunctions (function)](#getfunctions-function)
+- [getInterfaces (function)](#getinterfaces-function)
+- [getModuleDescription (function)](#getmoduledescription-function)
+- [getModuleName (function)](#getmodulename-function)
+- [getSourceFile (function)](#getsourcefile-function)
+- [getTypeAliases (function)](#gettypealiases-function)
+- [interface\_ (function)](#interface%5C_-function)
+- [method (function)](#method-function)
+- [module (function)](#module-function)
+- [parse (function)](#parse-function)
+- [run (function)](#run-function)
+- [typeAlias (function)](#typealias-function)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-# Class
+# Class (interface)
 
-**Signature** (interface)
+**Signature**
 
 ```ts
 export interface Class extends Documentable {
@@ -51,9 +51,9 @@ export interface Class extends Documentable {
 }
 ```
 
-# Constant
+# Constant (interface)
 
-**Signature** (interface)
+**Signature**
 
 ```ts
 export interface Constant extends Documentable {
@@ -61,9 +61,9 @@ export interface Constant extends Documentable {
 }
 ```
 
-# Documentable
+# Documentable (interface)
 
-**Signature** (interface)
+**Signature**
 
 ```ts
 export interface Documentable {
@@ -75,9 +75,9 @@ export interface Documentable {
 }
 ```
 
-# File
+# File (interface)
 
-**Signature** (interface)
+**Signature**
 
 ```ts
 export interface File {
@@ -86,9 +86,9 @@ export interface File {
 }
 ```
 
-# Func
+# Func (interface)
 
-**Signature** (interface)
+**Signature**
 
 ```ts
 export interface Func extends Documentable {
@@ -96,9 +96,9 @@ export interface Func extends Documentable {
 }
 ```
 
-# Interface
+# Interface (interface)
 
-**Signature** (interface)
+**Signature**
 
 ```ts
 export interface Interface extends Documentable {
@@ -106,9 +106,9 @@ export interface Interface extends Documentable {
 }
 ```
 
-# Method
+# Method (interface)
 
-**Signature** (interface)
+**Signature**
 
 ```ts
 export interface Method extends Documentable {
@@ -116,9 +116,9 @@ export interface Method extends Documentable {
 }
 ```
 
-# Module
+# Module (interface)
 
-**Signature** (interface)
+**Signature**
 
 ```ts
 export interface Module {
@@ -132,9 +132,9 @@ export interface Module {
 }
 ```
 
-# TypeAlias
+# TypeAlias (interface)
 
-**Signature** (interface)
+**Signature**
 
 ```ts
 export interface TypeAlias extends Documentable {
@@ -142,25 +142,25 @@ export interface TypeAlias extends Documentable {
 }
 ```
 
-# Parser
+# Parser (type alias)
 
-**Signature** (type alias)
+**Signature**
 
 ```ts
 export type Parser<A> = Validation<Array<string>, A>
 ```
 
-# monadParser
+# monadParser (constant)
 
-**Signature** (constant)
+**Signature**
 
 ```ts
 export const monadParser = ...
 ```
 
-# class\_
+# class\_ (function)
 
-**Signature** (function)
+**Signature**
 
 ```ts
 export function class_(
@@ -171,17 +171,17 @@ export function class_(
 ): Class { ... }
 ```
 
-# constant
+# constant (function)
 
-**Signature** (function)
+**Signature**
 
 ```ts
 export function constant(documentable: Documentable, signature: string): Constant { ... }
 ```
 
-# documentable
+# documentable (function)
 
-**Signature** (function)
+**Signature**
 
 ```ts
 export function documentable(
@@ -193,97 +193,97 @@ export function documentable(
 ): Documentable { ... }
 ```
 
-# func
+# func (function)
 
-**Signature** (function)
+**Signature**
 
 ```ts
 export function func(documentable: Documentable, signatures: Array<string>): Func { ... }
 ```
 
-# getClasses
+# getClasses (function)
 
-**Signature** (function)
+**Signature**
 
 ```ts
 export function getClasses(moduleName: string, sourceFile: ast.SourceFile): Parser<Array<Class>> { ... }
 ```
 
-# getConstants
+# getConstants (function)
 
-**Signature** (function)
+**Signature**
 
 ```ts
 export function getConstants(sourceFile: ast.SourceFile): Parser<Array<Constant>> { ... }
 ```
 
-# getFunctions
+# getFunctions (function)
 
-**Signature** (function)
+**Signature**
 
 ```ts
 export function getFunctions(moduleName: string, sourceFile: ast.SourceFile): Parser<Array<Func>> { ... }
 ```
 
-# getInterfaces
+# getInterfaces (function)
 
-**Signature** (function)
+**Signature**
 
 ```ts
 export function getInterfaces(sourceFile: ast.SourceFile): Parser<Array<Interface>> { ... }
 ```
 
-# getModuleDescription
+# getModuleDescription (function)
 
-**Signature** (function)
+**Signature**
 
 ```ts
 export function getModuleDescription(sourceFile: ast.SourceFile): Option<string> { ... }
 ```
 
-# getModuleName
+# getModuleName (function)
 
-**Signature** (function)
+**Signature**
 
 ```ts
 export function getModuleName(p: Array<string>): string { ... }
 ```
 
-# getSourceFile
+# getSourceFile (function)
 
-**Signature** (function)
+**Signature**
 
 ```ts
 export function getSourceFile(name: string, source: string): ast.SourceFile { ... }
 ```
 
-# getTypeAliases
+# getTypeAliases (function)
 
-**Signature** (function)
+**Signature**
 
 ```ts
 export function getTypeAliases(sourceFile: ast.SourceFile): Parser<Array<TypeAlias>> { ... }
 ```
 
-# interface\_
+# interface\_ (function)
 
-**Signature** (function)
+**Signature**
 
 ```ts
 export function interface_(documentable: Documentable, signature: string): Interface { ... }
 ```
 
-# method
+# method (function)
 
-**Signature** (function)
+**Signature**
 
 ```ts
 export function method(documentable: Documentable, signatures: Array<string>): Method { ... }
 ```
 
-# module
+# module (function)
 
-**Signature** (function)
+**Signature**
 
 ```ts
 export function module(
@@ -297,25 +297,25 @@ export function module(
 ): Module { ... }
 ```
 
-# parse
+# parse (function)
 
-**Signature** (function)
+**Signature**
 
 ```ts
 export function parse(path: Array<string>, source: string): Parser<Module> { ... }
 ```
 
-# run
+# run (function)
 
-**Signature** (function)
+**Signature**
 
 ```ts
 export function run(files: Array<File>): Parser<Array<Module>> { ... }
 ```
 
-# typeAlias
+# typeAlias (function)
 
-**Signature** (function)
+**Signature**
 
 ```ts
 export function typeAlias(documentable: Documentable, signature: string): TypeAlias { ... }

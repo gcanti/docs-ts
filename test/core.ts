@@ -1,5 +1,5 @@
 import * as assert from 'assert'
-import { getExamples, mangleExamples } from '../src'
+import { getExamples, fixExamples } from '../src/core'
 import { module, func, documentable } from '../src/parser'
 import { some, none } from 'fp-ts/lib/Option'
 
@@ -18,9 +18,9 @@ describe('getExamples', () => {
   })
 })
 
-describe('mangleExamples', () => {
+describe('fixExamplesProjectImports', () => {
   it('should load the project name', () => {
-    assert.deepStrictEqual(mangleExamples(getExamples([m]), 'mylibrary'), {
+    assert.deepStrictEqual(fixExamples(getExamples([m]), 'mylibrary'), {
       // tslint:disable-next-line: quotemark
       'src-index.ts-f1.ts': "import * as docs from './src'",
       // tslint:disable-next-line: quotemark

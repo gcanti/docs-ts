@@ -1,83 +1,18 @@
 import * as doctrine from 'doctrine'
 import { sequenceT } from 'fp-ts/lib/Apply'
-import { array } from 'fp-ts/lib/Array'
+import { array, sort } from 'fp-ts/lib/Array'
 import { getArrayMonoid } from 'fp-ts/lib/Monoid'
 import { fromNullable, none, Option, some } from 'fp-ts/lib/Option'
-import { ordString, contramap } from 'fp-ts/lib/Ord'
-import { isEmpty } from 'fp-ts/lib/Record'
-import { getTraversableComposition } from 'fp-ts/lib/Traversable2v'
-import { Forest, Tree, tree } from 'fp-ts/lib/Tree'
+import { ordString, contramap, Ord } from 'fp-ts/lib/Ord'
 import { failure, getMonad, success, Validation, getMonoid } from 'fp-ts/lib/Validation'
-import * as fs from 'fs'
-import * as glob from 'glob'
 import Ast, * as ast from 'ts-simple-ast'
 import * as path from 'path'
 
-interface Dir {
-  [key: string]: Dir
-}
+export type Parser<A> = Validation<Array<string>, A>
 
-export function fromPaths(paths: Array<string>): Dir {
-  const dir: Dir = {}
-  let current: Dir = dir
-  for (const path of paths) {
-    const names = path.split('/')
-    for (const name of names) {
-      if (current.hasOwnProperty(name)) {
-        current = current[name]
-      } else {
-        current = current[name] = {}
-      }
-    }
-    current = dir
-  }
-  return dir
-}
-
-export type File =
-  | {
-      readonly type: 'Directory'
-      readonly path: Array<string>
-      readonly children: Array<string>
-    }
-  | {
-      readonly type: 'File'
-      readonly path: Array<string>
-    }
-
-export function directory(path: Array<string>, children: Array<string>): File {
-  return { type: 'Directory', path, children }
-}
-
-export function file(path: Array<string>): File {
-  return { type: 'File', path }
-}
-
-export function fromDir(dir: Dir): Forest<File> {
-  function toForest(path: Array<string>, dir: Dir): Forest<File> {
-    return Object.keys(dir)
-      .sort(ordString.compare)
-      .map(name => toTree(path, name, dir[name]))
-  }
-  function toTree(parent: Array<string>, name: string, dir: Dir): Tree<File> {
-    const path = [...parent, name]
-    return isEmpty(dir) ? new Tree(file(path), []) : new Tree(directory(path, Object.keys(dir)), toForest(path, dir))
-  }
-  return toForest([], dir)
-}
-
-function fromPattern(pattern: string): Forest<File> {
-  return fromDir(fromPaths(glob.sync(pattern)))
-}
-
-type Parser<A> = Validation<Array<string>, A>
-
-function readFileSync(path: string): Parser<string> {
-  try {
-    return success(fs.readFileSync(path, { encoding: 'utf8' }))
-  } catch (e) {
-    return failure([`Cannot open file ${path}: ${e}`])
-  }
+export interface File {
+  path: string
+  content: string
 }
 
 export interface Documentable {
@@ -153,25 +88,14 @@ export function constant(documentable: Documentable, signature: string): Constan
   return { ...documentable, signature }
 }
 
-export type Node =
-  | {
-      readonly type: 'Index'
-      readonly path: Array<string>
-      readonly children: Array<string>
-    }
-  | {
-      readonly type: 'Module'
-      readonly path: Array<string>
-      readonly description: Option<string>
-      readonly interfaces: Array<Interface>
-      readonly typeAliases: Array<TypeAlias>
-      readonly functions: Array<Func>
-      readonly classes: Array<Class>
-      readonly constants: Array<Constant>
-    }
-
-export function index(path: Array<string>, children: Array<string>): Node {
-  return { type: 'Index', path, children }
+export interface Module {
+  readonly path: Array<string>
+  readonly description: Option<string>
+  readonly interfaces: Array<Interface>
+  readonly typeAliases: Array<TypeAlias>
+  readonly functions: Array<Func>
+  readonly classes: Array<Class>
+  readonly constants: Array<Constant>
 }
 
 export function module(
@@ -182,46 +106,22 @@ export function module(
   functions: Array<Func>,
   classes: Array<Class>,
   constants: Array<Constant>
-): Node {
-  return { type: 'Module', path, description, interfaces, typeAliases, functions, classes, constants }
+): Module {
+  return { path, description, interfaces, typeAliases, functions, classes, constants }
 }
 
-export function fold<R>(
-  fa: Node,
-  onIndex: (path: Array<string>, children: Array<string>) => R,
-  onModule: (
-    path: Array<string>,
-    description: Option<string>,
-    interfaces: Array<Interface>,
-    typeAliases: Array<TypeAlias>,
-    functions: Array<Func>,
-    classes: Array<Class>,
-    constants: Array<Constant>
-  ) => R
-): R {
-  switch (fa.type) {
-    case 'Index':
-      return onIndex(fa.path, fa.children)
-    case 'Module':
-      return onModule(fa.path, fa.description, fa.interfaces, fa.typeAliases, fa.functions, fa.classes, fa.constants)
-  }
-}
+const ordModule: Ord<Module> = contramap((module: Module) => module.path.join('/').toLowerCase(), ordString)
+
+const sortModules = sort(ordModule)
 
 const monoidFailure = getArrayMonoid<string>()
 
 export const monadParser = getMonad(monoidFailure)
 
-export function fromForest(forest: Forest<File>): Parser<Forest<Node>> {
-  const traverse = getTraversableComposition(array, tree).traverse(monadParser)
-  return traverse(forest, file => {
-    return file.type === 'Directory'
-      ? success(index(file.path, file.children))
-      : monadParser.chain(readFileSync(file.path.join('/')), source => parse(file, source))
-  })
-}
-
-export function run(pattern: string): Parser<Forest<Node>> {
-  return fromForest(fromPattern(pattern))
+export function run(files: Array<File>): Parser<Array<Module>> {
+  return array
+    .traverse(monadParser)(files, file => parse(file.path.split(path.sep), file.content))
+    .map(sortModules)
 }
 
 export function getSourceFile(name: string, source: string): ast.SourceFile {
@@ -508,8 +408,8 @@ export function getModuleDescription(sourceFile: ast.SourceFile): Option<string>
   }
 }
 
-export function parse(file: File, source: string): Parser<Node> {
-  const moduleName = getModuleName(file.path)
+export function parse(path: Array<string>, source: string): Parser<Module> {
+  const moduleName = getModuleName(path)
   const sourceFile = getSourceFile(moduleName, source)
   return sequenceT(monadParser)(
     getInterfaces(sourceFile),
@@ -518,6 +418,6 @@ export function parse(file: File, source: string): Parser<Node> {
     getClasses(moduleName, sourceFile),
     getConstants(sourceFile)
   ).map(([interfaces, functions, typeAliases, classes, constants]) =>
-    module(file.path, getModuleDescription(sourceFile), interfaces, typeAliases, functions, classes, constants)
+    module(path, getModuleDescription(sourceFile), interfaces, typeAliases, functions, classes, constants)
   )
 }

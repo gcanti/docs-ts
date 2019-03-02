@@ -1,6 +1,6 @@
 ---
 title: parser.ts
-nav_order: 4
+nav_order: 6
 ---
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
@@ -10,22 +10,17 @@ nav_order: 4
 - [Class](#class)
 - [Constant](#constant)
 - [Documentable](#documentable)
+- [File](#file)
 - [Func](#func)
 - [Interface](#interface)
 - [Method](#method)
+- [Module](#module)
 - [TypeAlias](#typealias)
-- [File](#file)
-- [Node](#node)
+- [Parser](#parser)
 - [monadParser](#monadparser)
 - [class\_](#class%5C_)
 - [constant](#constant)
-- [directory](#directory)
 - [documentable](#documentable)
-- [file](#file)
-- [fold](#fold)
-- [fromDir](#fromdir)
-- [fromForest](#fromforest)
-- [fromPaths](#frompaths)
 - [func](#func)
 - [getClasses](#getclasses)
 - [getConstants](#getconstants)
@@ -35,7 +30,6 @@ nav_order: 4
 - [getModuleName](#getmodulename)
 - [getSourceFile](#getsourcefile)
 - [getTypeAliases](#gettypealiases)
-- [index](#index)
 - [interface\_](#interface%5C_)
 - [method](#method)
 - [module](#module)
@@ -81,6 +75,17 @@ export interface Documentable {
 }
 ```
 
+# File
+
+**Signature** (interface)
+
+```ts
+export interface File {
+  path: string
+  content: string
+}
+```
+
 # Func
 
 **Signature** (interface)
@@ -111,6 +116,22 @@ export interface Method extends Documentable {
 }
 ```
 
+# Module
+
+**Signature** (interface)
+
+```ts
+export interface Module {
+  readonly path: Array<string>
+  readonly description: Option<string>
+  readonly interfaces: Array<Interface>
+  readonly typeAliases: Array<TypeAlias>
+  readonly functions: Array<Func>
+  readonly classes: Array<Class>
+  readonly constants: Array<Constant>
+}
+```
+
 # TypeAlias
 
 **Signature** (interface)
@@ -121,44 +142,12 @@ export interface TypeAlias extends Documentable {
 }
 ```
 
-# File
+# Parser
 
 **Signature** (type alias)
 
 ```ts
-export type File =
-  | {
-      readonly type: 'Directory'
-      readonly path: Array<string>
-      readonly children: Array<string>
-    }
-  | {
-      readonly type: 'File'
-      readonly path: Array<string>
-    }
-```
-
-# Node
-
-**Signature** (type alias)
-
-```ts
-export type Node =
-  | {
-      readonly type: 'Index'
-      readonly path: Array<string>
-      readonly children: Array<string>
-    }
-  | {
-      readonly type: 'Module'
-      readonly path: Array<string>
-      readonly description: Option<string>
-      readonly interfaces: Array<Interface>
-      readonly typeAliases: Array<TypeAlias>
-      readonly functions: Array<Func>
-      readonly classes: Array<Class>
-      readonly constants: Array<Constant>
-    }
+export type Parser<A> = Validation<Array<string>, A>
 ```
 
 # monadParser
@@ -190,14 +179,6 @@ export function class_(
 export function constant(documentable: Documentable, signature: string): Constant { ... }
 ```
 
-# directory
-
-**Signature** (function)
-
-```ts
-export function directory(path: Array<string>, children: Array<string>): File { ... }
-```
-
 # documentable
 
 **Signature** (function)
@@ -210,58 +191,6 @@ export function documentable(
   deprecated: boolean,
   example: Option<string>
 ): Documentable { ... }
-```
-
-# file
-
-**Signature** (function)
-
-```ts
-export function file(path: Array<string>): File { ... }
-```
-
-# fold
-
-**Signature** (function)
-
-```ts
-export function fold<R>(
-  fa: Node,
-  onIndex: (path: Array<string>, children: Array<string>) => R,
-  onModule: (
-    path: Array<string>,
-    description: Option<string>,
-    interfaces: Array<Interface>,
-    typeAliases: Array<TypeAlias>,
-    functions: Array<Func>,
-    classes: Array<Class>,
-    constants: Array<Constant>
-  ) => R
-): R { ... }
-```
-
-# fromDir
-
-**Signature** (function)
-
-```ts
-export function fromDir(dir: Dir): Forest<File> { ... }
-```
-
-# fromForest
-
-**Signature** (function)
-
-```ts
-export function fromForest(forest: Forest<File>): Parser<Forest<Node>> { ... }
-```
-
-# fromPaths
-
-**Signature** (function)
-
-```ts
-export function fromPaths(paths: Array<string>): Dir { ... }
 ```
 
 # func
@@ -336,14 +265,6 @@ export function getSourceFile(name: string, source: string): ast.SourceFile { ..
 export function getTypeAliases(sourceFile: ast.SourceFile): Parser<Array<TypeAlias>> { ... }
 ```
 
-# index
-
-**Signature** (function)
-
-```ts
-export function index(path: Array<string>, children: Array<string>): Node { ... }
-```
-
 # interface\_
 
 **Signature** (function)
@@ -373,7 +294,7 @@ export function module(
   functions: Array<Func>,
   classes: Array<Class>,
   constants: Array<Constant>
-): Node { ... }
+): Module { ... }
 ```
 
 # parse
@@ -381,7 +302,7 @@ export function module(
 **Signature** (function)
 
 ```ts
-export function parse(file: File, source: string): Parser<Node> { ... }
+export function parse(path: Array<string>, source: string): Parser<Module> { ... }
 ```
 
 # run
@@ -389,7 +310,7 @@ export function parse(file: File, source: string): Parser<Node> { ... }
 **Signature** (function)
 
 ```ts
-export function run(pattern: string): Parser<Forest<Node>> { ... }
+export function run(files: Array<File>): Parser<Array<Module>> { ... }
 ```
 
 # typeAlias

@@ -20,13 +20,8 @@ describe('check', () => {
         },
         defaultOptions
       ),
-      [
-        {
-          // tslint:disable-next-line: quotemark
-          message: "file.ts (1,7): Type 'true' is not assignable to type 'number'.",
-          source: 'const a: number = true'
-        }
-      ]
+      // tslint:disable-next-line: quotemark
+      ["file.ts (1,7): Type 'true' is not assignable to type 'number'."]
     )
   })
 })

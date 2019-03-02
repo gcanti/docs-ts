@@ -1,23 +1,11 @@
 import { Option } from 'fp-ts/lib/Option';
-import { Forest } from 'fp-ts/lib/Tree';
 import { Validation } from 'fp-ts/lib/Validation';
 import * as ast from 'ts-simple-ast';
-interface Dir {
-    [key: string]: Dir;
+export declare type Parser<A> = Validation<Array<string>, A>;
+export interface File {
+    path: string;
+    content: string;
 }
-export declare function fromPaths(paths: Array<string>): Dir;
-export declare type File = {
-    readonly type: 'Directory';
-    readonly path: Array<string>;
-    readonly children: Array<string>;
-} | {
-    readonly type: 'File';
-    readonly path: Array<string>;
-};
-export declare function directory(path: Array<string>, children: Array<string>): File;
-export declare function file(path: Array<string>): File;
-export declare function fromDir(dir: Dir): Forest<File>;
-declare type Parser<A> = Validation<Array<string>, A>;
 export interface Documentable {
     readonly name: string;
     readonly description: Option<string>;
@@ -52,12 +40,7 @@ export interface Constant extends Documentable {
     readonly signature: string;
 }
 export declare function constant(documentable: Documentable, signature: string): Constant;
-export declare type Node = {
-    readonly type: 'Index';
-    readonly path: Array<string>;
-    readonly children: Array<string>;
-} | {
-    readonly type: 'Module';
+export interface Module {
     readonly path: Array<string>;
     readonly description: Option<string>;
     readonly interfaces: Array<Interface>;
@@ -65,13 +48,10 @@ export declare type Node = {
     readonly functions: Array<Func>;
     readonly classes: Array<Class>;
     readonly constants: Array<Constant>;
-};
-export declare function index(path: Array<string>, children: Array<string>): Node;
-export declare function module(path: Array<string>, description: Option<string>, interfaces: Array<Interface>, typeAliases: Array<TypeAlias>, functions: Array<Func>, classes: Array<Class>, constants: Array<Constant>): Node;
-export declare function fold<R>(fa: Node, onIndex: (path: Array<string>, children: Array<string>) => R, onModule: (path: Array<string>, description: Option<string>, interfaces: Array<Interface>, typeAliases: Array<TypeAlias>, functions: Array<Func>, classes: Array<Class>, constants: Array<Constant>) => R): R;
+}
+export declare function module(path: Array<string>, description: Option<string>, interfaces: Array<Interface>, typeAliases: Array<TypeAlias>, functions: Array<Func>, classes: Array<Class>, constants: Array<Constant>): Module;
 export declare const monadParser: import("fp-ts/lib/Monad").Monad2C<"Validation", string[]>;
-export declare function fromForest(forest: Forest<File>): Parser<Forest<Node>>;
-export declare function run(pattern: string): Parser<Forest<Node>>;
+export declare function run(files: Array<File>): Parser<Array<Module>>;
 export declare function getSourceFile(name: string, source: string): ast.SourceFile;
 export declare function getModuleName(p: Array<string>): string;
 export declare function getInterfaces(sourceFile: ast.SourceFile): Parser<Array<Interface>>;
@@ -80,5 +60,4 @@ export declare function getTypeAliases(sourceFile: ast.SourceFile): Parser<Array
 export declare function getConstants(sourceFile: ast.SourceFile): Parser<Array<Constant>>;
 export declare function getClasses(moduleName: string, sourceFile: ast.SourceFile): Parser<Array<Class>>;
 export declare function getModuleDescription(sourceFile: ast.SourceFile): Option<string>;
-export declare function parse(file: File, source: string): Parser<Node>;
-export {};
+export declare function parse(path: Array<string>, source: string): Parser<Module>;

@@ -1,15 +1,12 @@
 import * as prettier from 'prettier'
 import { Option } from 'fp-ts/lib/Option'
-import { Class, Node, fold, Func, Interface, Method, TypeAlias, Constant } from './parser'
-import * as path from 'path'
+import { Class, Func, Interface, Method, TypeAlias, Constant, Module } from './parser'
 import { Validation, failure, success } from 'fp-ts/lib/Validation'
 
 const CRLF = '\n\n'
 const h1 = (title: string) => `# ${title}`
 const h2 = (title: string) => `## ${title}`
 const fence = (language: string) => (code: string): string => '```' + language + '\n' + code + '\n' + '```'
-const code = (code: string) => '`' + code + '`'
-const link = (text: string, href: string) => `[${text}](${href})`
 const ts = fence('ts')
 const bold = (code: string) => '**' + code + '**'
 const strike = (text: string) => '~~' + text + '~~'
@@ -142,34 +139,16 @@ export function printHeader(title: string, order: number): string {
   return s
 }
 
-export function printNode(node: Node): string {
-  return prettier.format(
-    fold(
-      node,
-      (_, children) => {
-        return (
-          children
-            .map(name => {
-              const isIndex = path.parse(name).ext === ''
-              return isIndex
-                ? '- ' + link(code(name) + ' directory', './' + name + '/' + 'index.md')
-                : '- ' + link(code(name) + ' file', './' + name + '.md')
-            })
-            .join('\n') + '\n'
-        )
-      },
-      (_p, description, interfaces, typeAliases, functions, classes, constants) => {
-        return (
-          printModuleDescription(description) +
-          doctoc() +
-          interfaces.map(i => printInterface(i)).join('') +
-          typeAliases.map(i => printTypeAlias(i)).join('') +
-          classes.map(c => printClass(c)).join('') +
-          constants.map(c => printConstant(c)).join('') +
-          functions.map(f => printFunction(f)).join('')
-        )
-      }
-    ),
-    prettierOptions
-  )
+export function printModule(module: Module, counter: number): string {
+  const header = printHeader(module.path.slice(1).join('/'), counter)
+  const s =
+    header +
+    printModuleDescription(module.description) +
+    doctoc() +
+    module.interfaces.map(i => printInterface(i)).join('') +
+    module.typeAliases.map(i => printTypeAlias(i)).join('') +
+    module.classes.map(c => printClass(c)).join('') +
+    module.constants.map(c => printConstant(c)).join('') +
+    module.functions.map(f => printFunction(f)).join('')
+  return prettier.format(s, prettierOptions)
 }

@@ -1,12 +1,7 @@
 import * as assert from 'assert'
 import { none, some } from 'fp-ts/lib/Option'
-import { Tree } from 'fp-ts/lib/Tree'
 import { failure, success } from 'fp-ts/lib/Validation'
 import {
-  directory,
-  file,
-  fromDir,
-  fromPaths,
   getClasses,
   getFunctions,
   getInterfaces,
@@ -15,28 +10,6 @@ import {
   getConstants,
   getModuleDescription
 } from '../src/parser'
-
-describe('fromPaths', () => {
-  it('should return a map of parts', () => {
-    assert.deepStrictEqual(fromPaths([]), {})
-    assert.deepStrictEqual(fromPaths(['a']), { a: {} })
-    assert.deepStrictEqual(fromPaths(['a/b']), { a: { b: {} } })
-    assert.deepStrictEqual(fromPaths(['a/b', 'a/c']), { a: { b: {}, c: {} } })
-  })
-})
-
-describe('fromDir', () => {
-  it('should return a tree of parts', () => {
-    assert.deepStrictEqual(fromDir(fromPaths([])), [])
-    assert.deepStrictEqual(fromDir(fromPaths(['a'])), [new Tree(file(['a']), [])])
-    assert.deepStrictEqual(fromDir(fromPaths(['a/b'])), [
-      new Tree(directory(['a'], ['b']), [new Tree(file(['a', 'b']), [])])
-    ])
-    assert.deepStrictEqual(fromDir(fromPaths(['a/b', 'a/c'])), [
-      new Tree(directory(['a'], ['b', 'c']), [new Tree(file(['a', 'b']), []), new Tree(file(['a', 'c']), [])])
-    ])
-  })
-})
 
 describe('getInterfaces', () => {
   it('should return no `Interface`s if the file is empty', () => {

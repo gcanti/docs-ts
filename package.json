@@ -6,6 +6,7 @@
     "lib"
   ],
   "main": "lib/index.js",
+  "bin": "lib/bin.js",
   "typings": "lib/index.d.ts",
   "scripts": {
     "lint": "tslint -p tsconfig.json src/**/*.ts test/**/*.ts",
@@ -18,7 +19,7 @@
     "dtslint": "dtslint dtslint",
     "mocha": "mocha -r ts-node/register test/*.ts",
     "doctoc": "doctoc docs",
-    "docs": "rimraf rm -rf docs/**/*.md!docs/index.md && ts-node docs.ts && npm run doctoc"
+    "docs": "ts-node docs.ts && npm run doctoc"
   },
   "repository": {
     "type": "git",
@@ -45,6 +46,7 @@
     "@types/jest": "^23.3.13",
     "@types/node": "^10.12.18",
     "@types/prettier": "^1.16.1",
+    "@types/rimraf": "^2.0.2",
     "doctoc": "^1.4.0",
     "dtslint": "github:gcanti/dtslint",
     "jest": "^23.6.0",

@@ -35,23 +35,13 @@ export const defaultOptions: ts.CompilerOptions = {
   noEmit: true
 }
 
-export interface Failure {
-  source: string
-  message: string
-}
-
-export function check(sources: Record<string, string>, options: ts.CompilerOptions): Array<Failure> {
+export function check(sources: Record<string, string>, options: ts.CompilerOptions): Array<string> {
   const program = getProgram(sources, options)
   const allDiagnostics = ts.getPreEmitDiagnostics(program)
-  const failures: Array<Failure> = []
-  allDiagnostics.forEach(diagnostic => {
+  return allDiagnostics.map(diagnostic => {
     const sourceFile = diagnostic.file!
     const { line, character } = sourceFile.getLineAndCharacterOfPosition(diagnostic.start!)
     const message = ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n')
-    failures.push({
-      source: sourceFile.getFullText(),
-      message: `${sourceFile.fileName} (${line + 1},${character + 1}): ${message}`
-    })
+    return `${sourceFile.fileName} (${line + 1},${character + 1}): ${message}`
   })
-  return failures
 }

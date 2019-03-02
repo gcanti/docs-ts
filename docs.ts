@@ -1,3 +1,3 @@
 import { main } from './src'
 
-main().run()
+main.run()

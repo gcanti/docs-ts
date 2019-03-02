@@ -1,134 +1,30 @@
-import * as parser from './parser'
-import { log } from 'fp-ts/lib/Console'
-import { IO, io } from 'fp-ts/lib/IO'
-import * as markdown from './markdown'
-import * as path from 'path'
+import { IO } from 'fp-ts/lib/IO'
 import * as fs from 'fs-extra'
-import { tree } from 'fp-ts/lib/Tree'
-import { Validation, success, failure } from 'fp-ts/lib/Validation'
-import { array, sort, empty } from 'fp-ts/lib/Array'
-import { ordString, contramap } from 'fp-ts/lib/Ord'
-import { Option } from 'fp-ts/lib/Option'
-import { fromFoldable, map } from 'fp-ts/lib/Record'
-import { tuple, identity } from 'fp-ts/lib/function'
-import { toArray } from 'fp-ts/lib/Foldable2v'
-import { check } from './check'
-import { fold, getArrayMonoid } from 'fp-ts/lib/Monoid'
+import * as glob from 'glob'
+import * as path from 'path'
 import * as ts from 'typescript'
+import * as core from './core'
+import * as rimraf from 'rimraf'
+import * as Console from 'fp-ts/lib/Console'
 
-function writeFileSync(path: string, content: string): Validation<Array<string>, IO<void>> {
-  try {
-    return success(log(`Printing module ${path}`).applySecond(new IO(() => fs.outputFileSync(path, content))))
-  } catch (e) {
-    return failure([`Cannot open file ${path}: ${e}`])
-  }
+const srcDir = 'src/**/*.ts'
+
+/**
+ * App instance
+ */
+const app: core.MonadApp = {
+  readOptions: new IO(() => {
+    const config = ts.readConfigFile('tsconfig.json', ts.sys.readFile).config
+    const { options } = ts.parseJsonConfigFileContent(config, ts.sys, process.cwd())
+    return options
+  }),
+  readProjectName: new IO(() => require(path.join(process.cwd(), 'package.json')).name),
+  readPaths: new IO(() => glob.sync(srcDir)),
+  readFile: path => new IO(() => fs.readFileSync(path, { encoding: 'utf8' })),
+  writeFile: (path, content) => new IO(() => fs.outputFileSync(path, content)),
+  exists: path => new IO(() => fs.existsSync(path)),
+  clean: pattern => new IO(() => rimraf.sync(pattern)),
+  log: Console.log
 }
 
-function getOutpuPath(outDir: string, node: parser.Node): string {
-  return parser.fold(
-    node,
-    p => path.join(outDir, p.slice(1).join(path.sep) + path.sep + 'index.md'),
-    p => path.join(outDir, p.slice(1).join(path.sep) + '.md')
-  )
-}
-
-export function getExamples(nodes: Array<parser.Node>): Record<string, string> {
-  function toArray(prefix: Array<string>, x: { name: string; example: Option<string> }): Array<[string, string]> {
-    return x.example.foldL(
-      () => empty,
-      source => {
-        const name = prefix.join('-') + '-' + x.name + '.ts'
-        return [tuple(name, source)]
-      }
-    )
-  }
-
-  const sources = array.chain(nodes, node => {
-    switch (node.type) {
-      case 'Index':
-        return empty
-      case 'Module':
-        const foldArrayOfTuple = fold(getArrayMonoid<[string, string]>())
-        const methods = array.chain(node.classes, c =>
-          foldArrayOfTuple([
-            array.chain(c.methods, m => toArray(node.path, m)),
-            array.chain(c.staticMethods, sm => toArray(node.path, sm))
-          ])
-        )
-        const interfaces = array.chain(node.interfaces, i => toArray(node.path, i))
-        const typeAliases = array.chain(node.typeAliases, ta => toArray(node.path, ta))
-        const constants = array.chain(node.constants, c => toArray(node.path, c))
-        const functions = array.chain(node.functions, f => toArray(node.path, f))
-        return foldArrayOfTuple([methods, interfaces, typeAliases, constants, functions])
-    }
-  })
-  return fromFoldable(array)(sources, identity)
-}
-
-export function checkExamples(
-  examples: Record<string, string>,
-  options: ts.CompilerOptions
-): Validation<Array<string>, void> {
-  const failures = check(examples, options)
-  if (failures.length > 0) {
-    return failure(failures.map(f => f.message))
-  } else {
-    return success(undefined)
-  }
-}
-
-export function mangleExamples(examples: Record<string, string>, projectName: string): Record<string, string> {
-  function replaceProjectName(source: string): string {
-    const root = new RegExp(`from '${projectName}'`, 'g')
-    const module = new RegExp(`from '${projectName}/lib/`, 'g')
-    return source.replace(root, `from './src'`).replace(module, `from './src/`)
-  }
-
-  return map(examples, source => {
-    const prelude = source.indexOf('assert.') !== -1 ? `import * as assert from 'assert'\n` : ''
-    const mangledSource = replaceProjectName(source)
-    return prelude + mangledSource
-  })
-}
-
-export function main(): IO<void> {
-  const projectName = require(path.join(process.cwd(), 'package.json')).name
-  const pattern = 'src/**/*.ts'
-  const outDir = 'docs'
-  const unParsedConfig = ts.readConfigFile('tsconfig.json', ts.sys.readFile).config
-  const { options } = ts.parseJsonConfigFileContent(unParsedConfig, ts.sys, process.cwd())
-  options.noEmit = true
-  const doTypeCheckExamples = true
-
-  let counter = 1
-
-  function writeNode(node: parser.Node): Validation<Array<string>, IO<void>> {
-    switch (node.type) {
-      case 'Index':
-        return success(log(`Detected directory ${node.path.join('/')}`))
-      case 'Module':
-        const header = markdown.printHeader(node.path.slice(1).join('/'), counter++)
-        return writeFileSync(getOutpuPath(outDir, node), header + markdown.printNode(node))
-    }
-  }
-
-  return parser.monadParser
-    .chain(parser.run(pattern), forest => {
-      const nodes = array.chain(forest, t => toArray(tree)(t))
-      const examples = mangleExamples(getExamples(nodes), projectName)
-      const check = doTypeCheckExamples ? checkExamples(examples, options) : success<Array<string>, void>(undefined)
-      return parser.monadParser.chain(check, () => {
-        const sorted = sort(contramap((node: parser.Node) => node.path.join('/').toLowerCase(), ordString))(nodes)
-        return array.traverse(parser.monadParser)(sorted, writeNode)
-      })
-    })
-    .map(a =>
-      array
-        .sequence(io)(a)
-        .map(() => undefined)
-    )
-    .fold(
-      errors => log(`Errors: ${errors.join('\n')}`).applySecond(new IO(() => process.exit(1))),
-      a => a.map(() => undefined)
-    )
-}
+export const main: IO<void> = core.main(app)

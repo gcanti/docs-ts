@@ -1,6 +1,6 @@
 ---
 title: markdown.ts
-nav_order: 3
+nav_order: 5
 ---
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
@@ -9,7 +9,7 @@ nav_order: 3
 
 - [parseLink](#parselink)
 - [printHeader](#printheader)
-- [printNode](#printnode)
+- [printModule](#printmodule)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -29,10 +29,10 @@ export function parseLink(s: string): Validation<Array<string>, RegExpMatchArray
 export function printHeader(title: string, order: number): string { ... }
 ```
 
-# printNode
+# printModule
 
 **Signature** (function)
 
 ```ts
-export function printNode(node: Node): string { ... }
+export function printModule(module: Module, counter: number): string { ... }
 ```

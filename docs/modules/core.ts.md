@@ -1,9 +1,14 @@
 ---
 title: core.ts
 nav_order: 3
+parent: Modules
 ---
 
-**Table of contents**
+# Overview
+
+core
+
+<h2 class="text-delta">Table of contents</h2>
 
 - [MonadApp (interface)](#monadapp-interface)
 - [MonadFileSystem (interface)](#monadfilesystem-interface)

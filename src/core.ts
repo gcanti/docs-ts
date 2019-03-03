@@ -1,3 +1,7 @@
+/**
+ * @file core
+ */
+
 import { array, empty } from 'fp-ts/lib/Array'
 import { identity, tuple } from 'fp-ts/lib/function'
 import { IO, io } from 'fp-ts/lib/IO'
@@ -32,12 +36,8 @@ export interface MonadLog {
  */
 export interface MonadApp extends MonadFileSystem, MonadProject, MonadLog {}
 
-function getModulePath(module: parser.Module): string {
-  return module.path.join('/')
-}
-
 function getMarkdownOutpuPath(outDir: string, module: parser.Module): string {
-  return path.join(outDir, module.path.slice(1).join(path.sep) + '.md')
+  return path.join(outDir, 'modules', module.path.slice(1).join(path.sep) + '.md')
 }
 
 type Example = [string, string]
@@ -128,7 +128,7 @@ function writeModules(M: MonadFileSystem & MonadLog, modules: Array<parser.Modul
   return array
     .traverse(io)(modules, module =>
       getFile(module).chain(file =>
-        M.log(`Printing module ${getModulePath(module)}`).applySecond(M.writeFile(file.path, file.content))
+        M.log(`Printing module ${file.path}`).applySecond(M.writeFile(file.path, file.content))
       )
     )
     .map(() => undefined)
@@ -143,6 +143,27 @@ function addIndex(M: MonadFileSystem & MonadLog): IO<void> {
             indexPath,
             `---
 title: Home
+nav_order: 1
+---
+`
+          )
+        )
+      : io.of(undefined)
+  )
+}
+
+function addModulesIndex(M: MonadFileSystem & MonadLog): IO<void> {
+  const indexPath = path.join(outDir, 'modules', 'index.md')
+  return M.exists(indexPath).chain(b =>
+    !b
+      ? M.log(`Adding modules/index.md to ${outDir}...`).chain(() =>
+          M.writeFile(
+            indexPath,
+            `---
+title: Modules
+has_children: true
+permalink: /docs/modules
+nav_order: 2
 ---
 `
           )
@@ -182,6 +203,7 @@ export function main(M: MonadApp): IO<void> {
         return M.log(`Removing files ${cleanPattern}...`)
           .chain(() => M.clean(cleanPattern))
           .chain(() => addIndex(M))
+          .chain(() => addModulesIndex(M))
           .chain(() => addConfigYML(M, projectName))
           .chain(() => {
             return readFilesFromPaths(M, paths).chain(files => {

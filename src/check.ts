@@ -1,3 +1,7 @@
+/**
+ * @file examples type-checking
+ */
+
 import * as ts from 'typescript'
 
 export function getProgram(source: Record<string, string>, options: ts.CompilerOptions): ts.Program {

@@ -1,3 +1,6 @@
+/**
+ * @file parser utilities
+ */
 import { Option } from 'fp-ts/lib/Option';
 import { Validation } from 'fp-ts/lib/Validation';
 import * as ast from 'ts-simple-ast';

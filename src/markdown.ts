@@ -1,3 +1,7 @@
+/**
+ * @file markdown utilities
+ */
+
 import * as prettier from 'prettier'
 import { Option } from 'fp-ts/lib/Option'
 import { Class, Func, Interface, Method, TypeAlias, Constant, Module, Export } from './parser'
@@ -135,6 +139,7 @@ export function printHeader(title: string, order: number): string {
   let s = '---\n'
   s += `title: ${title}\n`
   s += `nav_order: ${order}\n`
+  s += `parent: Modules\n`
   s += '---\n\n'
   return s
 }
@@ -151,6 +156,11 @@ export function printModule(module: Module, counter: number): string {
     module.exports.map(e => printExport(e)).join('')
 
   const result =
-    header + printModuleDescription(module.description) + bold('Table of contents') + CRLF + toc(md).content + md
+    header +
+    printModuleDescription(module.description) +
+    '<h2 class="text-delta">Table of contents</h2>' +
+    CRLF +
+    toc(md).content +
+    md
   return prettier.format(result, prettierOptions)
 }

@@ -1,9 +1,14 @@
 ---
 title: markdown.ts
 nav_order: 5
+parent: Modules
 ---
 
-**Table of contents**
+# Overview
+
+markdown utilities
+
+<h2 class="text-delta">Table of contents</h2>
 
 - [parseLink (function)](#parselink-function)
 - [printHeader (function)](#printheader-function)

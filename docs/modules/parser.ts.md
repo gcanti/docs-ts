@@ -1,9 +1,14 @@
 ---
 title: parser.ts
 nav_order: 6
+parent: Modules
 ---
 
-**Table of contents**
+# Overview
+
+parser utilities
+
+<h2 class="text-delta">Table of contents</h2>
 
 - [Class (interface)](#class-interface)
 - [Constant (interface)](#constant-interface)

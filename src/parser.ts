@@ -1,3 +1,7 @@
+/**
+ * @file parser utilities
+ */
+
 import * as doctrine from 'doctrine'
 import { array, sort } from 'fp-ts/lib/Array'
 import { getArrayMonoid } from 'fp-ts/lib/Monoid'

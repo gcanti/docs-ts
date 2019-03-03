@@ -1,9 +1,14 @@
 ---
 title: check.ts
 nav_order: 2
+parent: Modules
 ---
 
-**Table of contents**
+# Overview
+
+examples type-checking
+
+<h2 class="text-delta">Table of contents</h2>
 
 - [defaultOptions (constant)](#defaultoptions-constant)
 - [check (function)](#check-function)

@@ -1,9 +1,9 @@
+/**
+ * @file Internal helper
+ */
 import { URIS2, Type2, HKT, URIS, URIS3, Type3, Type } from 'fp-ts/lib/HKT';
 import { Apply2, Apply, Apply3, Apply2C, Apply3C, Apply1 } from 'fp-ts/lib/Apply';
 declare type EnforceNonEmptyRecord<R> = keyof R extends never ? never : R;
-/**
- * Internal helper
- */
 export declare function sequenceS<F extends URIS3>(F: Apply3<F>): <R extends Record<string, Type3<F, any, any, any>>>(r: EnforceNonEmptyRecord<R>) => Type3<F, {
     [K in keyof R]: R[K] extends Type3<F, infer U, any, any> ? U : never;
 }[keyof R], {

@@ -1,3 +1,6 @@
+/**
+ * @file core
+ */
 import { IO } from 'fp-ts/lib/IO';
 import * as ts from 'typescript';
 import * as parser from './parser';

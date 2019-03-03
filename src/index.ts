@@ -1,3 +1,7 @@
+/**
+ * @file production instance
+ */
+
 import { IO } from 'fp-ts/lib/IO'
 import * as fs from 'fs-extra'
 import * as glob from 'glob'

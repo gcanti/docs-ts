@@ -1,15 +1,18 @@
 ---
 title: sequenceS.ts
 nav_order: 7
+parent: Modules
 ---
 
-**Table of contents**
+# Overview
+
+Internal helper
+
+<h2 class="text-delta">Table of contents</h2>
 
 - [sequenceS (function)](#sequences-function)
 
 # sequenceS (function)
-
-Internal helper
 
 **Signature**
 

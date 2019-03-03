@@ -8,6 +8,7 @@ nav_order: 6
 - [Class (interface)](#class-interface)
 - [Constant (interface)](#constant-interface)
 - [Documentable (interface)](#documentable-interface)
+- [Export (interface)](#export-interface)
 - [File (interface)](#file-interface)
 - [Func (interface)](#func-interface)
 - [Interface (interface)](#interface-interface)
@@ -19,9 +20,11 @@ nav_order: 6
 - [class\_ (function)](#class_-function)
 - [constant (function)](#constant-function)
 - [documentable (function)](#documentable-function)
+- [export\_ (function)](#export_-function)
 - [func (function)](#func-function)
 - [getClasses (function)](#getclasses-function)
 - [getConstants (function)](#getconstants-function)
+- [getExports (function)](#getexports-function)
 - [getFunctions (function)](#getfunctions-function)
 - [getInterfaces (function)](#getinterfaces-function)
 - [getModuleDescription (function)](#getmoduledescription-function)
@@ -33,7 +36,9 @@ nav_order: 6
 - [module (function)](#module-function)
 - [parse (function)](#parse-function)
 - [run (function)](#run-function)
-- [typeAlias (function)](#typealias-function)# Class (interface)
+- [typeAlias (function)](#typealias-function)
+
+# Class (interface)
 
 **Signature**
 
@@ -66,6 +71,16 @@ export interface Documentable {
   readonly since: Option<string>
   readonly deprecated: boolean
   readonly example: Option<string>
+}
+```
+
+# Export (interface)
+
+**Signature**
+
+```ts
+export interface Export extends Documentable {
+  readonly signature: string
 }
 ```
 
@@ -123,6 +138,7 @@ export interface Module {
   readonly functions: Array<Func>
   readonly classes: Array<Class>
   readonly constants: Array<Constant>
+  readonly exports: Array<Export>
 }
 ```
 
@@ -187,6 +203,14 @@ export function documentable(
 ): Documentable { ... }
 ```
 
+# export\_ (function)
+
+**Signature**
+
+```ts
+export function export_(documentable: Documentable, signature: string): Export { ... }
+```
+
 # func (function)
 
 **Signature**
@@ -209,6 +233,14 @@ export function getClasses(moduleName: string, sourceFile: ast.SourceFile): Pars
 
 ```ts
 export function getConstants(sourceFile: ast.SourceFile): Parser<Array<Constant>> { ... }
+```
+
+# getExports (function)
+
+**Signature**
+
+```ts
+export function getExports(moduleName: string, sourceFile: ast.SourceFile): Parser<Array<Export>> { ... }
 ```
 
 # getFunctions (function)
@@ -287,7 +319,8 @@ export function module(
   typeAliases: Array<TypeAlias>,
   functions: Array<Func>,
   classes: Array<Class>,
-  constants: Array<Constant>
+  constants: Array<Constant>,
+  exports: Array<Export>
 ): Module { ... }
 ```
 

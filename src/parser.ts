@@ -1,5 +1,4 @@
 import * as doctrine from 'doctrine'
-import { sequenceT } from 'fp-ts/lib/Apply'
 import { array, sort } from 'fp-ts/lib/Array'
 import { getArrayMonoid } from 'fp-ts/lib/Monoid'
 import { fromNullable, none, Option, some } from 'fp-ts/lib/Option'
@@ -7,6 +6,7 @@ import { ordString, contramap, Ord } from 'fp-ts/lib/Ord'
 import { failure, getMonad, success, Validation, getMonoid } from 'fp-ts/lib/Validation'
 import Ast, * as ast from 'ts-simple-ast'
 import * as path from 'path'
+import { sequenceS } from './sequenceS'
 
 export type Parser<A> = Validation<Array<string>, A>
 
@@ -88,6 +88,14 @@ export function constant(documentable: Documentable, signature: string): Constan
   return { ...documentable, signature }
 }
 
+export interface Export extends Documentable {
+  readonly signature: string
+}
+
+export function export_(documentable: Documentable, signature: string): Export {
+  return { ...documentable, signature }
+}
+
 export interface Module {
   readonly path: Array<string>
   readonly description: Option<string>
@@ -96,6 +104,7 @@ export interface Module {
   readonly functions: Array<Func>
   readonly classes: Array<Class>
   readonly constants: Array<Constant>
+  readonly exports: Array<Export>
 }
 
 export function module(
@@ -105,9 +114,10 @@ export function module(
   typeAliases: Array<TypeAlias>,
   functions: Array<Func>,
   classes: Array<Class>,
-  constants: Array<Constant>
+  constants: Array<Constant>,
+  exports: Array<Export>
 ): Module {
-  return { path, description, interfaces, typeAliases, functions, classes, constants }
+  return { path, description, interfaces, typeAliases, functions, classes, constants, exports }
 }
 
 const ordModule: Ord<Module> = contramap((module: Module) => module.path.join('/').toLowerCase(), ordString)
@@ -328,6 +338,27 @@ export function getConstants(sourceFile: ast.SourceFile): Parser<Array<Constant>
     .map(constants => constants.sort(byName.compare))
 }
 
+function parseExportDeclaration(ed: ast.ExportDeclaration): Parser<Export> {
+  const signature = ed.getText()
+  const name = ed.getNamedExports()[0].getText()
+  const comments = ed.getLeadingCommentRanges()
+  if (comments.length > 0) {
+    const text = comments[0].getText()
+    const annotation = doctrine.parse(text, { unwrap: true })
+    const { description, since, deprecated, example } = getAnnotationInfo(annotation)
+    return success(export_(documentable(name, description, since, deprecated, example), signature))
+  } else {
+    return success(export_(documentable(name, none, none, false, none), signature))
+  }
+}
+
+export function getExports(sourceFile: ast.SourceFile): Parser<Array<Export>> {
+  const exportDeclarations = sourceFile.getExportDeclarations().filter(ed => ed.getNamedExports().length === 1)
+  return array
+    .traverse(monadParser)(exportDeclarations, parseExportDeclaration)
+    .map(exports => exports.sort(byName.compare))
+}
+
 function getTypeParameters(typeParameters: Array<ast.TypeParameterDeclaration>): string {
   return typeParameters.length === 0 ? '' : '<' + typeParameters.map(p => p.getName()).join(', ') + '>'
 }
@@ -411,13 +442,14 @@ export function getModuleDescription(sourceFile: ast.SourceFile): Option<string>
 export function parse(path: Array<string>, source: string): Parser<Module> {
   const moduleName = getModuleName(path)
   const sourceFile = getSourceFile(moduleName, source)
-  return sequenceT(monadParser)(
-    getInterfaces(sourceFile),
-    getFunctions(moduleName, sourceFile),
-    getTypeAliases(sourceFile),
-    getClasses(moduleName, sourceFile),
-    getConstants(sourceFile)
-  ).map(([interfaces, functions, typeAliases, classes, constants]) =>
-    module(path, getModuleDescription(sourceFile), interfaces, typeAliases, functions, classes, constants)
+  return sequenceS(monadParser)({
+    interfaces: getInterfaces(sourceFile),
+    functions: getFunctions(moduleName, sourceFile),
+    typeAliases: getTypeAliases(sourceFile),
+    classes: getClasses(moduleName, sourceFile),
+    constants: getConstants(sourceFile),
+    exports: getExports(sourceFile)
+  }).map(({ interfaces, functions, typeAliases, classes, constants, exports }) =>
+    module(path, getModuleDescription(sourceFile), interfaces, typeAliases, functions, classes, constants, exports)
   )
 }

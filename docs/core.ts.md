@@ -9,7 +9,9 @@ nav_order: 3
 - [MonadFileSystem (interface)](#monadfilesystem-interface)
 - [MonadLog (interface)](#monadlog-interface)
 - [MonadProject (interface)](#monadproject-interface)
-- [main (function)](#main-function)# MonadApp (interface)
+- [main (function)](#main-function)
+
+# MonadApp (interface)
 
 App capabilities
 

@@ -7,7 +7,9 @@ nav_order: 2
 
 - [defaultOptions (constant)](#defaultoptions-constant)
 - [check (function)](#check-function)
-- [getProgram (function)](#getprogram-function)# defaultOptions (constant)
+- [getProgram (function)](#getprogram-function)
+
+# defaultOptions (constant)
 
 **Signature**
 

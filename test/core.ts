@@ -5,7 +5,7 @@ import { some, none } from 'fp-ts/lib/Option'
 
 const f1 = func(documentable('f1', none, none, false, some(`import * as docs from 'mylibrary'`)), [])
 const f2 = func(documentable('f2', none, none, false, some(`import * as parser from 'mylibrary/lib/parser'`)), [])
-const m = module(['src', 'index.ts'], none, [], [], [f1, f2], [], [])
+const m = module(['src', 'index.ts'], none, [], [], [f1, f2], [], [], [])
 
 describe('getExamples', () => {
   it('should load the project name', () => {

@@ -1,6 +1,6 @@
 import * as prettier from 'prettier'
 import { Option } from 'fp-ts/lib/Option'
-import { Class, Func, Interface, Method, TypeAlias, Constant, Module } from './parser'
+import { Class, Func, Interface, Method, TypeAlias, Constant, Module, Export } from './parser'
 import { Validation, failure, success } from 'fp-ts/lib/Validation'
 const toc = require('markdown-toc')
 
@@ -74,6 +74,16 @@ function printFunction(f: Func): string {
   return s
 }
 
+function printExport(e: Export): string {
+  let s = h1(handleDeprecated(e.name, e.deprecated) + ' (export)')
+  s += printDescription(e.description)
+  s += printSignature(e.signature)
+  s += printExample(e.example)
+  s += printSince(e.since)
+  s += CRLF
+  return s
+}
+
 function printMethod(m: Method): string {
   let s = h2(handleDeprecated(m.name, m.deprecated) + ' (method)')
   s += printDescription(m.description)
@@ -132,11 +142,13 @@ export function printHeader(title: string, order: number): string {
 export function printModule(module: Module, counter: number): string {
   const header = printHeader(module.path.slice(1).join('/'), counter)
   const md =
+    CRLF +
     module.interfaces.map(i => printInterface(i)).join('') +
     module.typeAliases.map(i => printTypeAlias(i)).join('') +
     module.classes.map(c => printClass(c)).join('') +
     module.constants.map(c => printConstant(c)).join('') +
-    module.functions.map(f => printFunction(f)).join('')
+    module.functions.map(f => printFunction(f)).join('') +
+    module.exports.map(e => printExport(e)).join('')
 
   const result =
     header + printModuleDescription(module.description) + bold('Table of contents') + CRLF + toc(md).content + md

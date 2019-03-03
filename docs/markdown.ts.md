@@ -7,7 +7,9 @@ nav_order: 5
 
 - [parseLink (function)](#parselink-function)
 - [printHeader (function)](#printheader-function)
-- [printModule (function)](#printmodule-function)# parseLink (function)
+- [printModule (function)](#printmodule-function)
+
+# parseLink (function)
 
 **Signature**
 

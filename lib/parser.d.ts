@@ -40,6 +40,10 @@ export interface Constant extends Documentable {
     readonly signature: string;
 }
 export declare function constant(documentable: Documentable, signature: string): Constant;
+export interface Export extends Documentable {
+    readonly signature: string;
+}
+export declare function export_(documentable: Documentable, signature: string): Export;
 export interface Module {
     readonly path: Array<string>;
     readonly description: Option<string>;
@@ -48,8 +52,9 @@ export interface Module {
     readonly functions: Array<Func>;
     readonly classes: Array<Class>;
     readonly constants: Array<Constant>;
+    readonly exports: Array<Export>;
 }
-export declare function module(path: Array<string>, description: Option<string>, interfaces: Array<Interface>, typeAliases: Array<TypeAlias>, functions: Array<Func>, classes: Array<Class>, constants: Array<Constant>): Module;
+export declare function module(path: Array<string>, description: Option<string>, interfaces: Array<Interface>, typeAliases: Array<TypeAlias>, functions: Array<Func>, classes: Array<Class>, constants: Array<Constant>, exports: Array<Export>): Module;
 export declare const monadParser: import("fp-ts/lib/Monad").Monad2C<"Validation", string[]>;
 export declare function run(files: Array<File>): Parser<Array<Module>>;
 export declare function getSourceFile(name: string, source: string): ast.SourceFile;
@@ -58,6 +63,7 @@ export declare function getInterfaces(sourceFile: ast.SourceFile): Parser<Array<
 export declare function getFunctions(moduleName: string, sourceFile: ast.SourceFile): Parser<Array<Func>>;
 export declare function getTypeAliases(sourceFile: ast.SourceFile): Parser<Array<TypeAlias>>;
 export declare function getConstants(sourceFile: ast.SourceFile): Parser<Array<Constant>>;
+export declare function getExports(sourceFile: ast.SourceFile): Parser<Array<Export>>;
 export declare function getClasses(moduleName: string, sourceFile: ast.SourceFile): Parser<Array<Class>>;
 export declare function getModuleDescription(sourceFile: ast.SourceFile): Option<string>;
 export declare function parse(path: Array<string>, source: string): Parser<Module>;

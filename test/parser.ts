@@ -8,7 +8,8 @@ import {
   getSourceFile,
   getTypeAliases,
   getConstants,
-  getModuleDescription
+  getModuleDescription,
+  getExports
 } from '../src/parser'
 
 describe('getInterfaces', () => {
@@ -398,5 +399,42 @@ export const a: number = 1
     `
     )
     assert.deepStrictEqual(getModuleDescription(sourceFile), some('Manages the configuration settings for the widget'))
+  })
+})
+
+describe('getExports', () => {
+  it('should return no `Export`s if the file is empty', () => {
+    const sourceFile = getSourceFile('test', '')
+    assert.deepStrictEqual(getExports(sourceFile), success([]))
+  })
+
+  it('should skip if there are too many named exports', () => {
+    const sourceFile = getSourceFile('test', 'export { a, b }')
+    assert.deepStrictEqual(getExports(sourceFile), success([]))
+  })
+
+  it('should return an `Export`', () => {
+    const sourceFile = getSourceFile(
+      'test',
+      `/**
+* a description...
+* @since 1.0.0
+* @deprecated
+*/
+export { a }`
+    )
+    assert.deepStrictEqual(
+      getExports(sourceFile),
+      success([
+        {
+          deprecated: true,
+          description: some('a description...'),
+          example: none,
+          name: 'a',
+          signature: 'export { a }',
+          since: some('1.0.0')
+        }
+      ])
+    )
   })
 })

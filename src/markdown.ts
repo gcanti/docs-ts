@@ -158,9 +158,15 @@ export function printModule(module: Module, counter: number): string {
   const result =
     header +
     printModuleDescription(module.description) +
+    CRLF +
+    '---' +
+    CRLF +
     '<h2 class="text-delta">Table of contents</h2>' +
     CRLF +
     toc(md).content +
+    CRLF +
+    '---' +
+    CRLF +
     md
   return prettier.format(result, prettierOptions)
 }

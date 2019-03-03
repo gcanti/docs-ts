@@ -8,6 +8,8 @@ parent: Modules
 
 core
 
+---
+
 <h2 class="text-delta">Table of contents</h2>
 
 - [MonadApp (interface)](#monadapp-interface)
@@ -15,6 +17,8 @@ core
 - [MonadLog (interface)](#monadlog-interface)
 - [MonadProject (interface)](#monadproject-interface)
 - [main (function)](#main-function)
+
+---
 
 # MonadApp (interface)
 

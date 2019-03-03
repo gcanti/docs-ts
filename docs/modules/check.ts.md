@@ -8,11 +8,15 @@ parent: Modules
 
 examples type-checking
 
+---
+
 <h2 class="text-delta">Table of contents</h2>
 
 - [defaultOptions (constant)](#defaultoptions-constant)
 - [check (function)](#check-function)
 - [getProgram (function)](#getprogram-function)
+
+---
 
 # defaultOptions (constant)
 

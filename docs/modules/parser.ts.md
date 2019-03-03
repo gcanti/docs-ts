@@ -8,6 +8,8 @@ parent: Modules
 
 parser utilities
 
+---
+
 <h2 class="text-delta">Table of contents</h2>
 
 - [Class (interface)](#class-interface)
@@ -42,6 +44,8 @@ parser utilities
 - [parse (function)](#parse-function)
 - [run (function)](#run-function)
 - [typeAlias (function)](#typealias-function)
+
+---
 
 # Class (interface)
 

@@ -8,9 +8,13 @@ parent: Modules
 
 Internal helper
 
+---
+
 <h2 class="text-delta">Table of contents</h2>
 
 - [sequenceS (function)](#sequences-function)
+
+---
 
 # sequenceS (function)
 

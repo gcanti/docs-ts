@@ -205,6 +205,7 @@ export function main(M: MonadApp): IO<void> {
           .chain(() => addIndex(M))
           .chain(() => addModulesIndex(M))
           .chain(() => addConfigYML(M, projectName))
+          .chain(() => M.log(`Type checking examples...`))
           .chain(() => {
             return readFilesFromPaths(M, paths).chain(files => {
               const options: ts.CompilerOptions = { ...projectOptions, ...compilerOptionsOverrides }

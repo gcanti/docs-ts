@@ -178,7 +178,7 @@ export function main(M: MonadApp): IO<void> {
   return M.readOptions.chain(projectOptions =>
     M.readProjectName.chain(projectName =>
       M.readPaths.chain(paths => {
-        const cleanPattern = path.join(outDir, '!(index.md|_config.yml)')
+        const cleanPattern = path.join(outDir, '**/*.ts.md')
         return M.log(`Removing files ${cleanPattern}...`)
           .chain(() => M.clean(cleanPattern))
           .chain(() => addIndex(M))

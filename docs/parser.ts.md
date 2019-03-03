@@ -240,7 +240,7 @@ export function getConstants(sourceFile: ast.SourceFile): Parser<Array<Constant>
 **Signature**
 
 ```ts
-export function getExports(moduleName: string, sourceFile: ast.SourceFile): Parser<Array<Export>> { ... }
+export function getExports(sourceFile: ast.SourceFile): Parser<Array<Export>> { ... }
 ```
 
 # getFunctions (function)

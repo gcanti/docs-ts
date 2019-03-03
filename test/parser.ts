@@ -413,6 +413,23 @@ describe('getExports', () => {
     assert.deepStrictEqual(getExports(sourceFile), success([]))
   })
 
+  it('should handle renamimg', () => {
+    const sourceFile = getSourceFile('test', 'export { a as b }')
+    assert.deepStrictEqual(
+      getExports(sourceFile),
+      success([
+        {
+          deprecated: false,
+          description: none,
+          example: none,
+          name: 'b',
+          signature: 'export { a as b }',
+          since: none
+        }
+      ])
+    )
+  })
+
   it('should return an `Export`', () => {
     const sourceFile = getSourceFile(
       'test',

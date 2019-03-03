@@ -340,7 +340,8 @@ export function getConstants(sourceFile: ast.SourceFile): Parser<Array<Constant>
 
 function parseExportDeclaration(ed: ast.ExportDeclaration): Parser<Export> {
   const signature = ed.getText()
-  const name = ed.getNamedExports()[0].getText()
+  const specifier = ed.getNamedExports()[0]
+  const name = specifier.compilerNode.name.text
   const comments = ed.getLeadingCommentRanges()
   if (comments.length > 0) {
     const text = comments[0].getText()

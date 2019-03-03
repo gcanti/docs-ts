@@ -144,9 +144,6 @@ function addIndex(M: MonadFileSystem & MonadLog): IO<void> {
             `---
 title: Home
 ---
-
-<!-- START doctoc -->
-<!-- END doctoc -->
 `
           )
         )

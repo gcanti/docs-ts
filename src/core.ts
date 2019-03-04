@@ -1,90 +1,109 @@
+import { Task, task } from 'fp-ts/lib/Task'
+import { TaskEither, right, taskEither, fromEither, fromIOEither } from 'fp-ts/lib/TaskEither'
+import * as parser from './parser'
+import * as path from 'path'
+import { array, empty } from 'fp-ts/lib/Array'
+import { getArrayMonoid, fold } from 'fp-ts/lib/Monoid'
+import * as markdown from './markdown'
+import { fromValidation, right as rightEither, left as leftEither } from 'fp-ts/lib/Either'
+import { spawnSync } from 'child_process'
+import { IO } from 'fp-ts/lib/IO'
+import { IOEither } from 'fp-ts/lib/IOEither'
+
 /**
  * @file core
  */
 
-import { array, empty } from 'fp-ts/lib/Array'
-import { identity, tuple } from 'fp-ts/lib/function'
-import { IO, io } from 'fp-ts/lib/IO'
-import { fold, getArrayMonoid } from 'fp-ts/lib/Monoid'
-import { fromFoldable, map } from 'fp-ts/lib/Record'
-import { failure, success, Validation } from 'fp-ts/lib/Validation'
-import * as path from 'path'
-import * as ts from 'typescript'
-import { check } from './check'
-import * as markdown from './markdown'
-import * as parser from './parser'
-
-export interface MonadProject {
-  readOptions: IO<ts.CompilerOptions>
-  readProjectName: IO<string>
-  readPaths: IO<Array<string>>
-}
-
 export interface MonadFileSystem {
-  readFile: (path: string) => IO<string>
-  writeFile: (path: string, content: string) => IO<void>
-  exists: (path: string) => IO<boolean>
-  clean: (patterm: string) => IO<void>
+  getFilenames: (pattern: string) => Task<Array<string>>
+  readFile: (path: string) => TaskEither<string, string>
+  writeFile: (path: string, content: string) => TaskEither<string, void>
+  existsFile: (path: string) => Task<boolean>
+  clean: (pattern: string) => Task<void>
 }
 
 export interface MonadLog {
-  log: (message: string) => IO<void>
+  log: (message: string) => Task<void>
+}
+
+export interface MonadProcess {
+  exit: (code: 0 | 1) => Task<void>
 }
 
 /**
  * App capabilities
  */
-export interface MonadApp extends MonadFileSystem, MonadProject, MonadLog {}
+export interface MonadApp extends MonadFileSystem, MonadLog, MonadProcess {}
 
-function getMarkdownOutpuPath(outDir: string, module: parser.Module): string {
-  return path.join(outDir, 'modules', module.path.slice(1).join(path.sep) + '.md')
+const outDir = 'docs'
+const srcDir = 'src'
+
+interface PackageJSON {
+  name: string
 }
 
-type Example = [string, string]
+interface File {
+  path: string
+  content: string
+  overwrite: boolean
+}
 
-/**
- * @internal
- */
-export function fixExamples(examples: Record<string, string>, projectName: string): Record<string, string> {
-  function replaceProjectName(source: string): string {
-    const root = new RegExp(`from '${projectName}'`, 'g')
-    const module = new RegExp(`from '${projectName}/lib/`, 'g')
-    return source.replace(root, `from './src'`).replace(module, `from './src/`)
-  }
+const file = (path: string, content: string, overwrite: boolean): File => ({ path, content, overwrite })
 
-  return map(examples, source => {
-    const prelude = source.indexOf('assert.') !== -1 ? `import * as assert from 'assert'\n` : ''
-    const mangledSource = replaceProjectName(source)
-    return prelude + mangledSource
+function readFiles(M: MonadFileSystem, paths: Array<string>): TaskEither<string, Array<File>> {
+  return array.traverse(taskEither)(paths, path => M.readFile(path).map(content => file(path, content, false)))
+}
+
+function writeFile(M: MonadFileSystem & MonadLog, file: File): TaskEither<string, void> {
+  const writeFile = M.writeFile(file.path, file.content)
+  return right<string, boolean>(M.existsFile(file.path)).chain(exists => {
+    if (exists) {
+      if (file.overwrite) {
+        return right<string, void>(M.log(`Overwriting file ${file.path}`)).chain(() => writeFile)
+      } else {
+        return right<string, void>(M.log(`File ${file.path} already exists`))
+      }
+    } else {
+      return right<string, void>(M.log(`Writing file ${file.path}`)).chain(() => writeFile)
+    }
   })
 }
 
-function typecheckModules(
-  modules: Array<parser.Module>,
-  projectName: string,
-  options: ts.CompilerOptions
-): Validation<Array<string>, Array<parser.Module>> {
-  if (!doTypeCheckExamples) {
-    return success(modules)
-  }
-  const examples = getExamples(modules)
-  const fixedExamples = fixExamples(examples, projectName)
-  const failures = check(fixedExamples, options)
-  return failures.length > 0 ? failure(failures) : success(modules)
+function writeFiles(M: MonadFileSystem & MonadLog, files: Array<File>): TaskEither<string, void> {
+  return array
+    .traverse(taskEither)(files, file => writeFile(M, file))
+    .map(() => undefined)
 }
 
-const foldExamples = fold(getArrayMonoid<Example>())
+function getPackageJSON(M: MonadFileSystem & MonadLog): TaskEither<string, PackageJSON> {
+  return M.readFile(path.join(process.cwd(), 'package.json')).chain(s => {
+    const json = JSON.parse(s)
+    const name = json.name
+    return right<string, void>(M.log(`Detected project name: ${name}`)).map(() => ({
+      name
+    }))
+  })
+}
 
-/**
- * @internal
- */
-export function getExamples(modules: Array<parser.Module>): Record<string, string> {
-  const sources = array.chain(modules, module => {
+function readSources(M: MonadFileSystem & MonadLog): TaskEither<string, Array<File>> {
+  const srcPattern = path.join(srcDir, '**/*.ts')
+  return right<string, Array<string>>(M.getFilenames(srcPattern)).chain(paths =>
+    right<string, void>(M.log(`${paths.length} modules found`)).chain(() => readFiles(M, paths))
+  )
+}
+
+function parseModules(files: Array<File>): TaskEither<string, Array<parser.Module>> {
+  return fromEither(fromValidation(parser.run(files).mapFailure(errors => errors.join('\n'))))
+}
+
+const foldExamples = fold(getArrayMonoid<File>())
+
+function getExampleFiles(modules: Array<parser.Module>): Array<File> {
+  return array.chain(modules, module => {
     const prefix = module.path.join('-')
-    function getDocumentableExamples(documentable: parser.Documentable): Array<Example> {
-      return documentable.example.fold(empty, source => {
-        const name = prefix + '-' + documentable.name + '.ts'
-        return [tuple(name, source)]
+    function getDocumentableExamples(documentable: parser.Documentable): Array<File> {
+      return documentable.example.fold(empty, content => {
+        return [file(path.join(outDir, 'examples', prefix + '-' + documentable.name + '.ts'), content + '\n', true)]
       })
     }
     const methods = array.chain(module.classes, c =>
@@ -100,86 +119,84 @@ export function getExamples(modules: Array<parser.Module>): Record<string, strin
 
     return foldExamples([methods, interfaces, typeAliases, constants, functions])
   })
-  return fromFoldable(array)(sources, identity)
 }
 
-function readFilesFromPaths(M: MonadFileSystem, paths: Array<string>): IO<Array<parser.File>> {
-  return array.traverse(io)(paths, path => M.readFile(path).map(content => ({ path, content })))
+function addAssertImport(code: string): string {
+  return code.indexOf('assert.') !== -1 ? `import * as assert from 'assert'\n` + code : code
 }
 
-let counter = 1
-
-const nextCounter = new IO(() => counter++)
-
-function getFile(module: parser.Module): IO<parser.File> {
-  return nextCounter.map(counter => ({
-    path: getMarkdownOutpuPath(outDir, module),
-    content: markdown.printModule(module, counter)
-  }))
+function handleImports(files: Array<File>, projectName: string): Array<File> {
+  function replaceProjectName(source: string): string {
+    const root = new RegExp(`from '${projectName}'`, 'g')
+    const module = new RegExp(`from '${projectName}/lib/`, 'g')
+    return source.replace(root, `from '../../src'`).replace(module, `from '../../src/`)
+  }
+  return files.map(f => {
+    const handleProjectImports = replaceProjectName(f.content)
+    const handleAssert = addAssertImport(handleProjectImports)
+    return file(f.path, handleAssert, f.overwrite)
+  })
 }
 
-const compilerOptionsOverrides: ts.CompilerOptions = { noEmit: true }
-const outDir = 'docs'
-const doTypeCheckExamples = true
+function getExampleIndex(examples: Array<File>): File {
+  const content = examples.map(example => `import './${path.basename(example.path)}'`).join('\n') + '\n'
+  return file(path.join(outDir, 'examples', 'index.ts'), content, true)
+}
 
-const P = parser.monadParser
+function typecheck(
+  M: MonadFileSystem & MonadLog,
+  modules: Array<parser.Module>,
+  projectName: string
+): TaskEither<string, Array<parser.Module>> {
+  const examplePattern = path.join(outDir, 'examples')
+  const clean = right<string, void>(M.log(`Clean up examples...`)).chain(() => right(M.clean(examplePattern)))
+  const examples = handleImports(getExampleFiles(modules), projectName)
+  if (examples.length === 0) {
+    return clean.map(() => modules)
+  }
+  const files = [getExampleIndex(examples), ...examples]
 
-function writeModules(M: MonadFileSystem & MonadLog, modules: Array<parser.Module>): IO<void> {
-  return array
-    .traverse(io)(modules, module =>
-      getFile(module).chain(file =>
-        M.log(`Printing module ${file.path}`).applySecond(M.writeFile(file.path, file.content))
-      )
+  const typecheckExamples: TaskEither<string, void> = fromIOEither(
+    new IOEither(
+      new IO(() => {
+        const { status } = spawnSync('ts-node', [path.join(outDir, 'examples', 'index.ts')], { stdio: 'inherit' })
+        return status === 0 ? rightEither(undefined) : leftEither('Type checking error')
+      })
     )
-    .map(() => undefined)
+  )
+
+  return writeFiles(M, files)
+    .chain(() => right<string, void>(M.log(`Type checking examples...`)).chain(() => typecheckExamples))
+    .chain(() => clean)
+    .map(() => modules)
 }
 
-function addIndex(M: MonadFileSystem & MonadLog): IO<void> {
-  const indexPath = path.join(outDir, 'index.md')
-  return M.exists(indexPath).chain(b =>
-    !b
-      ? M.log(`Adding index.md to ${outDir}...`).chain(() =>
-          M.writeFile(
-            indexPath,
-            `---
+const home: File = file(
+  path.join(outDir, 'index.md'),
+  `---
 title: Home
 nav_order: 1
 ---
-`
-          )
-        )
-      : io.of(undefined)
-  )
-}
+`,
+  false
+)
 
-function addModulesIndex(M: MonadFileSystem & MonadLog): IO<void> {
-  const indexPath = path.join(outDir, 'modules', 'index.md')
-  return M.exists(indexPath).chain(b =>
-    !b
-      ? M.log(`Adding modules/index.md to ${outDir}...`).chain(() =>
-          M.writeFile(
-            indexPath,
-            `---
+const modulesIndex: File = file(
+  path.join(outDir, 'modules', 'index.md'),
+  `---
 title: Modules
 has_children: true
 permalink: /docs/modules
 nav_order: 2
 ---
-`
-          )
-        )
-      : io.of(undefined)
-  )
-}
+`,
+  false
+)
 
-function addConfigYML(M: MonadFileSystem & MonadLog, projectName: string): IO<void> {
-  const indexPath = path.join(outDir, '_config.yml')
-  return M.exists(indexPath).chain(b =>
-    !b
-      ? M.log(`Adding _config.yml to ${outDir}...`).chain(() =>
-          M.writeFile(
-            indexPath,
-            `remote_theme: pmarsceill/just-the-docs
+function getConfigYML(projectName: string): File {
+  return file(
+    path.join(outDir, '_config.yml'),
+    `remote_theme: pmarsceill/just-the-docs
 
 # Enable or disable the site search
 search_enabled: true
@@ -188,33 +205,48 @@ search_enabled: true
 aux_links:
   '${projectName} on GitHub':
     - '//github.com/gcanti/${projectName}'
-`
-          )
-        )
-      : io.of(undefined)
+`,
+    false
   )
 }
 
-export function main(M: MonadApp): IO<void> {
-  return M.readOptions.chain(projectOptions =>
-    M.readProjectName.chain(projectName =>
-      M.readPaths.chain(paths => {
-        const cleanPattern = path.join(outDir, '**/*.ts.md')
-        return M.log(`Removing files ${cleanPattern}...`)
-          .chain(() => M.clean(cleanPattern))
-          .chain(() => addIndex(M))
-          .chain(() => addModulesIndex(M))
-          .chain(() => addConfigYML(M, projectName))
-          .chain(() => M.log(`Type checking examples...`))
-          .chain(() => {
-            return readFilesFromPaths(M, paths).chain(files => {
-              const options: ts.CompilerOptions = { ...projectOptions, ...compilerOptionsOverrides }
-              const eModules = P.chain(parser.run(files), modules => typecheckModules(modules, projectName, options))
-              const eWrite = eModules.map(modules => writeModules(M, modules))
-              return eWrite.getOrElseL(errors => M.log(`Errors: ${errors.join('\n')}`))
-            })
-          })
-      })
-    )
-  )
+let counter = 1
+
+function getMarkdownOutpuPath(module: parser.Module): string {
+  return path.join(outDir, 'modules', module.path.slice(1).join(path.sep) + '.md')
+}
+
+function getModuleMarkdownFiles(modules: Array<parser.Module>): Array<File> {
+  return modules.map(module => file(getMarkdownOutpuPath(module), markdown.printModule(module, counter++), true))
+}
+
+function getMarkdownFiles(modules: Array<parser.Module>, projectName: string): Array<File> {
+  return [home, modulesIndex, getConfigYML(projectName), ...getModuleMarkdownFiles(modules)]
+}
+
+function writeMarkdownFiles(M: MonadFileSystem & MonadLog, files: Array<File>): TaskEither<string, void> {
+  const outPattern = path.join(outDir, '**/*.ts.md')
+  return right<string, void>(M.log(`Deleting ${outPattern}`))
+    .chain(() => right(M.clean(outPattern)))
+    .chain(() => writeFiles(M, files))
+}
+
+function onLeft(M: MonadLog, e: string): Task<void> {
+  return M.log(e)
+}
+
+function onRight(): Task<void> {
+  return task.of(undefined)
+}
+
+export function main(M: MonadApp): Task<void> {
+  return getPackageJSON(M)
+    .chain(pkg => {
+      return readSources(M)
+        .chain(parseModules)
+        .chain(modules => typecheck(M, modules, pkg.name))
+        .map(modules => getMarkdownFiles(modules, pkg.name))
+        .chain(markdownFiles => writeMarkdownFiles(M, markdownFiles))
+    })
+    .foldTask(e => onLeft(M, e), onRight)
 }

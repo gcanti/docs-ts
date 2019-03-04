@@ -1,3 +1,1 @@
-import { main } from './src'
-
-main.run()
+import './src/bin'

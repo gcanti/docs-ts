@@ -1,12 +1,8 @@
 ---
 title: index.ts
-nav_order: 4
+nav_order: 3
 parent: Modules
 ---
-
-# Overview
-
-production instance
 
 ---
 
@@ -21,5 +17,5 @@ production instance
 **Signature**
 
 ```ts
-export const main: IO<void> = ...
+export const main: Task<void> = ...
 ```

@@ -1,34 +1,24 @@
+import { Task } from 'fp-ts/lib/Task';
+import { TaskEither } from 'fp-ts/lib/TaskEither';
 /**
  * @file core
  */
-import { IO } from 'fp-ts/lib/IO';
-import * as ts from 'typescript';
-import * as parser from './parser';
-export interface MonadProject {
-    readOptions: IO<ts.CompilerOptions>;
-    readProjectName: IO<string>;
-    readPaths: IO<Array<string>>;
-}
 export interface MonadFileSystem {
-    readFile: (path: string) => IO<string>;
-    writeFile: (path: string, content: string) => IO<void>;
-    exists: (path: string) => IO<boolean>;
-    clean: (patterm: string) => IO<void>;
+    getFilenames: (pattern: string) => Task<Array<string>>;
+    readFile: (path: string) => TaskEither<string, string>;
+    writeFile: (path: string, content: string) => TaskEither<string, void>;
+    existsFile: (path: string) => Task<boolean>;
+    clean: (pattern: string) => Task<void>;
 }
 export interface MonadLog {
-    log: (message: string) => IO<void>;
+    log: (message: string) => Task<void>;
+}
+export interface MonadProcess {
+    exit: (code: 0 | 1) => Task<void>;
 }
 /**
  * App capabilities
  */
-export interface MonadApp extends MonadFileSystem, MonadProject, MonadLog {
+export interface MonadApp extends MonadFileSystem, MonadLog, MonadProcess {
 }
-/**
- * @internal
- */
-export declare function fixExamples(examples: Record<string, string>, projectName: string): Record<string, string>;
-/**
- * @internal
- */
-export declare function getExamples(modules: Array<parser.Module>): Record<string, string>;
-export declare function main(M: MonadApp): IO<void>;
+export declare function main(M: MonadApp): Task<void>;

@@ -1,5 +1,2 @@
-/**
- * @file production instance
- */
-import { IO } from 'fp-ts/lib/IO';
-export declare const main: IO<void>;
+import { Task } from 'fp-ts/lib/Task';
+export declare const main: Task<void>;

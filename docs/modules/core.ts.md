@@ -1,12 +1,8 @@
 ---
 title: core.ts
-nav_order: 3
+nav_order: 2
 parent: Modules
 ---
-
-# Overview
-
-core
 
 ---
 
@@ -15,7 +11,7 @@ core
 - [MonadApp (interface)](#monadapp-interface)
 - [MonadFileSystem (interface)](#monadfilesystem-interface)
 - [MonadLog (interface)](#monadlog-interface)
-- [MonadProject (interface)](#monadproject-interface)
+- [MonadProcess (interface)](#monadprocess-interface)
 - [main (function)](#main-function)
 
 ---
@@ -27,7 +23,7 @@ App capabilities
 **Signature**
 
 ```ts
-export interface MonadApp extends MonadFileSystem, MonadProject, MonadLog {}
+export interface MonadApp extends MonadFileSystem, MonadLog, MonadProcess {}
 ```
 
 # MonadFileSystem (interface)
@@ -36,10 +32,11 @@ export interface MonadApp extends MonadFileSystem, MonadProject, MonadLog {}
 
 ```ts
 export interface MonadFileSystem {
-  readFile: (path: string) => IO<string>
-  writeFile: (path: string, content: string) => IO<void>
-  exists: (path: string) => IO<boolean>
-  clean: (patterm: string) => IO<void>
+  getFilenames: (pattern: string) => Task<Array<string>>
+  readFile: (path: string) => TaskEither<string, string>
+  writeFile: (path: string, content: string) => TaskEither<string, void>
+  existsFile: (path: string) => Task<boolean>
+  clean: (pattern: string) => Task<void>
 }
 ```
 
@@ -49,19 +46,17 @@ export interface MonadFileSystem {
 
 ```ts
 export interface MonadLog {
-  log: (message: string) => IO<void>
+  log: (message: string) => Task<void>
 }
 ```
 
-# MonadProject (interface)
+# MonadProcess (interface)
 
 **Signature**
 
 ```ts
-export interface MonadProject {
-  readOptions: IO<ts.CompilerOptions>
-  readProjectName: IO<string>
-  readPaths: IO<Array<string>>
+export interface MonadProcess {
+  exit: (code: 0 | 1) => Task<void>
 }
 ```
 
@@ -70,5 +65,5 @@ export interface MonadProject {
 **Signature**
 
 ```ts
-export function main(M: MonadApp): IO<void> { ... }
+export function main(M: MonadApp): Task<void> { ... }
 ```

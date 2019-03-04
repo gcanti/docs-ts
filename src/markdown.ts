@@ -5,7 +5,6 @@
 import * as prettier from 'prettier'
 import { Option } from 'fp-ts/lib/Option'
 import { Class, Func, Interface, Method, TypeAlias, Constant, Module, Export } from './parser'
-import { Validation, failure, success } from 'fp-ts/lib/Validation'
 const toc = require('markdown-toc')
 
 const CRLF = '\n\n'
@@ -15,17 +14,6 @@ const fence = (language: string) => (code: string): string => '```' + language +
 const ts = fence('ts')
 const bold = (code: string) => '**' + code + '**'
 const strike = (text: string) => '~~' + text + '~~'
-
-const linkRe = /{@link\s+(.*?)}/g
-
-export function parseLink(s: string): Validation<Array<string>, RegExpMatchArray> {
-  const m = s.match(linkRe)
-  if (m === null) {
-    return failure([`Invalid link ${JSON.stringify(s)}`])
-  } else {
-    return success(m)
-  }
-}
 
 const prettierOptions: prettier.Options = {
   parser: 'markdown',

@@ -1,6 +1,6 @@
 ---
 title: markdown.ts
-nav_order: 5
+nav_order: 4
 parent: Modules
 ---
 
@@ -12,19 +12,10 @@ markdown utilities
 
 <h2 class="text-delta">Table of contents</h2>
 
-- [parseLink (function)](#parselink-function)
 - [printHeader (function)](#printheader-function)
 - [printModule (function)](#printmodule-function)
 
 ---
-
-# parseLink (function)
-
-**Signature**
-
-```ts
-export function parseLink(s: string): Validation<Array<string>, RegExpMatchArray> { ... }
-```
 
 # printHeader (function)
 

@@ -2,10 +2,10 @@
  * @file examples type-checking
  */
 
-import { catOptions } from 'fp-ts/lib/Array'
+// import { catOptions } from 'fp-ts/lib/Array'
 import { Option, none, some } from 'fp-ts/lib/Option'
 import * as ts from 'typescript'
-const safeEval = require('safe-eval')
+// const safeEval = require('safe-eval')
 
 export function getProgram(source: Record<string, string>, options: ts.CompilerOptions): ts.Program {
   const files: Array<string> = []
@@ -42,11 +42,13 @@ export const defaultOptions: ts.CompilerOptions = {
   noEmit: true
 }
 
-const context = { exports: {}, require: require }
+// const context = { exports: {}, require: require }
 
 export function evaluate(source: string): Option<unknown> {
   try {
-    safeEval(source, context)
+    // safeEval(source, context)
+    // tslint:disable-next-line: no-eval
+    eval(source)
     return none
   } catch (e) {
     return some(e)
@@ -70,13 +72,14 @@ export function check(sources: Record<string, string>, options: ts.CompilerOptio
     const message = ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n')
     return `${sourceFile.fileName} (${line + 1},${character + 1}): ${message}`
   })
-  if (errors.length > 0) {
-    return errors
-  }
-  return catOptions(
-    Object.keys(sources).map(k => {
-      const code = transpile(sources[k], options)
-      return evaluate(code).map(e => `${k}: ${String(e)}`)
-    })
-  )
+  return errors
+  // if (errors.length > 0) {
+  //   return errors
+  // }
+  // return catOptions(
+  //   Object.keys(sources).map(k => {
+  //     const code = transpile(sources[k], options)
+  //     return evaluate(code).map(e => `${k}: ${String(e)}`)
+  //   })
+  // )
 }

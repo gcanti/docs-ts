@@ -39,4 +39,19 @@ assert.strictEqual(1, 2)`
       ]
     )
   })
+
+  it.only('should import the project modules', () => {
+    assert.deepStrictEqual(
+      check(
+        {
+          'file.ts': `import * as assert from 'assert'
+import { main } from './src'
+import { IO } from 'fp-ts/lib/IO'
+assert.strictEqual(main instanceof IO, true)`
+        },
+        defaultOptions
+      ),
+      []
+    )
+  })
 })

@@ -8,6 +8,7 @@ parent: Modules
 
 <h2 class="text-delta">Table of contents</h2>
 
+- [App (interface)](#app-interface)
 - [MonadApp (interface)](#monadapp-interface)
 - [MonadFileSystem (interface)](#monadfilesystem-interface)
 - [MonadLog (interface)](#monadlog-interface)
@@ -16,6 +17,14 @@ parent: Modules
 
 ---
 
+# App (interface)
+
+**Signature**
+
+```ts
+export interface App<A> extends TaskEither<string, A> {}
+```
+
 # MonadApp (interface)
 
 App capabilities
@@ -23,7 +32,7 @@ App capabilities
 **Signature**
 
 ```ts
-export interface MonadApp extends MonadFileSystem, MonadLog, MonadProcess {}
+export interface MonadApp extends MonadFileSystem, MonadLog, MonadProcess, MonadTask2<'TaskEither'> {}
 ```
 
 # MonadFileSystem (interface)
@@ -33,8 +42,8 @@ export interface MonadApp extends MonadFileSystem, MonadLog, MonadProcess {}
 ```ts
 export interface MonadFileSystem {
   getFilenames: (pattern: string) => Task<Array<string>>
-  readFile: (path: string) => TaskEither<string, string>
-  writeFile: (path: string, content: string) => TaskEither<string, void>
+  readFile: (path: string) => App<string>
+  writeFile: (path: string, content: string) => App<void>
   existsFile: (path: string) => Task<boolean>
   clean: (pattern: string) => Task<void>
 }
@@ -46,7 +55,7 @@ export interface MonadFileSystem {
 
 ```ts
 export interface MonadLog {
-  log: (message: string) => Task<void>
+  log: (message: string) => App<void>
 }
 ```
 
@@ -65,5 +74,5 @@ export interface MonadProcess {
 **Signature**
 
 ```ts
-export function main(M: MonadApp): Task<void> { ... }
+export function main(M: MonadApp): App<void> { ... }
 ```

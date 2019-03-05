@@ -6,4 +6,4 @@ search_enabled: true
 # Aux links for the upper right navigation
 aux_links:
   'docs-ts on GitHub':
-    - '//github.com/gcanti/docs-ts'
+    - 'https://github.com/gcanti/docs-ts'

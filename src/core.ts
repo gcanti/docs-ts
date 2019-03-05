@@ -1,5 +1,5 @@
 import { Task } from 'fp-ts/lib/Task'
-import { TaskEither, taskEither, fromEither, fromIOEither } from 'fp-ts/lib/TaskEither'
+import { TaskEither, taskEither, fromEither, fromIOEither, fromLeft } from 'fp-ts/lib/TaskEither'
 import * as parser from './parser'
 import * as path from 'path'
 import { array, empty } from 'fp-ts/lib/Array'
@@ -39,6 +39,7 @@ const srcDir = 'src'
 
 interface PackageJSON {
   name: string
+  homepage?: string
 }
 
 interface File {
@@ -78,8 +79,10 @@ function getPackageJSON(M: MonadFileSystem & MonadLog): App<PackageJSON> {
   return M.readFile(path.join(process.cwd(), 'package.json')).chain(s => {
     const json = JSON.parse(s)
     const name = json.name
+    const homepage = json.homepage
     return M.log(`Project name detected: ${name}`).map(() => ({
-      name
+      name,
+      homepage
     }))
   })
 }
@@ -192,9 +195,11 @@ nav_order: 2
   false
 )
 
-function getConfigYML(projectName: string): File {
+const configYMLPath = path.join(outDir, '_config.yml')
+
+function getConfigYML(projectName: string, homepage: string): File {
   return file(
-    path.join(outDir, '_config.yml'),
+    configYMLPath,
     `remote_theme: pmarsceill/just-the-docs
 
 # Enable or disable the site search
@@ -203,7 +208,7 @@ search_enabled: true
 # Aux links for the upper right navigation
 aux_links:
   '${projectName} on GitHub':
-    - '//github.com/gcanti/${projectName}'
+    - '${homepage}'
 `,
     false
   )
@@ -219,8 +224,8 @@ function getModuleMarkdownFiles(modules: Array<parser.Module>): Array<File> {
   return modules.map(module => file(getMarkdownOutpuPath(module), markdown.printModule(module, counter++), true))
 }
 
-function getMarkdownFiles(modules: Array<parser.Module>, projectName: string): Array<File> {
-  return [home, modulesIndex, getConfigYML(projectName), ...getModuleMarkdownFiles(modules)]
+function getMarkdownFiles(modules: Array<parser.Module>, projectName: string, homepage: string): Array<File> {
+  return [home, modulesIndex, getConfigYML(projectName, homepage), ...getModuleMarkdownFiles(modules)]
 }
 
 function writeMarkdownFiles(M: MonadApp, files: Array<File>): App<void> {
@@ -230,12 +235,18 @@ function writeMarkdownFiles(M: MonadApp, files: Array<File>): App<void> {
     .chain(() => writeFiles(M, files))
 }
 
+function checkHomepage(pkg: PackageJSON): App<string> {
+  return pkg.homepage === undefined ? fromLeft('Missing homepage in package.json') : taskEither.of(pkg.homepage)
+}
+
 export function main(M: MonadApp): App<void> {
   return getPackageJSON(M).chain(pkg => {
-    return readSources(M)
-      .chain(modules => parseModules(M, modules))
-      .chain(modules => typecheck(M, modules, pkg.name))
-      .map(modules => getMarkdownFiles(modules, pkg.name))
-      .chain(markdownFiles => writeMarkdownFiles(M, markdownFiles))
+    return checkHomepage(pkg).chain(homepage =>
+      readSources(M)
+        .chain(modules => parseModules(M, modules))
+        .chain(modules => typecheck(M, modules, pkg.name))
+        .map(modules => getMarkdownFiles(modules, pkg.name, homepage))
+        .chain(markdownFiles => writeMarkdownFiles(M, markdownFiles))
+    )
   })
 }

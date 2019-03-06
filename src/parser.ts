@@ -109,6 +109,7 @@ export interface Module {
   readonly classes: Array<Class>
   readonly constants: Array<Constant>
   readonly exports: Array<Export>
+  readonly deprecated: boolean
 }
 
 export function module(
@@ -119,9 +120,10 @@ export function module(
   functions: Array<Func>,
   classes: Array<Class>,
   constants: Array<Constant>,
-  exports: Array<Export>
+  exports: Array<Export>,
+  deprecated: boolean
 ): Module {
-  return { path, description, interfaces, typeAliases, functions, classes, constants, exports }
+  return { path, description, interfaces, typeAliases, functions, classes, constants, exports, deprecated }
 }
 
 const ordModule: Ord<Module> = contramap((module: Module) => module.path.join('/').toLowerCase(), ordString)
@@ -135,7 +137,7 @@ export const monadParser = getMonad(monoidFailure)
 export function run(files: Array<File>): Parser<Array<Module>> {
   return array
     .traverse(monadParser)(files, file => parse(file.path.split(path.sep), file.content))
-    .map(sortModules)
+    .map(modules => sortModules(modules.filter(module => !module.deprecated)))
 }
 
 export function getSourceFile(name: string, source: string): ast.SourceFile {
@@ -429,18 +431,23 @@ export function getClasses(moduleName: string, sourceFile: ast.SourceFile): Pars
     .map(classes => classes.sort(byName.compare))
 }
 
-export function getModuleDescription(sourceFile: ast.SourceFile): Option<string> {
+export function getModuleInfo(sourceFile: ast.SourceFile): { description: Option<string>; deprecated: boolean } {
   const x = sourceFile.getStatements()
   if (x.length > 0) {
     const comments = x[0].getLeadingCommentRanges()
     if (comments.length > 0) {
       const text = comments[0].getText()
       const annotation = doctrine.parse(text, { unwrap: true })
-      return getFile(annotation)
+      const description = getFile(annotation)
+      return {
+        description,
+        deprecated: isDeprecated(annotation)
+      }
     }
-    return none
-  } else {
-    return none
+  }
+  return {
+    description: none,
+    deprecated: false
   }
 }
 
@@ -454,7 +461,8 @@ export function parse(path: Array<string>, source: string): Parser<Module> {
     classes: getClasses(moduleName, sourceFile),
     constants: getConstants(sourceFile),
     exports: getExports(sourceFile)
-  }).map(({ interfaces, functions, typeAliases, classes, constants, exports }) =>
-    module(path, getModuleDescription(sourceFile), interfaces, typeAliases, functions, classes, constants, exports)
-  )
+  }).map(({ interfaces, functions, typeAliases, classes, constants, exports }) => {
+    const { description, deprecated } = getModuleInfo(sourceFile)
+    return module(path, description, interfaces, typeAliases, functions, classes, constants, exports, deprecated)
+  })
 }

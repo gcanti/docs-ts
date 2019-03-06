@@ -8,7 +8,7 @@ import {
   getSourceFile,
   getTypeAliases,
   getConstants,
-  getModuleDescription,
+  getModuleInfo,
   getExports
 } from '../src/parser'
 
@@ -370,8 +370,8 @@ export class Test<A> {
   })
 })
 
-describe('getModuleDescription', () => {
-  it('should return a file description', () => {
+describe('getModuleInfo', () => {
+  it('should not return a file description if there is no @file tag', () => {
     const sourceFile = getSourceFile(
       'test',
       `
@@ -381,15 +381,19 @@ describe('getModuleDescription', () => {
 export const a: number = 1
     `
     )
-    assert.deepStrictEqual(getModuleDescription(sourceFile), none)
+    assert.deepStrictEqual(getModuleInfo(sourceFile), {
+      description: none,
+      deprecated: false
+    })
   })
 
-  it('should return a file description', () => {
+  it('should return a description field and a deprecated field', () => {
     const sourceFile = getSourceFile(
       'test',
       `
 /**
  * @file Manages the configuration settings for the widget
+ * @deprecated
  */
 
 /**
@@ -398,7 +402,10 @@ export const a: number = 1
 export const a: number = 1
     `
     )
-    assert.deepStrictEqual(getModuleDescription(sourceFile), some('Manages the configuration settings for the widget'))
+    assert.deepStrictEqual(getModuleInfo(sourceFile), {
+      description: some('Manages the configuration settings for the widget'),
+      deprecated: true
+    })
   })
 })
 

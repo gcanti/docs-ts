@@ -56,8 +56,9 @@ export interface Module {
     readonly classes: Array<Class>;
     readonly constants: Array<Constant>;
     readonly exports: Array<Export>;
+    readonly deprecated: boolean;
 }
-export declare function module(path: Array<string>, description: Option<string>, interfaces: Array<Interface>, typeAliases: Array<TypeAlias>, functions: Array<Func>, classes: Array<Class>, constants: Array<Constant>, exports: Array<Export>): Module;
+export declare function module(path: Array<string>, description: Option<string>, interfaces: Array<Interface>, typeAliases: Array<TypeAlias>, functions: Array<Func>, classes: Array<Class>, constants: Array<Constant>, exports: Array<Export>, deprecated: boolean): Module;
 export declare const monadParser: import("fp-ts/lib/Monad").Monad2C<"Validation", string[]>;
 export declare function run(files: Array<File>): Parser<Array<Module>>;
 export declare function getSourceFile(name: string, source: string): ast.SourceFile;
@@ -68,5 +69,8 @@ export declare function getTypeAliases(sourceFile: ast.SourceFile): Parser<Array
 export declare function getConstants(sourceFile: ast.SourceFile): Parser<Array<Constant>>;
 export declare function getExports(sourceFile: ast.SourceFile): Parser<Array<Export>>;
 export declare function getClasses(moduleName: string, sourceFile: ast.SourceFile): Parser<Array<Class>>;
-export declare function getModuleDescription(sourceFile: ast.SourceFile): Option<string>;
+export declare function getModuleInfo(sourceFile: ast.SourceFile): {
+    description: Option<string>;
+    deprecated: boolean;
+};
 export declare function parse(path: Array<string>, source: string): Parser<Module>;

@@ -34,7 +34,7 @@ parser utilities
 - [getExports (function)](#getexports-function)
 - [getFunctions (function)](#getfunctions-function)
 - [getInterfaces (function)](#getinterfaces-function)
-- [getModuleDescription (function)](#getmoduledescription-function)
+- [getModuleInfo (function)](#getmoduleinfo-function)
 - [getModuleName (function)](#getmodulename-function)
 - [getSourceFile (function)](#getsourcefile-function)
 - [getTypeAliases (function)](#gettypealiases-function)
@@ -148,6 +148,7 @@ export interface Module {
   readonly classes: Array<Class>
   readonly constants: Array<Constant>
   readonly exports: Array<Export>
+  readonly deprecated: boolean
 }
 ```
 
@@ -268,12 +269,12 @@ export function getFunctions(moduleName: string, sourceFile: ast.SourceFile): Pa
 export function getInterfaces(sourceFile: ast.SourceFile): Parser<Array<Interface>> { ... }
 ```
 
-# getModuleDescription (function)
+# getModuleInfo (function)
 
 **Signature**
 
 ```ts
-export function getModuleDescription(sourceFile: ast.SourceFile): Option<string> { ... }
+export function getModuleInfo(sourceFile: ast.SourceFile): { ... }
 ```
 
 # getModuleName (function)
@@ -329,7 +330,8 @@ export function module(
   functions: Array<Func>,
   classes: Array<Class>,
   constants: Array<Constant>,
-  exports: Array<Export>
+  exports: Array<Export>,
+  deprecated: boolean
 ): Module { ... }
 ```
 

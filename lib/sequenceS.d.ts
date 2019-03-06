@@ -1,5 +1,6 @@
 /**
- * @file Internal helper
+ * @file TODO: use `fp-ts-contrib/lib/sequenceS` when lends.
+ * @deprecated
  */
 import { URIS2, Type2, HKT, URIS, URIS3, Type3, Type } from 'fp-ts/lib/HKT';
 import { Apply2, Apply, Apply3, Apply2C, Apply3C, Apply1 } from 'fp-ts/lib/Apply';

@@ -66,6 +66,16 @@ function printFunction(f: Func): string {
   return s
 }
 
+function printStaticMethod(f: Func): string {
+  let s = h1(handleDeprecated(f.name, f.deprecated) + ' (static method)')
+  s += printDescription(f.description)
+  s += printSignatures(f.signatures)
+  s += printExample(f.example)
+  s += printSince(f.since)
+  s += CRLF
+  return s
+}
+
 function printExport(e: Export): string {
   let s = h1(handleDeprecated(e.name, e.deprecated) + ' (export)')
   s += printDescription(e.description)
@@ -93,7 +103,7 @@ function printClass(c: Class): string {
   s += printExample(c.example)
   s += printSince(c.since)
   s += CRLF
-  s += c.staticMethods.map(printMethod).join(CRLF)
+  s += c.staticMethods.map(printStaticMethod).join(CRLF)
   s += c.methods.map(printMethod).join(CRLF)
   s += CRLF
   return s

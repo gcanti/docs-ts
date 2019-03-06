@@ -145,7 +145,8 @@ export function sum(a: number, b: number): number { return a + b }`
 * @deprecated
 */
 export function sum(a: int, b: int): int
-export function sum(a: number, b: number): number { return a + b }`
+export function sum(a: number, b: number): number
+export function sum(a: any, b: any): any { return a + b }`
     )
     assert.deepStrictEqual(
       getFunctions('test', sourceFile),
@@ -321,7 +322,8 @@ export class Test<A> {
    * @deprecated
    */
   static f(x: number): number
-  static f(x: string): string {}
+  static f(x: string): string
+  static f(x: any): any {}
   constructor(readonly value: A) { }
   /**
    * a method description...
@@ -329,7 +331,8 @@ export class Test<A> {
    * @deprecated
    */
   map(f: (a: number) => number): Test
-  map(f: (a: string) => string): Test {
+  map(f: (a: string) => string): Test
+  map(f: (a: any) => any): any {
     return new Test(f(this.value))
   }
 }`

@@ -238,8 +238,13 @@ function parseFunctionDeclaration(moduleName: string, fd: ast.FunctionDeclaratio
   const annotation = getFunctionDeclarationAnnotation(fd)
   const { description, since, deprecated, example } = getAnnotationInfo(annotation)
   const overloads = fd.getOverloads()
-  const signature = getFunctionDeclarationSignature(fd)
-  const signatures = overloads.length === 0 ? [signature] : [...overloads.map(fd => fd.getText()), signature]
+  const signatures =
+    overloads.length === 0
+      ? [getFunctionDeclarationSignature(fd)]
+      : [
+          ...overloads.slice(0, overloads.length - 1).map(fd => fd.getText()),
+          getFunctionDeclarationSignature(overloads[overloads.length - 1])
+        ]
   const name = fd.getName()
   if (name === undefined || name.trim() === '') {
     return failure([`Missing function name in module ${moduleName}`])
@@ -391,7 +396,7 @@ function getClassDeclarationSignature(c: ast.ClassDeclaration): string {
 function getMethodSignature(md: ast.MethodDeclaration): string {
   const text = md.getText()
   const end = text.indexOf('{')
-  return `${text.substring(0, end).trim()} { ... }`
+  return `${text.substring(0, end === -1 ? text.length : end).trim()} { ... }`
 }
 
 function parseMethod(md: ast.MethodDeclaration): Parser<Method> {
@@ -399,8 +404,13 @@ function parseMethod(md: ast.MethodDeclaration): Parser<Method> {
   const overloads = md.getOverloads()
   const annotation = overloads.length === 0 ? getAnnotation(md.getJsDocs()) : getAnnotation(overloads[0].getJsDocs())
   const { description, since, deprecated, example } = getAnnotationInfo(annotation)
-  const signature = getMethodSignature(md)
-  const signatures = overloads.length === 0 ? [signature] : [...overloads.map(md => md.getText()), signature]
+  const signatures =
+    overloads.length === 0
+      ? [getMethodSignature(md)]
+      : [
+          ...overloads.slice(0, overloads.length - 1).map(md => md.getText()),
+          getMethodSignature(overloads[overloads.length - 1])
+        ]
   return success(method(documentable(name, description, since, deprecated, example), signatures))
 }
 

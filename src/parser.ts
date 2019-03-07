@@ -19,12 +19,18 @@ export interface File {
   content: string
 }
 
+export type Example = string
+
+export function example(code: string): Example {
+  return code
+}
+
 export interface Documentable {
   readonly name: string
   readonly description: Option<string>
   readonly since: Option<string>
   readonly deprecated: boolean
-  readonly example: Option<string>
+  readonly examples: Array<Example>
 }
 
 export function documentable(
@@ -32,9 +38,9 @@ export function documentable(
   description: Option<string>,
   since: Option<string>,
   deprecated: boolean,
-  example: Option<string>
+  examples: Array<Example>
 ): Documentable {
-  return { name, description, since, deprecated, example }
+  return { name, description, since, deprecated, examples }
 }
 
 export interface Interface extends Documentable {
@@ -173,8 +179,8 @@ function isInternal(annotation: doctrine.Annotation): boolean {
   return fromNullable(annotation.tags.filter(tag => tag.title === 'internal')[0]).isSome()
 }
 
-function getExample(annotation: doctrine.Annotation): Option<string> {
-  return fromNullable(annotation.tags.filter(tag => tag.title === 'example')[0]).mapNullable(tag => tag.description)
+function getExamples(annotation: doctrine.Annotation): Array<Example> {
+  return annotation.tags.filter(tag => tag.title === 'example').map(tag => fromNullable(tag.description).getOrElse(''))
 }
 
 function getAnnotationInfo(
@@ -183,21 +189,21 @@ function getAnnotationInfo(
   description: Option<string>
   since: Option<string>
   deprecated: boolean
-  example: Option<string>
+  examples: Array<Example>
 } {
   return {
     description: getDescription(annotation),
     since: getSince(annotation),
     deprecated: isDeprecated(annotation),
-    example: getExample(annotation)
+    examples: getExamples(annotation)
   }
 }
 
 function parseInterfaceDeclaration(id: ast.InterfaceDeclaration): Parser<Interface> {
   const annotation = getAnnotation(id.getJsDocs())
-  const { description, since, deprecated, example } = getAnnotationInfo(annotation)
+  const { description, since, deprecated, examples } = getAnnotationInfo(annotation)
   const signature = id.getText()
-  return success(interface_(documentable(id.getName(), description, since, deprecated, example), signature))
+  return success(interface_(documentable(id.getName(), description, since, deprecated, examples), signature))
 }
 
 export function getInterfaces(sourceFile: ast.SourceFile): Parser<Array<Interface>> {
@@ -240,7 +246,7 @@ function getFunctionDeclarationAnnotation(fd: ast.FunctionDeclaration): doctrine
 
 function parseFunctionDeclaration(moduleName: string, fd: ast.FunctionDeclaration): Parser<Func> {
   const annotation = getFunctionDeclarationAnnotation(fd)
-  const { description, since, deprecated, example } = getAnnotationInfo(annotation)
+  const { description, since, deprecated, examples } = getAnnotationInfo(annotation)
   const overloads = fd.getOverloads()
   const signatures =
     overloads.length === 0
@@ -253,17 +259,17 @@ function parseFunctionDeclaration(moduleName: string, fd: ast.FunctionDeclaratio
   if (name === undefined || name.trim() === '') {
     return failure([`Missing function name in module ${moduleName}`])
   } else {
-    return success(func(documentable(name, description, since, deprecated, example), signatures))
+    return success(func(documentable(name, description, since, deprecated, examples), signatures))
   }
 }
 
 function parseFunctionVariableDeclaration(vd: ast.VariableDeclaration): Parser<Func> {
   const vs: any = vd.getParent().getParent()
   const annotation = getAnnotation(vs.getJsDocs())
-  const { description, since, deprecated, example } = getAnnotationInfo(annotation)
+  const { description, since, deprecated, examples } = getAnnotationInfo(annotation)
   const signatures = [getFunctionVariableDeclarationSignature(vd)]
   const name = vd.getName()
-  return success(func(documentable(name, description, since, deprecated, example), signatures))
+  return success(func(documentable(name, description, since, deprecated, examples), signatures))
 }
 
 const byName = contramap((x: { name: string }) => x.name, ordString)
@@ -304,10 +310,10 @@ function getTypeAliasesAnnotation(ta: ast.TypeAliasDeclaration): doctrine.Annota
 
 function parseTypeAliasDeclaration(ta: ast.TypeAliasDeclaration): Parser<TypeAlias> {
   const annotation = getTypeAliasesAnnotation(ta)
-  const { description, since, deprecated, example } = getAnnotationInfo(annotation)
+  const { description, since, deprecated, examples } = getAnnotationInfo(annotation)
   const signature = ta.getText()
   const name = ta.getName()
-  return success(typeAlias(documentable(name, description, since, deprecated, example), signature))
+  return success(typeAlias(documentable(name, description, since, deprecated, examples), signature))
 }
 
 export function getTypeAliases(sourceFile: ast.SourceFile): Parser<Array<TypeAlias>> {
@@ -329,10 +335,10 @@ function getConstantVariableDeclarationSignature(vd: ast.VariableDeclaration): s
 function parseConstantVariableDeclaration(vd: ast.VariableDeclaration): Parser<Constant> {
   const vs: any = vd.getParent().getParent()
   const annotation = getAnnotation(vs.getJsDocs())
-  const { description, since, deprecated, example } = getAnnotationInfo(annotation)
+  const { description, since, deprecated, examples } = getAnnotationInfo(annotation)
   const signature = getConstantVariableDeclarationSignature(vd)
   const name = vd.getName()
-  return success(constant(documentable(name, description, since, deprecated, example), signature))
+  return success(constant(documentable(name, description, since, deprecated, examples), signature))
 }
 
 export function getConstants(sourceFile: ast.SourceFile): Parser<Array<Constant>> {
@@ -361,10 +367,10 @@ function parseExportDeclaration(ed: ast.ExportDeclaration): Parser<Export> {
   if (comments.length > 0) {
     const text = comments[0].getText()
     const annotation = doctrine.parse(text, { unwrap: true })
-    const { description, since, deprecated, example } = getAnnotationInfo(annotation)
-    return success(export_(documentable(name, description, since, deprecated, example), signature))
+    const { description, since, deprecated, examples } = getAnnotationInfo(annotation)
+    return success(export_(documentable(name, description, since, deprecated, examples), signature))
   } else {
-    return success(export_(documentable(name, none, none, false, none), signature))
+    return success(export_(documentable(name, none, none, false, []), signature))
   }
 }
 
@@ -415,7 +421,7 @@ function parseMethod(md: ast.MethodDeclaration): Parser<Method> {
   const name = md.getName()
   const overloads = md.getOverloads()
   const annotation = overloads.length === 0 ? getAnnotation(md.getJsDocs()) : getAnnotation(overloads[0].getJsDocs())
-  const { description, since, deprecated, example } = getAnnotationInfo(annotation)
+  const { description, since, deprecated, examples } = getAnnotationInfo(annotation)
   const signatures =
     overloads.length === 0
       ? [getMethodSignature(md)]
@@ -423,7 +429,7 @@ function parseMethod(md: ast.MethodDeclaration): Parser<Method> {
           ...overloads.slice(0, overloads.length - 1).map(md => md.getText()),
           getMethodSignature(overloads[overloads.length - 1])
         ]
-  return success(method(documentable(name, description, since, deprecated, example), signatures))
+  return success(method(documentable(name, description, since, deprecated, examples), signatures))
 }
 
 function parseClass(moduleName: string, c: ast.ClassDeclaration): Parser<Class> {
@@ -432,13 +438,13 @@ function parseClass(moduleName: string, c: ast.ClassDeclaration): Parser<Class> 
     return failure([`Missing class name in module ${moduleName}`])
   } else {
     const annotation = getAnnotation(c.getJsDocs())
-    const { description, since, deprecated, example } = getAnnotationInfo(annotation)
+    const { description, since, deprecated, examples } = getAnnotationInfo(annotation)
     const signature = getClassDeclarationSignature(c)
     const methods = array.traverse(monadParser)(c.getInstanceMethods(), parseMethod)
     const staticMethods = array.traverse(monadParser)(c.getStaticMethods(), parseMethod)
     return monadParser.ap(
       methods.map(methods => (staticMethods: Array<Method>) =>
-        class_(documentable(name, description, since, deprecated, example), signature, methods, staticMethods)
+        class_(documentable(name, description, since, deprecated, examples), signature, methods, staticMethods)
       ),
       staticMethods
     )

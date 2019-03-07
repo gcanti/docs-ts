@@ -4,7 +4,7 @@
 
 import * as prettier from 'prettier'
 import { Option } from 'fp-ts/lib/Option'
-import { Class, Func, Interface, Method, TypeAlias, Constant, Module, Export } from './parser'
+import { Class, Func, Interface, Method, TypeAlias, Constant, Module, Export, Example } from './parser'
 const toc = require('markdown-toc')
 
 const CRLF = '\n\n'
@@ -30,7 +30,7 @@ function printInterface(i: Interface): string {
   let s = h1(handleDeprecated(i.name, i.deprecated) + ' (interface)')
   s += printDescription(i.description)
   s += printSignature(i.signature)
-  s += printExample(i.example)
+  s += printExamples(i.examples)
   s += printSince(i.since)
   s += CRLF
   return s
@@ -40,7 +40,7 @@ function printTypeAlias(ta: TypeAlias): string {
   let s = h1(handleDeprecated(ta.name, ta.deprecated) + ' (type alias)')
   s += printDescription(ta.description)
   s += printSignature(ta.signature)
-  s += printExample(ta.example)
+  s += printExamples(ta.examples)
   s += printSince(ta.since)
   s += CRLF
   return s
@@ -50,7 +50,7 @@ function printConstant(c: Constant): string {
   let s = h1(handleDeprecated(c.name, c.deprecated) + ' (constant)')
   s += printDescription(c.description)
   s += printSignature(c.signature)
-  s += printExample(c.example)
+  s += printExamples(c.examples)
   s += printSince(c.since)
   s += CRLF
   return s
@@ -60,7 +60,7 @@ function printFunction(f: Func): string {
   let s = h1(handleDeprecated(f.name, f.deprecated) + ' (function)')
   s += printDescription(f.description)
   s += printSignatures(f.signatures)
-  s += printExample(f.example)
+  s += printExamples(f.examples)
   s += printSince(f.since)
   s += CRLF
   return s
@@ -70,7 +70,7 @@ function printStaticMethod(f: Func): string {
   let s = h1(handleDeprecated(f.name, f.deprecated) + ' (static method)')
   s += printDescription(f.description)
   s += printSignatures(f.signatures)
-  s += printExample(f.example)
+  s += printExamples(f.examples)
   s += printSince(f.since)
   s += CRLF
   return s
@@ -80,7 +80,7 @@ function printExport(e: Export): string {
   let s = h1(handleDeprecated(e.name, e.deprecated) + ' (export)')
   s += printDescription(e.description)
   s += printSignature(e.signature)
-  s += printExample(e.example)
+  s += printExamples(e.examples)
   s += printSince(e.since)
   s += CRLF
   return s
@@ -90,7 +90,7 @@ function printMethod(m: Method): string {
   let s = h2(handleDeprecated(m.name, m.deprecated) + ' (method)')
   s += printDescription(m.description)
   s += printSignatures(m.signatures)
-  s += printExample(m.example)
+  s += printExamples(m.examples)
   s += printSince(m.since)
   s += CRLF
   return s
@@ -100,7 +100,7 @@ function printClass(c: Class): string {
   let s = h1(handleDeprecated(c.name, c.deprecated) + ' (class)')
   s += printDescription(c.description)
   s += printSignature(c.signature)
-  s += printExample(c.example)
+  s += printExamples(c.examples)
   s += printSince(c.since)
   s += CRLF
   s += c.staticMethods.map(printStaticMethod).join(CRLF)
@@ -125,8 +125,18 @@ function printModuleDescription(description: Option<string>): string {
   return description.fold('', s => CRLF + h1('Overview') + CRLF + s + CRLF)
 }
 
-function printExample(example: Option<string>): string {
-  return example.fold('', s => CRLF + bold('Example') + CRLF + ts(s))
+export function printExamples(examples: Array<Example>): string {
+  if (examples.length === 0) {
+    return ''
+  }
+  return (
+    CRLF +
+    examples
+      .map(code => {
+        return bold('Example') + CRLF + ts(code)
+      })
+      .join(CRLF)
+  )
 }
 
 function printSince(since: Option<string>): string {

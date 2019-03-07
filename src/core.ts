@@ -2,7 +2,7 @@ import { Task } from 'fp-ts/lib/Task'
 import { TaskEither, taskEither, fromEither, fromIOEither, fromLeft } from 'fp-ts/lib/TaskEither'
 import * as parser from './parser'
 import * as path from 'path'
-import { array, empty } from 'fp-ts/lib/Array'
+import { array } from 'fp-ts/lib/Array'
 import { getArrayMonoid, fold } from 'fp-ts/lib/Monoid'
 import * as markdown from './markdown'
 import { fromValidation, right as rightEither, left as leftEither } from 'fp-ts/lib/Either'
@@ -106,9 +106,9 @@ function getExampleFiles(modules: Array<parser.Module>): Array<File> {
   return array.chain(modules, module => {
     const prefix = module.path.join('-')
     function getDocumentableExamples(documentable: parser.Documentable): Array<File> {
-      return documentable.example.fold(empty, content => {
-        return [file(path.join(outDir, 'examples', prefix + '-' + documentable.name + '.ts'), content + '\n', true)]
-      })
+      return documentable.examples.map((content, i) =>
+        file(path.join(outDir, 'examples', prefix + '-' + documentable.name + '-' + i + '.ts'), content + '\n', true)
+      )
     }
     const methods = array.chain(module.classes, c =>
       foldExamples([

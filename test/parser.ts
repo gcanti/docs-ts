@@ -42,7 +42,7 @@ export interface A {}`
           name: 'A',
           signature: 'export interface A {}',
           since: some('1.0.0'),
-          example: none
+          examples: []
         }
       ])
     )
@@ -92,6 +92,10 @@ describe('getFunctions', () => {
       `/**
  * a description...
  * @since 1.0.0
+ * @example
+ * assert.deeStrictEqual(f(1, 2), { a: 1, b: 2})
+ * @example
+ * assert.deeStrictEqual(f(3, 4), { a: 3, b: 4})
  * @deprecated
  */
 export const f = (a: number, b: number): { [key: string]: number } => ({ a, b })`
@@ -105,7 +109,7 @@ export const f = (a: number, b: number): { [key: string]: number } => ({ a, b })
           name: 'f',
           signatures: ['export const f = (a: number, b: number): { [key: string]: number } => ...'],
           since: some('1.0.0'),
-          example: none
+          examples: ['assert.deeStrictEqual(f(1, 2), { a: 1, b: 2})', 'assert.deeStrictEqual(f(3, 4), { a: 3, b: 4})']
         }
       ])
     )
@@ -126,7 +130,7 @@ export function f(a: number, b: number): { [key: string]: number } { return { a,
           name: 'f',
           signatures: ['export function f(a: number, b: number): { [key: string]: number } { ... }'],
           since: none,
-          example: none
+          examples: []
         }
       ])
     )
@@ -152,7 +156,7 @@ export function f(a: number, b: number): { [key: string]: number } { return { a,
           name: 'f',
           signatures: ['export function f(a: number, b: number): { [key: string]: number } { ... }'],
           since: some('1.0.0'),
-          example: none
+          examples: []
         }
       ])
     )
@@ -183,7 +187,7 @@ export function f(a: any, b: any): { [key: string]: number } { return { a, b } }
             'export function f(a: number, b: number): { [key: string]: number } { ... }'
           ],
           since: some('1.0.0'),
-          example: none
+          examples: []
         }
       ])
     )
@@ -210,7 +214,7 @@ export type Option<A> = None<A> | Some<A>`
           name: 'Option',
           signature: 'export type Option<A> = None<A> | Some<A>',
           since: some('1.0.0'),
-          example: none
+          examples: []
         }
       ])
     )
@@ -237,7 +241,7 @@ export const setoidString: Setoid<string> = setoidStrict`
           name: 'setoidString',
           signature: 'export const setoidString: Setoid<string> = ...',
           since: some('1.0.0'),
-          example: none
+          examples: []
         }
       ])
     )
@@ -258,7 +262,7 @@ describe('getClasses', () => {
         {
           deprecated: false,
           description: none,
-          example: none,
+          examples: [],
           methods: [],
           name: 'C',
           signature: 'export class C {\n  constructor() { ... }\n  ... \n}',
@@ -304,7 +308,7 @@ export class Test {
           name: 'Test',
           signature: 'export class Test {\n  constructor(readonly value: string) { ... }\n  ... \n}',
           since: some('1.0.0'),
-          example: none,
+          examples: [],
           methods: [
             {
               deprecated: true,
@@ -312,7 +316,7 @@ export class Test {
               name: 'g',
               signatures: ['g(a: number, b: number): { [key: string]: number } { ... }'],
               since: some('1.1.0'),
-              example: none
+              examples: []
             }
           ],
           staticMethods: [
@@ -322,7 +326,7 @@ export class Test {
               name: 'f',
               signatures: ['static f() { ... }'],
               since: some('1.1.0'),
-              example: none
+              examples: []
             }
           ]
         }
@@ -369,7 +373,7 @@ export class Test<A> {
           name: 'Test',
           signature: 'export class Test<A> {\n  constructor(readonly value: A) { ... }\n  ... \n}',
           since: some('1.0.0'),
-          example: none,
+          examples: [],
           methods: [
             {
               deprecated: true,
@@ -377,7 +381,7 @@ export class Test<A> {
               name: 'map',
               signatures: ['map(f: (a: number) => number): Test', 'map(f: (a: string) => string): Test { ... }'],
               since: some('1.1.0'),
-              example: none
+              examples: []
             }
           ],
           staticMethods: [
@@ -387,7 +391,7 @@ export class Test<A> {
               name: 'f',
               signatures: ['static f(x: number): number', 'static f(x: string): string { ... }'],
               since: some('1.1.0'),
-              example: none
+              examples: []
             }
           ]
         }
@@ -454,7 +458,7 @@ describe('getExports', () => {
         {
           deprecated: false,
           description: none,
-          example: none,
+          examples: [],
           name: 'b',
           signature: 'export { a as b }',
           since: none
@@ -479,7 +483,7 @@ export { a }`
         {
           deprecated: true,
           description: some('a description...'),
-          example: none,
+          examples: [],
           name: 'a',
           signature: 'export { a }',
           since: some('1.0.0')

@@ -9,14 +9,16 @@ export interface File {
     path: string;
     content: string;
 }
+export declare type Example = string;
+export declare function example(code: string): Example;
 export interface Documentable {
     readonly name: string;
     readonly description: Option<string>;
     readonly since: Option<string>;
     readonly deprecated: boolean;
-    readonly example: Option<string>;
+    readonly examples: Array<Example>;
 }
-export declare function documentable(name: string, description: Option<string>, since: Option<string>, deprecated: boolean, example: Option<string>): Documentable;
+export declare function documentable(name: string, description: Option<string>, since: Option<string>, deprecated: boolean, examples: Array<Example>): Documentable;
 export interface Interface extends Documentable {
     signature: string;
 }

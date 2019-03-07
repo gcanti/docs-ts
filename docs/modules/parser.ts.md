@@ -22,11 +22,13 @@ parser utilities
 - [Method (interface)](#method-interface)
 - [Module (interface)](#module-interface)
 - [TypeAlias (interface)](#typealias-interface)
+- [Example (type alias)](#example-type-alias)
 - [Parser (type alias)](#parser-type-alias)
 - [monadParser (constant)](#monadparser-constant)
 - [class\_ (function)](#class_-function)
 - [constant (function)](#constant-function)
 - [documentable (function)](#documentable-function)
+- [example (function)](#example-function)
 - [export\_ (function)](#export_-function)
 - [func (function)](#func-function)
 - [getClasses (function)](#getclasses-function)
@@ -79,7 +81,7 @@ export interface Documentable {
   readonly description: Option<string>
   readonly since: Option<string>
   readonly deprecated: boolean
-  readonly example: Option<string>
+  readonly examples: Array<Example>
 }
 ```
 
@@ -162,6 +164,14 @@ export interface TypeAlias extends Documentable {
 }
 ```
 
+# Example (type alias)
+
+**Signature**
+
+```ts
+export type Example = string
+```
+
 # Parser (type alias)
 
 **Signature**
@@ -209,8 +219,16 @@ export function documentable(
   description: Option<string>,
   since: Option<string>,
   deprecated: boolean,
-  example: Option<string>
+  examples: Array<Example>
 ): Documentable { ... }
+```
+
+# example (function)
+
+**Signature**
+
+```ts
+export function example(code: string): Example { ... }
 ```
 
 # export\_ (function)
@@ -274,7 +292,7 @@ export function getInterfaces(sourceFile: ast.SourceFile): Parser<Array<Interfac
 **Signature**
 
 ```ts
-export function getModuleInfo(sourceFile: ast.SourceFile): { ... }
+export function getModuleInfo(sourceFile: ast.SourceFile): { description: Option<string>; deprecated: boolean } { ... }
 ```
 
 # getModuleName (function)

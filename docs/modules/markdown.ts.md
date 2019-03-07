@@ -12,10 +12,19 @@ markdown utilities
 
 <h2 class="text-delta">Table of contents</h2>
 
+- [printExamples (function)](#printexamples-function)
 - [printHeader (function)](#printheader-function)
 - [printModule (function)](#printmodule-function)
 
 ---
+
+# printExamples (function)
+
+**Signature**
+
+```ts
+export function printExamples(examples: Array<Example>): string { ... }
+```
 
 # printHeader (function)
 

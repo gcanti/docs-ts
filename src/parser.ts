@@ -209,8 +209,12 @@ export function getInterfaces(sourceFile: ast.SourceFile): Parser<Array<Interfac
 
 function getFunctionDeclarationSignature(f: ast.FunctionDeclaration): string {
   const text = f.getText()
-  const end = text.indexOf('{')
-  return `${text.substring(0, end === -1 ? text.length : end).trim()} { ... }`
+  const body = f.compilerNode.body
+  if (body === undefined) {
+    return text + ' { ... }'
+  }
+  const end = body.getStart() - f.getStart() - 1
+  return text.substring(0, end) + ' { ... }'
 }
 
 const indexOf = (big: string, small: string) => {
@@ -377,8 +381,12 @@ function getTypeParameters(typeParameters: Array<ast.TypeParameterDeclaration>):
 
 function getConstructorDeclarationSignature(c: ast.ConstructorDeclaration): string {
   const text = c.getText()
-  const end = text.indexOf('{')
-  return `${text.substring(0, end === -1 ? text.length : end).trim()} { ... }`
+  const body = c.compilerNode.body
+  if (body === undefined) {
+    return text + ' { ... }'
+  }
+  const end = body.getStart() - c.getStart() - 1
+  return text.substring(0, end) + ' { ... }'
 }
 
 function getClassDeclarationSignature(c: ast.ClassDeclaration): string {
@@ -395,8 +403,12 @@ function getClassDeclarationSignature(c: ast.ClassDeclaration): string {
 
 function getMethodSignature(md: ast.MethodDeclaration): string {
   const text = md.getText()
-  const end = text.indexOf('{')
-  return `${text.substring(0, end === -1 ? text.length : end).trim()} { ... }`
+  const body = md.compilerNode.body
+  if (body === undefined) {
+    return text + ' { ... }'
+  }
+  const end = body.getStart() - md.getStart() - 1
+  return text.substring(0, end) + ' { ... }'
 }
 
 function parseMethod(md: ast.MethodDeclaration): Parser<Method> {

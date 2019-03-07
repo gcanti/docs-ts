@@ -94,7 +94,7 @@ describe('getFunctions', () => {
  * @since 1.0.0
  * @deprecated
  */
-export const sum = (a: number, b: number): number => a + b`
+export const f = (a: number, b: number): { [key: string]: number } => ({ a, b })`
     )
     assert.deepStrictEqual(
       getFunctions('test', sourceFile),
@@ -102,8 +102,8 @@ export const sum = (a: number, b: number): number => a + b`
         {
           deprecated: true,
           description: some('a description...'),
-          name: 'sum',
-          signatures: ['export const sum = (a: number, b: number): number => ...'],
+          name: 'f',
+          signatures: ['export const f = (a: number, b: number): { [key: string]: number } => ...'],
           since: some('1.0.0'),
           example: none
         }
@@ -111,15 +111,37 @@ export const sum = (a: number, b: number): number => a + b`
     )
   })
 
-  it('should return a `Func`', () => {
+  it('should return a `Func` with a body', () => {
     const sourceFile = getSourceFile(
       'test',
-      `/**
+      `const a: number = 1
+export function f(a: number, b: number): { [key: string]: number } { return { a, b } }`
+    )
+    assert.deepStrictEqual(
+      getFunctions('test', sourceFile),
+      success([
+        {
+          deprecated: false,
+          description: none,
+          name: 'f',
+          signatures: ['export function f(a: number, b: number): { [key: string]: number } { ... }'],
+          since: none,
+          example: none
+        }
+      ])
+    )
+  })
+
+  it('should return a `Func` with comments', () => {
+    const sourceFile = getSourceFile(
+      'test',
+      `const a: number = 1
+/**
  * a description...
  * @since 1.0.0
  * @deprecated
  */
-export function sum(a: number, b: number): number { return a + b }`
+export function f(a: number, b: number): { [key: string]: number } { return { a, b } }`
     )
     assert.deepStrictEqual(
       getFunctions('test', sourceFile),
@@ -127,8 +149,8 @@ export function sum(a: number, b: number): number { return a + b }`
         {
           deprecated: true,
           description: some('a description...'),
-          name: 'sum',
-          signatures: ['export function sum(a: number, b: number): number { ... }'],
+          name: 'f',
+          signatures: ['export function f(a: number, b: number): { [key: string]: number } { ... }'],
           since: some('1.0.0'),
           example: none
         }
@@ -139,14 +161,15 @@ export function sum(a: number, b: number): number { return a + b }`
   it('should handle overloadings', () => {
     const sourceFile = getSourceFile(
       'test',
-      `/**
+      `const a: number = 1
+/**
 * a description...
 * @since 1.0.0
 * @deprecated
 */
-export function sum(a: int, b: int): int
-export function sum(a: number, b: number): number
-export function sum(a: any, b: any): any { return a + b }`
+export function f(a: int, b: int): { [key: string]: number }
+export function f(a: number, b: number): { [key: string]: number }
+export function f(a: any, b: any): { [key: string]: number } { return { a, b } }`
     )
     assert.deepStrictEqual(
       getFunctions('test', sourceFile),
@@ -154,10 +177,10 @@ export function sum(a: any, b: any): any { return a + b }`
         {
           deprecated: true,
           description: some('a description...'),
-          name: 'sum',
+          name: 'f',
           signatures: [
-            'export function sum(a: int, b: int): int',
-            'export function sum(a: number, b: number): number { ... }'
+            'export function f(a: int, b: int): { [key: string]: number }',
+            'export function f(a: number, b: number): { [key: string]: number } { ... }'
           ],
           since: some('1.0.0'),
           example: none
@@ -267,8 +290,8 @@ export class Test {
    * @since 1.1.0
    * @deprecated
    */
-  map(f: (a: string) => string): Test {
-    return new Test(f(this.value))
+  g(a: number, b: number): { [key: string]: number } {
+    return { a, b }
   }
 }`
     )
@@ -286,8 +309,8 @@ export class Test {
             {
               deprecated: true,
               description: some('a method description...'),
-              name: 'map',
-              signatures: ['map(f: (a: string) => string): Test { ... }'],
+              name: 'g',
+              signatures: ['g(a: number, b: number): { [key: string]: number } { ... }'],
               since: some('1.1.0'),
               example: none
             }

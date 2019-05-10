@@ -1,6 +1,6 @@
 # Setup and usage
 
-1. `npm i gcanti/docs-ts -D`
+1. `npm i docs-ts -D`
 
 2. run
 

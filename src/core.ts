@@ -91,9 +91,7 @@ function readSources(M: MonadApp): App<Array<File>> {
   const srcPattern = path.join(srcDir, '**', '*.ts')
   return M.fromTask<string, Array<string>>(M.getFilenames(srcPattern))
     .map(paths => array.map(paths, path.normalize))
-    .chain(paths =>
-      M.log(`${paths.length} modules found`).chain(() => readFiles(M, paths))
-    )
+    .chain(paths => M.log(`${paths.length} modules found`).chain(() => readFiles(M, paths)))
 }
 
 function parseModules(M: MonadLog, files: Array<File>): App<Array<parser.Module>> {

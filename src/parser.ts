@@ -3,14 +3,14 @@
  */
 
 import * as doctrine from 'doctrine'
+import { sequenceS } from 'fp-ts/lib/Apply'
 import { array, sort } from 'fp-ts/lib/Array'
 import { getArrayMonoid } from 'fp-ts/lib/Monoid'
 import { fromNullable, none, Option, some } from 'fp-ts/lib/Option'
-import { ordString, contramap, Ord } from 'fp-ts/lib/Ord'
-import { failure, getMonad, success, Validation, getMonoid } from 'fp-ts/lib/Validation'
-import Ast, * as ast from 'ts-simple-ast'
+import { contramap, Ord, ordString } from 'fp-ts/lib/Ord'
+import { failure, getMonad, getMonoid, success, Validation } from 'fp-ts/lib/Validation'
 import * as path from 'path'
-import { sequenceS } from './sequenceS'
+import Ast, * as ast from 'ts-simple-ast'
 
 export type Parser<A> = Validation<Array<string>, A>
 

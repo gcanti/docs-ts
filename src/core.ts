@@ -25,14 +25,10 @@ export interface MonadLog {
   log: (message: string) => App<void>
 }
 
-export interface MonadProcess {
-  exit: (code: 0 | 1) => Task<void>
-}
-
 /**
  * App capabilities
  */
-export interface MonadApp extends MonadFileSystem, MonadLog, MonadProcess, MonadTask2<'TaskEither'> {}
+export interface MonadApp extends MonadFileSystem, MonadLog, MonadTask2<'TaskEither'> {}
 
 const outDir = 'docs'
 const srcDir = 'src'

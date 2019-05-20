@@ -14,12 +14,13 @@ const monadApp: core.MonadApp = {
   writeFile: (path: string, content: string) => fromIO(new IO(() => fs.outputFileSync(path, content))),
   existsFile: (path: string) => fromIOTask(new IO(() => fs.existsSync(path))),
   clean: (pattern: string) => fromIOTask(new IO(() => rimraf.sync(pattern))),
-  log: (message: string) => fromIO(log(message)),
-  exit: (code: 0 | 1) => fromIOTask(new IO(() => process.exit(code)))
+  log: (message: string) => fromIO(log(message))
 }
 
+const exit = (code: 0 | 1) => new IO(() => process.exit(code))
+
 function onLeft(e: string): Task<void> {
-  return fromIOTask(log(e))
+  return fromIOTask(log(e).chain(() => exit(1)))
 }
 
 function onRight(): Task<void> {

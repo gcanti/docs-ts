@@ -12,7 +12,6 @@ parent: Modules
 - [MonadApp (interface)](#monadapp-interface)
 - [MonadFileSystem (interface)](#monadfilesystem-interface)
 - [MonadLog (interface)](#monadlog-interface)
-- [MonadProcess (interface)](#monadprocess-interface)
 - [main (function)](#main-function)
 
 ---
@@ -32,7 +31,7 @@ App capabilities
 **Signature**
 
 ```ts
-export interface MonadApp extends MonadFileSystem, MonadLog, MonadProcess, MonadTask2<'TaskEither'> {}
+export interface MonadApp extends MonadFileSystem, MonadLog, MonadTask2<'TaskEither'> {}
 ```
 
 # MonadFileSystem (interface)
@@ -56,16 +55,6 @@ export interface MonadFileSystem {
 ```ts
 export interface MonadLog {
   log: (message: string) => App<void>
-}
-```
-
-# MonadProcess (interface)
-
-**Signature**
-
-```ts
-export interface MonadProcess {
-  exit: (code: 0 | 1) => Task<void>
 }
 ```
 

@@ -21,7 +21,7 @@ parent: Modules
 **Signature**
 
 ```ts
-export interface App<A> extends TaskEither<string, A> {}
+export interface App<A> extends TE.TaskEither<string, A> {}
 ```
 
 # MonadApp (interface)
@@ -40,11 +40,11 @@ export interface MonadApp extends MonadFileSystem, MonadLog, MonadTask2<'TaskEit
 
 ```ts
 export interface MonadFileSystem {
-  getFilenames: (pattern: string) => Task<Array<string>>
+  getFilenames: (pattern: string) => T.Task<Array<string>>
   readFile: (path: string) => App<string>
   writeFile: (path: string, content: string) => App<void>
-  existsFile: (path: string) => Task<boolean>
-  clean: (pattern: string) => Task<void>
+  existsFile: (path: string) => T.Task<boolean>
+  clean: (pattern: string) => T.Task<void>
 }
 ```
 

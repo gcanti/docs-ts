@@ -78,8 +78,8 @@ export interface Constant extends Documentable {
 ```ts
 export interface Documentable {
   readonly name: string
-  readonly description: Option<string>
-  readonly since: Option<string>
+  readonly description: O.Option<string>
+  readonly since: O.Option<string>
   readonly deprecated: boolean
   readonly examples: Array<Example>
 }
@@ -143,7 +143,7 @@ export interface Method extends Documentable {
 ```ts
 export interface Module {
   readonly path: Array<string>
-  readonly description: Option<string>
+  readonly description: O.Option<string>
   readonly interfaces: Array<Interface>
   readonly typeAliases: Array<TypeAlias>
   readonly functions: Array<Func>
@@ -177,7 +177,7 @@ export type Example = string
 **Signature**
 
 ```ts
-export type Parser<A> = Validation<Array<string>, A>
+export type Parser<A> = E.Either<Array<string>, A>
 ```
 
 # monadParser (constant)
@@ -216,8 +216,8 @@ export function constant(documentable: Documentable, signature: string): Constan
 ```ts
 export function documentable(
   name: string,
-  description: Option<string>,
-  since: Option<string>,
+  description: O.Option<string>,
+  since: O.Option<string>,
   deprecated: boolean,
   examples: Array<Example>
 ): Documentable { ... }
@@ -292,7 +292,7 @@ export function getInterfaces(sourceFile: ast.SourceFile): Parser<Array<Interfac
 **Signature**
 
 ```ts
-export function getModuleInfo(sourceFile: ast.SourceFile): { description: Option<string>; deprecated: boolean } { ... }
+export function getModuleInfo(sourceFile: ast.SourceFile): { description: O.Option<string>; deprecated: boolean } { ... }
 ```
 
 # getModuleName (function)
@@ -342,7 +342,7 @@ export function method(documentable: Documentable, signatures: Array<string>): M
 ```ts
 export function module(
   path: Array<string>,
-  description: Option<string>,
+  description: O.Option<string>,
   interfaces: Array<Interface>,
   typeAliases: Array<TypeAlias>,
   functions: Array<Func>,

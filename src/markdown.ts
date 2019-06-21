@@ -3,8 +3,9 @@
  */
 
 import * as prettier from 'prettier'
-import { Option } from 'fp-ts/lib/Option'
+import * as O from 'fp-ts/lib/Option'
 import { Class, Func, Interface, Method, TypeAlias, Constant, Module, Export, Example } from './parser'
+import { pipe } from 'fp-ts/lib/pipeable'
 const toc = require('markdown-toc')
 
 const CRLF = '\n\n'
@@ -117,12 +118,18 @@ function printSignatures(signature: Array<string>): string {
   return CRLF + bold('Signature') + CRLF + ts(signature.join('\n'))
 }
 
-function printDescription(description: Option<string>): string {
-  return description.fold('', s => CRLF + s)
+function printDescription(description: O.Option<string>): string {
+  return pipe(
+    description,
+    O.fold(() => '', s => CRLF + s)
+  )
 }
 
-function printModuleDescription(description: Option<string>): string {
-  return description.fold('', s => CRLF + h1('Overview') + CRLF + s + CRLF)
+function printModuleDescription(description: O.Option<string>): string {
+  return pipe(
+    description,
+    O.fold(() => '', s => CRLF + h1('Overview') + CRLF + s + CRLF)
+  )
 }
 
 export function printExamples(examples: Array<Example>): string {
@@ -139,8 +146,11 @@ export function printExamples(examples: Array<Example>): string {
   )
 }
 
-function printSince(since: Option<string>): string {
-  return since.fold('', s => CRLF + `Added in v${s}`)
+function printSince(since: O.Option<string>): string {
+  return pipe(
+    since,
+    O.fold(() => '', s => CRLF + `Added in v${s}`)
+  )
 }
 
 export function printHeader(title: string, order: number): string {

@@ -17,5 +17,5 @@ parent: Modules
 **Signature**
 
 ```ts
-export const main: Task<void> = ...
+export const main: T.Task<void> = ...
 ```

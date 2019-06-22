@@ -1,4 +1,3 @@
-import * as T from 'fp-ts/lib/Task'
 import * as TE from 'fp-ts/lib/TaskEither'
 import * as parser from './parser'
 import * as path from 'path'
@@ -7,18 +6,17 @@ import { fold } from 'fp-ts/lib/Monoid'
 import * as markdown from './markdown'
 import * as E from 'fp-ts/lib/Either'
 import { spawnSync } from 'child_process'
-import { MonadTask2 } from 'fp-ts/lib/MonadTask'
 import { pipe } from 'fp-ts/lib/pipeable'
 import chalk from 'chalk'
 
 export interface App<A> extends TE.TaskEither<string, A> {}
 
 export interface MonadFileSystem {
-  getFilenames: (pattern: string) => T.Task<Array<string>>
+  getFilenames: (pattern: string) => App<Array<string>>
   readFile: (path: string) => App<string>
   writeFile: (path: string, content: string) => App<void>
-  existsFile: (path: string) => T.Task<boolean>
-  clean: (pattern: string) => T.Task<void>
+  existsFile: (path: string) => App<boolean>
+  clean: (pattern: string) => App<void>
 }
 
 export interface MonadLog {
@@ -28,7 +26,7 @@ export interface MonadLog {
 /**
  * App capabilities
  */
-export interface MonadApp extends MonadFileSystem, MonadLog, MonadTask2<'TaskEither'> {}
+export interface MonadApp extends MonadFileSystem, MonadLog {}
 
 const outDir = 'docs'
 const srcDir = 'src'
@@ -60,7 +58,7 @@ function readFiles(M: MonadFileSystem, paths: Array<string>): App<Array<File>> {
 function writeFile(M: MonadApp, file: File): App<void> {
   const writeFile = M.writeFile(file.path, file.content)
   return pipe(
-    M.fromTask<string, boolean>(M.existsFile(file.path)),
+    M.existsFile(file.path),
     TE.chain(exists => {
       if (exists) {
         if (file.overwrite) {
@@ -109,7 +107,7 @@ function getPackageJSON(M: MonadFileSystem & MonadLog): App<PackageJSON> {
 function readSources(M: MonadApp): App<Array<File>> {
   const srcPattern = path.join(srcDir, '**', '*.ts')
   return pipe(
-    M.fromTask<string, Array<string>>(M.getFilenames(srcPattern)),
+    M.getFilenames(srcPattern),
     TE.map(paths => A.array.map(paths, path.normalize)),
     TE.chain(paths =>
       pipe(
@@ -185,7 +183,7 @@ function typecheck(M: MonadApp, modules: Array<parser.Module>, projectName: stri
   const examplePattern = path.join(outDir, 'examples')
   const clean = pipe(
     M.log(chalk.gray(`Clean up examples: deleting ${examplePattern}...`)),
-    TE.chain(() => M.fromTask(M.clean(examplePattern)))
+    TE.chain(() => M.clean(examplePattern))
   )
   const examples = handleImports(getExampleFiles(modules), projectName)
   if (examples.length === 0) {
@@ -271,7 +269,7 @@ function writeMarkdownFiles(M: MonadApp, files: Array<File>): App<void> {
   return pipe(
     M.log(chalk.cyan(`Writing markdown...`)),
     TE.chain(() => M.log(chalk.gray(`Clean up docs folder: deleting ${outPattern}...`))),
-    TE.chain(() => M.fromTask(M.clean(outPattern))),
+    TE.chain(() => M.clean(outPattern)),
     TE.chain(() => writeFiles(M, files))
   )
 }

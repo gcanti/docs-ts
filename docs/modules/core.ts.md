@@ -31,7 +31,7 @@ App capabilities
 **Signature**
 
 ```ts
-export interface MonadApp extends MonadFileSystem, MonadLog, MonadTask2<'TaskEither'> {}
+export interface MonadApp extends MonadFileSystem, MonadLog {}
 ```
 
 # MonadFileSystem (interface)
@@ -40,11 +40,11 @@ export interface MonadApp extends MonadFileSystem, MonadLog, MonadTask2<'TaskEit
 
 ```ts
 export interface MonadFileSystem {
-  getFilenames: (pattern: string) => T.Task<Array<string>>
+  getFilenames: (pattern: string) => App<Array<string>>
   readFile: (path: string) => App<string>
   writeFile: (path: string, content: string) => App<void>
-  existsFile: (path: string) => T.Task<boolean>
-  clean: (pattern: string) => T.Task<void>
+  existsFile: (path: string) => App<boolean>
+  clean: (pattern: string) => App<void>
 }
 ```
 

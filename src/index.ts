@@ -10,11 +10,11 @@ import * as core from './core'
 
 const monadApp: core.MonadApp = {
   ...TE.taskEither,
-  getFilenames: (pattern: string) => T.fromIO(() => glob.sync(pattern)),
+  getFilenames: (pattern: string) => TE.rightIO(() => glob.sync(pattern)),
   readFile: (path: string) => TE.rightIO(() => fs.readFileSync(path, { encoding: 'utf8' })),
   writeFile: (path: string, content: string) => TE.rightIO(() => fs.outputFileSync(path, content)),
-  existsFile: (path: string) => T.fromIO(() => fs.existsSync(path)),
-  clean: (pattern: string) => T.fromIO(() => rimraf.sync(pattern)),
+  existsFile: (path: string) => TE.rightIO(() => fs.existsSync(path)),
+  clean: (pattern: string) => TE.rightIO(() => rimraf.sync(pattern)),
   log: (message: string) => TE.rightIO(log(message))
 }
 

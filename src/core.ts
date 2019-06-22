@@ -9,6 +9,7 @@ import * as E from 'fp-ts/lib/Either'
 import { spawnSync } from 'child_process'
 import { MonadTask2 } from 'fp-ts/lib/MonadTask'
 import { pipe } from 'fp-ts/lib/pipeable'
+import chalk from 'chalk'
 
 export interface App<A> extends TE.TaskEither<string, A> {}
 
@@ -64,15 +65,15 @@ function writeFile(M: MonadApp, file: File): App<void> {
       if (exists) {
         if (file.overwrite) {
           return pipe(
-            M.log(`Overwriting file ${file.path}`),
+            M.log(chalk.gray(`Overwriting file ${file.path}`)),
             TE.chain(() => writeFile)
           )
         } else {
-          return M.log(`File ${file.path} already exists, skipping creation`)
+          return M.log(chalk.gray(`File ${file.path} already exists, skipping creation`))
         }
       } else {
         return pipe(
-          M.log(`Writing file ${file.path}`),
+          M.log(chalk.gray('Writing file ') + chalk.bold.gray(file.path)),
           TE.chain(() => writeFile)
         )
       }
@@ -95,7 +96,7 @@ function getPackageJSON(M: MonadFileSystem & MonadLog): App<PackageJSON> {
       const name = json.name
       const homepage = json.homepage
       return pipe(
-        M.log(`Project name detected: ${name}`),
+        M.log(chalk.gray(`Project name detected: ${name}`)),
         TE.map(() => ({
           name,
           homepage
@@ -112,7 +113,7 @@ function readSources(M: MonadApp): App<Array<File>> {
     TE.map(paths => A.array.map(paths, path.normalize)),
     TE.chain(paths =>
       pipe(
-        M.log(`${paths.length} modules found`),
+        M.log(chalk.bold.magenta(`${paths.length} modules found`)),
         TE.chain(() => readFiles(M, paths))
       )
     )
@@ -121,7 +122,7 @@ function readSources(M: MonadApp): App<Array<File>> {
 
 function parseModules(M: MonadLog, files: Array<File>): App<Array<parser.Module>> {
   return pipe(
-    M.log('Parsing modules...'),
+    M.log(chalk.cyan('Parsing modules...')),
     TE.chain(() =>
       TE.fromEither(
         pipe(
@@ -183,7 +184,7 @@ function getExampleIndex(examples: Array<File>): File {
 function typecheck(M: MonadApp, modules: Array<parser.Module>, projectName: string): App<Array<parser.Module>> {
   const examplePattern = path.join(outDir, 'examples')
   const clean = pipe(
-    M.log(`Clean up examples: deleting ${examplePattern}...`),
+    M.log(chalk.gray(`Clean up examples: deleting ${examplePattern}...`)),
     TE.chain(() => M.fromTask(M.clean(examplePattern)))
   )
   const examples = handleImports(getExampleFiles(modules), projectName)
@@ -201,8 +202,9 @@ function typecheck(M: MonadApp, modules: Array<parser.Module>, projectName: stri
   })
 
   return pipe(
-    writeFiles(M, files),
-    TE.chain(() => M.log(`Type checking examples...`)),
+    M.log(chalk.cyan(`Writing examples...`)),
+    TE.chain(() => writeFiles(M, files)),
+    TE.chain(() => M.log(chalk.cyan(`Type checking examples...`))),
     TE.chain(() => typecheckExamples),
     TE.chain(() => clean),
     TE.map(() => modules)
@@ -267,7 +269,8 @@ function getMarkdownFiles(modules: Array<parser.Module>, projectName: string, ho
 function writeMarkdownFiles(M: MonadApp, files: Array<File>): App<void> {
   const outPattern = path.join(outDir, '**/*.ts.md')
   return pipe(
-    M.log(`Clean up docs folder: deleting ${outPattern}...`),
+    M.log(chalk.cyan(`Writing markdown...`)),
+    TE.chain(() => M.log(chalk.gray(`Clean up docs folder: deleting ${outPattern}...`))),
     TE.chain(() => M.fromTask(M.clean(outPattern))),
     TE.chain(() => writeFiles(M, files))
   )
@@ -289,7 +292,8 @@ export function main(M: MonadApp): App<void> {
             TE.chain(modules => parseModules(M, modules)),
             TE.chain(modules => typecheck(M, modules, pkg.name)),
             TE.map(modules => getMarkdownFiles(modules, pkg.name, homepage)),
-            TE.chain(markdownFiles => writeMarkdownFiles(M, markdownFiles))
+            TE.chain(markdownFiles => writeMarkdownFiles(M, markdownFiles)),
+            TE.chain(() => M.log(chalk.bold.green('Docs generation succeeded!')))
           )
         )
       )

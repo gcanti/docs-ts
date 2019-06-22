@@ -31,6 +31,7 @@
   },
   "homepage": "https://github.com/gcanti/docs-ts",
   "dependencies": {
+    "chalk": "^2.4.2",
     "doctrine": "^3.0.0",
     "fp-ts": "^2.0.0-rc.7",
     "fs-extra": "^7.0.1",

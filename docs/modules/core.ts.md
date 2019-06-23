@@ -9,24 +9,35 @@ parent: Modules
 <h2 class="text-delta">Table of contents</h2>
 
 - [App (interface)](#app-interface)
+- [Eff (interface)](#eff-interface)
 - [MonadApp (interface)](#monadapp-interface)
 - [MonadFileSystem (interface)](#monadfilesystem-interface)
 - [MonadLog (interface)](#monadlog-interface)
-- [main (function)](#main-function)
+- [main (constant)](#main-constant)
 
 ---
 
 # App (interface)
 
+App effect
+
 **Signature**
 
 ```ts
-export interface App<A> extends TE.TaskEither<string, A> {}
+export interface App<A> extends RTE.ReaderTaskEither<MonadApp, string, A> {}
+```
+
+# Eff (interface)
+
+capabilities
+
+**Signature**
+
+```ts
+export interface Eff<A> extends TE.TaskEither<string, A> {}
 ```
 
 # MonadApp (interface)
-
-App capabilities
 
 **Signature**
 
@@ -40,11 +51,11 @@ export interface MonadApp extends MonadFileSystem, MonadLog {}
 
 ```ts
 export interface MonadFileSystem {
-  getFilenames: (pattern: string) => App<Array<string>>
-  readFile: (path: string) => App<string>
-  writeFile: (path: string, content: string) => App<void>
-  existsFile: (path: string) => App<boolean>
-  clean: (pattern: string) => App<void>
+  readonly getFilenames: (pattern: string) => Eff<Array<string>>
+  readonly readFile: (path: string) => Eff<string>
+  readonly writeFile: (path: string, content: string) => Eff<void>
+  readonly existsFile: (path: string) => Eff<boolean>
+  readonly clean: (pattern: string) => Eff<void>
 }
 ```
 
@@ -54,14 +65,16 @@ export interface MonadFileSystem {
 
 ```ts
 export interface MonadLog {
-  log: (message: string) => App<void>
+  readonly info: (message: string) => Eff<void>
+  readonly log: (message: string) => Eff<void>
+  readonly debug: (message: string) => Eff<void>
 }
 ```
 
-# main (function)
+# main (constant)
 
 **Signature**
 
 ```ts
-export function main(M: MonadApp): App<void> { ... }
+export const main: App<void> = ...
 ```

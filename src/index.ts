@@ -7,6 +7,7 @@ import * as fs from 'fs-extra'
 import * as glob from 'glob'
 import * as rimraf from 'rimraf'
 import * as core from './core'
+import chalk from 'chalk'
 
 const monadApp: core.MonadApp = {
   ...TE.taskEither,
@@ -15,7 +16,9 @@ const monadApp: core.MonadApp = {
   writeFile: (path: string, content: string) => TE.rightIO(() => fs.outputFileSync(path, content)),
   existsFile: (path: string) => TE.rightIO(() => fs.existsSync(path)),
   clean: (pattern: string) => TE.rightIO(() => rimraf.sync(pattern)),
-  log: (message: string) => TE.rightIO(log(message))
+  info: (message: string) => TE.rightIO(log(chalk.bold.magenta(message))),
+  log: (message: string) => TE.rightIO(log(chalk.cyan(message))),
+  debug: (message: string) => TE.rightIO(log(chalk.gray(message)))
 }
 
 const exit = (code: 0 | 1): IO.IO<void> => () => process.exit(code)
@@ -30,7 +33,7 @@ function onLeft(e: string): T.Task<void> {
 }
 
 function onRight(): T.Task<void> {
-  return T.of(undefined)
+  return T.fromIO(log(chalk.bold.green('Docs generation succeeded!')))
 }
 
 export const main: T.Task<void> = pipe(

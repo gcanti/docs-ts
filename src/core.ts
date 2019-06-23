@@ -7,94 +7,105 @@ import * as markdown from './markdown'
 import * as E from 'fp-ts/lib/Either'
 import { spawnSync } from 'child_process'
 import { pipe } from 'fp-ts/lib/pipeable'
-import chalk from 'chalk'
+import * as RTE from 'fp-ts/lib/ReaderTaskEither'
 
-export interface App<A> extends TE.TaskEither<string, A> {}
+/**
+ * capabilities
+ */
+export interface Eff<A> extends TE.TaskEither<string, A> {}
 
 export interface MonadFileSystem {
-  getFilenames: (pattern: string) => App<Array<string>>
-  readFile: (path: string) => App<string>
-  writeFile: (path: string, content: string) => App<void>
-  existsFile: (path: string) => App<boolean>
-  clean: (pattern: string) => App<void>
+  readonly getFilenames: (pattern: string) => Eff<Array<string>>
+  readonly readFile: (path: string) => Eff<string>
+  readonly writeFile: (path: string, content: string) => Eff<void>
+  readonly existsFile: (path: string) => Eff<boolean>
+  readonly clean: (pattern: string) => Eff<void>
 }
 
 export interface MonadLog {
-  log: (message: string) => App<void>
+  readonly info: (message: string) => Eff<void>
+  readonly log: (message: string) => Eff<void>
+  readonly debug: (message: string) => Eff<void>
 }
 
-/**
- * App capabilities
- */
 export interface MonadApp extends MonadFileSystem, MonadLog {}
+
+/**
+ * App effect
+ */
+export interface App<A> extends RTE.ReaderTaskEither<MonadApp, string, A> {}
 
 const outDir = 'docs'
 const srcDir = 'src'
 
 interface PackageJSON {
-  name: string
-  homepage?: string
+  readonly name: string
+  readonly homepage?: string
 }
 
 interface File {
-  path: string
-  content: string
-  overwrite: boolean
+  readonly path: string
+  readonly content: string
+  readonly overwrite: boolean
 }
 
 const file = (path: string, content: string, overwrite: boolean): File => ({ path, content, overwrite })
 
 const traverse = A.array.traverse(TE.taskEither)
 
-function readFiles(M: MonadFileSystem, paths: Array<string>): App<Array<File>> {
-  return traverse(paths, path =>
-    pipe(
-      M.readFile(path),
-      TE.map(content => file(path, content, false))
+function readFiles(paths: Array<string>): App<Array<File>> {
+  return M =>
+    traverse(paths, path =>
+      pipe(
+        M.readFile(path),
+        TE.map(content => file(path, content, false))
+      )
     )
-  )
 }
 
-function writeFile(M: MonadApp, file: File): App<void> {
-  const writeFile = M.writeFile(file.path, file.content)
-  return pipe(
-    M.existsFile(file.path),
-    TE.chain(exists => {
-      if (exists) {
-        if (file.overwrite) {
+function writeFile(file: File): App<void> {
+  return M => {
+    const writeFile = M.writeFile(file.path, file.content)
+    return pipe(
+      M.existsFile(file.path),
+      TE.chain(exists => {
+        if (exists) {
+          if (file.overwrite) {
+            return pipe(
+              M.debug(`Overwriting file ${file.path}`),
+              TE.chain(() => writeFile)
+            )
+          } else {
+            return M.debug(`File ${file.path} already exists, skipping creation`)
+          }
+        } else {
           return pipe(
-            M.log(chalk.gray(`Overwriting file ${file.path}`)),
+            M.debug('Writing file ' + file.path),
             TE.chain(() => writeFile)
           )
-        } else {
-          return M.log(chalk.gray(`File ${file.path} already exists, skipping creation`))
         }
-      } else {
-        return pipe(
-          M.log(chalk.gray('Writing file ') + chalk.bold.gray(file.path)),
-          TE.chain(() => writeFile)
-        )
-      }
-    })
-  )
+      })
+    )
+  }
 }
 
-function writeFiles(M: MonadApp, files: Array<File>): App<void> {
-  return pipe(
-    traverse(files, file => writeFile(M, file)),
-    TE.map(() => undefined)
-  )
+function writeFiles(files: Array<File>): App<void> {
+  return M =>
+    pipe(
+      traverse(files, file => writeFile(file)(M)),
+      TE.map(() => undefined)
+    )
 }
 
-function getPackageJSON(M: MonadFileSystem & MonadLog): App<PackageJSON> {
-  return pipe(
+const getPackageJSON: App<PackageJSON> = M =>
+  pipe(
     M.readFile(path.join(process.cwd(), 'package.json')),
     TE.chain(s => {
       const json = JSON.parse(s)
       const name = json.name
       const homepage = json.homepage
       return pipe(
-        M.log(chalk.gray(`Project name detected: ${name}`)),
+        M.debug(`Project name detected: ${name}`),
         TE.map(() => ({
           name,
           homepage
@@ -102,37 +113,37 @@ function getPackageJSON(M: MonadFileSystem & MonadLog): App<PackageJSON> {
       )
     })
   )
-}
 
-function readSources(M: MonadApp): App<Array<File>> {
+const readSources: App<Array<File>> = M => {
   const srcPattern = path.join(srcDir, '**', '*.ts')
   return pipe(
     M.getFilenames(srcPattern),
     TE.map(paths => A.array.map(paths, path.normalize)),
     TE.chain(paths =>
       pipe(
-        M.log(chalk.bold.magenta(`${paths.length} modules found`)),
-        TE.chain(() => readFiles(M, paths))
+        M.info(`${paths.length} modules found`),
+        TE.chain(() => readFiles(paths)(M))
       )
     )
   )
 }
 
-function parseModules(M: MonadLog, files: Array<File>): App<Array<parser.Module>> {
-  return pipe(
-    M.log(chalk.cyan('Parsing modules...')),
-    TE.chain(() =>
-      TE.fromEither(
-        pipe(
-          parser.run(files),
-          E.mapLeft(errors => errors.join('\n'))
+function parseModules(files: Array<File>): App<Array<parser.Module>> {
+  return M =>
+    pipe(
+      M.log('Parsing modules...'),
+      TE.chain(() =>
+        TE.fromEither(
+          pipe(
+            parser.run(files),
+            E.mapLeft(errors => errors.join('\n'))
+          )
         )
       )
     )
-  )
 }
 
-const foldExamples = fold(A.getMonoid<File>())
+const foldFiles = fold(A.getMonoid<File>())
 
 function getExampleFiles(modules: Array<parser.Module>): Array<File> {
   return A.array.chain(modules, module => {
@@ -143,7 +154,7 @@ function getExampleFiles(modules: Array<parser.Module>): Array<File> {
       )
     }
     const methods = A.array.chain(module.classes, c =>
-      foldExamples([
+      foldFiles([
         A.array.chain(c.methods, getDocumentableExamples),
         A.array.chain(c.staticMethods, getDocumentableExamples)
       ])
@@ -153,7 +164,7 @@ function getExampleFiles(modules: Array<parser.Module>): Array<File> {
     const constants = A.array.chain(module.constants, getDocumentableExamples)
     const functions = A.array.chain(module.functions, getDocumentableExamples)
 
-    return foldExamples([methods, interfaces, typeAliases, constants, functions])
+    return foldFiles([methods, interfaces, typeAliases, constants, functions])
   })
 }
 
@@ -179,34 +190,36 @@ function getExampleIndex(examples: Array<File>): File {
   return file(path.join(outDir, 'examples', 'index.ts'), content, true)
 }
 
-function typecheck(M: MonadApp, modules: Array<parser.Module>, projectName: string): App<Array<parser.Module>> {
-  const examplePattern = path.join(outDir, 'examples')
-  const clean = pipe(
-    M.log(chalk.gray(`Clean up examples: deleting ${examplePattern}...`)),
-    TE.chain(() => M.clean(examplePattern))
-  )
-  const examples = handleImports(getExampleFiles(modules), projectName)
-  if (examples.length === 0) {
+function typecheck(projectName: string): (modules: Array<parser.Module>) => App<void> {
+  return modules => M => {
+    const examplePattern = path.join(outDir, 'examples')
+
+    const clean = pipe(
+      M.debug(`Clean up examples: deleting ${examplePattern}...`),
+      TE.chain(() => M.clean(examplePattern))
+    )
+
+    const examples = handleImports(getExampleFiles(modules), projectName)
+
+    if (examples.length === 0) {
+      return clean
+    }
+
+    const files = [getExampleIndex(examples), ...examples]
+
+    const typecheckExamples: Eff<void> = TE.fromIOEither(() => {
+      const { status } = spawnSync('ts-node', [path.join(outDir, 'examples', 'index.ts')], { stdio: 'inherit' })
+      return status === 0 ? E.right(undefined) : E.left('Type checking error')
+    })
+
     return pipe(
-      clean,
-      TE.map(() => modules)
+      M.log(`Writing examples...`),
+      TE.chain(() => writeFiles(files)(M)),
+      TE.chain(() => M.log(`Type checking examples...`)),
+      TE.chain(() => typecheckExamples),
+      TE.chain(() => clean)
     )
   }
-  const files = [getExampleIndex(examples), ...examples]
-
-  const typecheckExamples: App<void> = TE.fromIOEither(() => {
-    const { status } = spawnSync('ts-node', [path.join(outDir, 'examples', 'index.ts')], { stdio: 'inherit' })
-    return status === 0 ? E.right(undefined) : E.left('Type checking error')
-  })
-
-  return pipe(
-    M.log(chalk.cyan(`Writing examples...`)),
-    TE.chain(() => writeFiles(M, files)),
-    TE.chain(() => M.log(chalk.cyan(`Type checking examples...`))),
-    TE.chain(() => typecheckExamples),
-    TE.chain(() => clean),
-    TE.map(() => modules)
-  )
 }
 
 const home: File = file(
@@ -260,41 +273,40 @@ function getModuleMarkdownFiles(modules: Array<parser.Module>): Array<File> {
   return modules.map(module => file(getMarkdownOutpuPath(module), markdown.printModule(module, counter++), true))
 }
 
-function getMarkdownFiles(modules: Array<parser.Module>, projectName: string, homepage: string): Array<File> {
-  return [home, modulesIndex, getConfigYML(projectName, homepage), ...getModuleMarkdownFiles(modules)]
+function getMarkdownFiles(projectName: string, homepage: string): (modules: Array<parser.Module>) => Array<File> {
+  return modules => [home, modulesIndex, getConfigYML(projectName, homepage), ...getModuleMarkdownFiles(modules)]
 }
 
-function writeMarkdownFiles(M: MonadApp, files: Array<File>): App<void> {
-  const outPattern = path.join(outDir, '**/*.ts.md')
-  return pipe(
-    M.log(chalk.cyan(`Writing markdown...`)),
-    TE.chain(() => M.log(chalk.gray(`Clean up docs folder: deleting ${outPattern}...`))),
-    TE.chain(() => M.clean(outPattern)),
-    TE.chain(() => writeFiles(M, files))
-  )
+function writeMarkdownFiles(files: Array<File>): App<void> {
+  return M => {
+    const outPattern = path.join(outDir, '**/*.ts.md')
+    return pipe(
+      M.log(`Writing markdown...`),
+      TE.chain(() => M.debug(`Clean up docs folder: deleting ${outPattern}...`)),
+      TE.chain(() => M.clean(outPattern)),
+      TE.chain(() => writeFiles(files)(M))
+    )
+  }
 }
 
-function checkHomepage(pkg: PackageJSON): App<string> {
-  return pkg.homepage === undefined ? TE.left('Missing homepage in package.json') : TE.right(pkg.homepage)
+function checkHomepage(pkg: PackageJSON): E.Either<string, string> {
+  return pkg.homepage === undefined ? E.left('Missing homepage in package.json') : E.right(pkg.homepage)
 }
 
-export function main(M: MonadApp): App<void> {
-  return pipe(
-    getPackageJSON(M),
-    TE.chain(pkg =>
-      pipe(
-        checkHomepage(pkg),
-        TE.chain(homepage =>
-          pipe(
-            readSources(M),
-            TE.chain(modules => parseModules(M, modules)),
-            TE.chain(modules => typecheck(M, modules, pkg.name)),
-            TE.map(modules => getMarkdownFiles(modules, pkg.name, homepage)),
-            TE.chain(markdownFiles => writeMarkdownFiles(M, markdownFiles)),
-            TE.chain(() => M.log(chalk.bold.green('Docs generation succeeded!')))
-          )
+export const main: App<void> = pipe(
+  getPackageJSON,
+  RTE.chain(pkg =>
+    pipe(
+      RTE.fromEither(checkHomepage(pkg)),
+      RTE.chain(homepage =>
+        pipe(
+          readSources,
+          RTE.chain(parseModules),
+          RTE.chainFirst(typecheck(pkg.name)),
+          RTE.map(getMarkdownFiles(pkg.name, homepage)),
+          RTE.chain(writeMarkdownFiles)
         )
       )
     )
   )
-}
+)

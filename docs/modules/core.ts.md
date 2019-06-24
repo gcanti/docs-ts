@@ -8,23 +8,31 @@ parent: Modules
 
 <h2 class="text-delta">Table of contents</h2>
 
-- [App (interface)](#app-interface)
+- [AppEff (interface)](#appeff-interface)
+- [Capabilities (interface)](#capabilities-interface)
 - [Eff (interface)](#eff-interface)
-- [MonadApp (interface)](#monadapp-interface)
 - [MonadFileSystem (interface)](#monadfilesystem-interface)
 - [MonadLog (interface)](#monadlog-interface)
 - [main (constant)](#main-constant)
 
 ---
 
-# App (interface)
+# AppEff (interface)
 
 App effect
 
 **Signature**
 
 ```ts
-export interface App<A> extends RTE.ReaderTaskEither<MonadApp, string, A> {}
+export interface AppEff<A> extends RTE.ReaderTaskEither<Capabilities, string, A> {}
+```
+
+# Capabilities (interface)
+
+**Signature**
+
+```ts
+export interface Capabilities extends MonadFileSystem, MonadLog {}
 ```
 
 # Eff (interface)
@@ -35,14 +43,6 @@ capabilities
 
 ```ts
 export interface Eff<A> extends TE.TaskEither<string, A> {}
-```
-
-# MonadApp (interface)
-
-**Signature**
-
-```ts
-export interface MonadApp extends MonadFileSystem, MonadLog {}
 ```
 
 # MonadFileSystem (interface)
@@ -76,5 +76,5 @@ export interface MonadLog {
 **Signature**
 
 ```ts
-export const main: App<void> = ...
+export const main: AppEff<void> = ...
 ```

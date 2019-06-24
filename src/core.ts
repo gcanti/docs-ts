@@ -8,6 +8,7 @@ import * as E from 'fp-ts/lib/Either'
 import { spawnSync } from 'child_process'
 import { pipe } from 'fp-ts/lib/pipeable'
 import * as RTE from 'fp-ts/lib/ReaderTaskEither'
+import * as R from 'fp-ts/lib/Reader'
 
 /**
  * capabilities
@@ -28,12 +29,12 @@ export interface MonadLog {
   readonly debug: (message: string) => Eff<void>
 }
 
-export interface MonadApp extends MonadFileSystem, MonadLog {}
+export interface Capabilities extends MonadFileSystem, MonadLog {}
 
 /**
  * App effect
  */
-export interface App<A> extends RTE.ReaderTaskEither<MonadApp, string, A> {}
+export interface AppEff<A> extends RTE.ReaderTaskEither<Capabilities, string, A> {}
 
 const outDir = 'docs'
 const srcDir = 'src'
@@ -49,89 +50,88 @@ interface File {
   readonly overwrite: boolean
 }
 
-const file = (path: string, content: string, overwrite: boolean): File => ({ path, content, overwrite })
+function file(path: string, content: string, overwrite: boolean): File {
+  return {
+    path,
+    content,
+    overwrite
+  }
+}
 
-const traverse = A.array.traverse(TE.taskEither)
-
-function readFiles(paths: Array<string>): App<Array<File>> {
-  return M =>
-    traverse(paths, path =>
-      pipe(
-        M.readFile(path),
-        TE.map(content => file(path, content, false))
-      )
+function readFile(path: string): AppEff<File> {
+  return C =>
+    pipe(
+      C.readFile(path),
+      TE.map(content => file(path, content, false))
     )
 }
 
-function writeFile(file: File): App<void> {
-  return M => {
-    const writeFile = M.writeFile(file.path, file.content)
+function readFiles(paths: Array<string>): AppEff<Array<File>> {
+  return A.array.traverse(RTE.readerTaskEither)(paths, readFile)
+}
+
+function writeFile(file: File): AppEff<void> {
+  return C => {
+    const overwrite = pipe(
+      C.debug(`Overwriting file ${file.path}`),
+      TE.chain(() => C.writeFile(file.path, file.content))
+    )
+
+    const skip = C.debug(`File ${file.path} already exists, skipping creation`)
+
+    const write = pipe(
+      C.debug('Writing file ' + file.path),
+      TE.chain(() => C.writeFile(file.path, file.content))
+    )
+
     return pipe(
-      M.existsFile(file.path),
-      TE.chain(exists => {
-        if (exists) {
-          if (file.overwrite) {
-            return pipe(
-              M.debug(`Overwriting file ${file.path}`),
-              TE.chain(() => writeFile)
-            )
-          } else {
-            return M.debug(`File ${file.path} already exists, skipping creation`)
-          }
-        } else {
-          return pipe(
-            M.debug('Writing file ' + file.path),
-            TE.chain(() => writeFile)
-          )
-        }
-      })
+      C.existsFile(file.path),
+      TE.chain(exists => (exists ? (file.overwrite ? overwrite : skip) : write))
     )
   }
 }
 
-function writeFiles(files: Array<File>): App<void> {
-  return M =>
-    pipe(
-      traverse(files, file => writeFile(file)(M)),
-      TE.map(() => undefined)
-    )
+function writeFiles(files: Array<File>): AppEff<void> {
+  return pipe(
+    A.array.traverse(RTE.readerTaskEither)(files, writeFile),
+    RTE.map(() => undefined)
+  )
 }
 
-const getPackageJSON: App<PackageJSON> = M =>
+const getPackageJSON: AppEff<PackageJSON> = C =>
   pipe(
-    M.readFile(path.join(process.cwd(), 'package.json')),
+    C.readFile(path.join(process.cwd(), 'package.json')),
     TE.chain(s => {
       const json = JSON.parse(s)
       const name = json.name
-      const homepage = json.homepage
       return pipe(
-        M.debug(`Project name detected: ${name}`),
+        C.debug(`Project name detected: ${name}`),
         TE.map(() => ({
           name,
-          homepage
+          homepage: json.homepage
         }))
       )
     })
   )
 
-const readSources: App<Array<File>> = M => {
-  const srcPattern = path.join(srcDir, '**', '*.ts')
-  return pipe(
-    M.getFilenames(srcPattern),
-    TE.map(paths => A.array.map(paths, path.normalize)),
-    TE.chain(paths =>
-      pipe(
-        M.info(`${paths.length} modules found`),
-        TE.chain(() => readFiles(paths)(M))
-      )
-    )
-  )
-}
+const srcPattern = path.join(srcDir, '**', '*.ts')
 
-function parseModules(files: Array<File>): App<Array<parser.Module>> {
-  return M =>
+const getSrcPaths: AppEff<Array<string>> = C =>
+  pipe(
+    C.getFilenames(srcPattern),
+    TE.map(paths => A.array.map(paths, path.normalize)),
+    TE.chainFirst(paths => C.info(`${paths.length} modules found`))
+  )
+
+const readSources: AppEff<Array<File>> = pipe(
+  getSrcPaths,
+  RTE.chain(readFiles)
+)
+
+function parseModules(files: Array<File>): AppEff<Array<parser.Module>> {
+  return C =>
     pipe(
-      M.log('Parsing modules...'),
+      C.log('Parsing modules...'),
       TE.chain(() =>
         TE.fromEither(
           pipe(
@@ -190,35 +190,47 @@ function getExampleIndex(examples: Array<File>): File {
   return file(path.join(outDir, 'examples', 'index.ts'), content, true)
 }
 
-function typecheck(projectName: string): (modules: Array<parser.Module>) => App<void> {
-  return modules => M => {
-    const examplePattern = path.join(outDir, 'examples')
+const examplePattern = path.join(outDir, 'examples')
 
-    const clean = pipe(
-      M.debug(`Clean up examples: deleting ${examplePattern}...`),
-      TE.chain(() => M.clean(examplePattern))
+const cleanExamples: AppEff<void> = C =>
+  pipe(
+    C.debug(`Clean up examples: deleting ${examplePattern}...`),
+    TE.chain(() => C.clean(examplePattern))
+  )
+
+const spawnTsNode: AppEff<void> = C =>
+  pipe(
+    C.log(`Type checking examples...`),
+    TE.chain(() =>
+      TE.fromIOEither(() => {
+        const { status } = spawnSync('ts-node', [path.join(outDir, 'examples', 'index.ts')], { stdio: 'inherit' })
+        return status === 0 ? E.right(undefined) : E.left('Type checking error')
+      })
     )
+  )
 
+function writeExamples(examples: Array<File>): AppEff<void> {
+  return pipe(
+    RTE.ask<Capabilities>(),
+    RTE.chain(C =>
+      pipe(
+        R.reader.of(C.log(`Writing examples...`)),
+        RTE.chain(() => writeFiles([getExampleIndex(examples), ...examples]))
+      )
+    )
+  )
+}
+
+function typecheckExamples(projectName: string): (modules: Array<parser.Module>) => AppEff<void> {
+  return modules => {
     const examples = handleImports(getExampleFiles(modules), projectName)
-
-    if (examples.length === 0) {
-      return clean
-    }
-
-    const files = [getExampleIndex(examples), ...examples]
-
-    const typecheckExamples: Eff<void> = TE.fromIOEither(() => {
-      const { status } = spawnSync('ts-node', [path.join(outDir, 'examples', 'index.ts')], { stdio: 'inherit' })
-      return status === 0 ? E.right(undefined) : E.left('Type checking error')
-    })
-
-    return pipe(
-      M.log(`Writing examples...`),
-      TE.chain(() => writeFiles(files)(M)),
-      TE.chain(() => M.log(`Type checking examples...`)),
-      TE.chain(() => typecheckExamples),
-      TE.chain(() => clean)
-    )
+    return examples.length === 0
+      ? cleanExamples
+      : pipe(
+          writeExamples(examples),
+          RTE.chain(() => spawnTsNode),
+          RTE.chain(() => cleanExamples)
+        )
   }
 }
 
@@ -277,23 +289,27 @@ function getMarkdownFiles(projectName: string, homepage: string): (modules: Arra
   return modules => [home, modulesIndex, getConfigYML(projectName, homepage), ...getModuleMarkdownFiles(modules)]
 }
 
-function writeMarkdownFiles(files: Array<File>): App<void> {
-  return M => {
-    const outPattern = path.join(outDir, '**/*.ts.md')
-    return pipe(
-      M.log(`Writing markdown...`),
-      TE.chain(() => M.debug(`Clean up docs folder: deleting ${outPattern}...`)),
-      TE.chain(() => M.clean(outPattern)),
-      TE.chain(() => writeFiles(files)(M))
+const outPattern = path.join(outDir, '**/*.ts.md')
+
+function writeMarkdownFiles(files: Array<File>): AppEff<void> {
+  const cleanOut: AppEff<void> = C =>
+    pipe(
+      C.log(`Writing markdown...`),
+      TE.chain(() => C.debug(`Clean up docs folder: deleting ${outPattern}...`)),
+      TE.chain(() => C.clean(outPattern))
     )
-  }
+
+  return pipe(
+    cleanOut,
+    RTE.chain(() => writeFiles(files))
+  )
 }
 
 function checkHomepage(pkg: PackageJSON): E.Either<string, string> {
   return pkg.homepage === undefined ? E.left('Missing homepage in package.json') : E.right(pkg.homepage)
 }
 
-export const main: App<void> = pipe(
+export const main: AppEff<void> = pipe(
   getPackageJSON,
   RTE.chain(pkg =>
     pipe(
@@ -302,7 +318,7 @@ export const main: App<void> = pipe(
         pipe(
           readSources,
           RTE.chain(parseModules),
-          RTE.chainFirst(typecheck(pkg.name)),
+          RTE.chainFirst(typecheckExamples(pkg.name)),
           RTE.map(getMarkdownFiles(pkg.name, homepage)),
           RTE.chain(writeMarkdownFiles)
         )

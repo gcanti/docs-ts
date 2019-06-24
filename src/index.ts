@@ -1,3 +1,4 @@
+import chalk from 'chalk'
 import { log } from 'fp-ts/lib/Console'
 import * as IO from 'fp-ts/lib/IO'
 import { pipe } from 'fp-ts/lib/pipeable'
@@ -7,9 +8,8 @@ import * as fs from 'fs-extra'
 import * as glob from 'glob'
 import * as rimraf from 'rimraf'
 import * as core from './core'
-import chalk from 'chalk'
 
-const monadApp: core.MonadApp = {
+const capabilities: core.Capabilities = {
   ...TE.taskEither,
   getFilenames: (pattern: string) => TE.rightIO(() => glob.sync(pattern)),
   readFile: (path: string) => TE.rightIO(() => fs.readFileSync(path, { encoding: 'utf8' })),
@@ -37,6 +37,6 @@ function onRight(): T.Task<void> {
 }
 
 export const main: T.Task<void> = pipe(
-  core.main(monadApp),
+  core.main(capabilities),
   TE.fold(onLeft, onRight)
 )

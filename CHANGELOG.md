@@ -17,6 +17,9 @@
 
 upgrade to `fp-ts@2.0.0-rc.7` (@gcanti)
 
+- **Bug Fix**
+  - fix static methods heading (@gcanti)
+
 # 0.0.3
 
 upgrade to `fp-ts@1.18.x` (@gcanti)

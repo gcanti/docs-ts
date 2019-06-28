@@ -16,6 +16,7 @@
     "test": "npm run lint && npm run prettier && npm run jest && npm run docs",
     "clean": "rimraf rm -rf lib/*",
     "build": "npm run clean && tsc",
+    "prepublish": "npm run build",
     "mocha": "mocha -r ts-node/register test/*.ts",
     "doctoc": "doctoc docs",
     "docs": "ts-node docs.ts"

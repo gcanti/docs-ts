@@ -68,7 +68,7 @@ function printFunction(f: Func): string {
 }
 
 function printStaticMethod(f: Func): string {
-  let s = h1(handleDeprecated(f.name, f.deprecated) + ' (static method)')
+  let s = h2(handleDeprecated(f.name, f.deprecated) + ' (static method)')
   s += printDescription(f.description)
   s += printSignatures(f.signatures)
   s += printExamples(f.examples)

@@ -15,11 +15,11 @@
 
 # 0.1.0
 
-upgrade to `fp-ts@2.0.0-rc.7`
+upgrade to `fp-ts@2.0.0-rc.7` (@gcanti)
 
 # 0.0.3
 
-upgrade to `fp-ts@1.18.x`
+upgrade to `fp-ts@1.18.x` (@gcanti)
 
 # 0.0.2
 

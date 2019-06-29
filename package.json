@@ -52,9 +52,9 @@
     "@types/prettier": "^1.16.1",
     "@types/rimraf": "^2.0.2",
     "doctoc": "^1.4.0",
-    "jest": "^23.6.0",
+    "jest": "^24.8.0",
     "mocha": "^5.2.0",
-    "ts-jest": "^23.10.5",
+    "ts-jest": "^24.0.2",
     "tslint": "^5.12.1",
     "tslint-config-standard": "^8.0.1",
     "typescript": "^3.5.2"

@@ -9,70 +9,113 @@ import * as O from 'fp-ts/lib/Option'
 import * as E from 'fp-ts/lib/Either'
 import { contramap, Ord, ordString } from 'fp-ts/lib/Ord'
 import * as path from 'path'
-import Ast, * as ast from 'ts-simple-ast'
+// import Ast, * as ast from 'ts-simple-ast'
 import { pipe } from 'fp-ts/lib/pipeable'
+import * as ast from 'ts-morph'
 
+/**
+ * @since 0.2.0
+ */
 export type Parser<A> = E.Either<Array<string>, A>
 
+/**
+ * @since 0.2.0
+ */
 export interface File {
   path: string
   content: string
 }
 
+/**
+ * @since 0.2.0
+ */
 export type Example = string
 
+/**
+ * @since 0.2.0
+ */
 export function example(code: string): Example {
   return code
 }
 
+/**
+ * @since 0.2.0
+ */
 export interface Documentable {
   readonly name: string
   readonly description: O.Option<string>
-  readonly since: O.Option<string>
+  readonly since: string
   readonly deprecated: boolean
   readonly examples: Array<Example>
 }
 
+/**
+ * @since 0.2.0
+ */
 export function documentable(
   name: string,
   description: O.Option<string>,
-  since: O.Option<string>,
+  since: string,
   deprecated: boolean,
   examples: Array<Example>
 ): Documentable {
   return { name, description, since, deprecated, examples }
 }
 
+/**
+ * @since 0.2.0
+ */
 export interface Interface extends Documentable {
   signature: string
 }
 
+/**
+ * @since 0.2.0
+ */
 export function interface_(documentable: Documentable, signature: string): Interface {
   return { ...documentable, signature }
 }
 
+/**
+ * @since 0.2.0
+ */
 export interface Func extends Documentable {
   readonly signatures: Array<string>
 }
 
+/**
+ * @since 0.2.0
+ */
 export function func(documentable: Documentable, signatures: Array<string>): Func {
   return { ...documentable, signatures }
 }
 
+/**
+ * @since 0.2.0
+ */
 export interface Method extends Documentable {
   readonly signatures: Array<string>
 }
 
+/**
+ * @since 0.2.0
+ */
 export function method(documentable: Documentable, signatures: Array<string>): Method {
   return { ...documentable, signatures }
 }
 
+/**
+ * @since 0.2.0
+ */
 export interface Class extends Documentable {
   readonly signature: string
   readonly methods: Array<Method>
   readonly staticMethods: Array<Method>
 }
 
+/**
+ * @since 0.2.0
+ */
 export function class_(
   documentable: Documentable,
   signature: string,
@@ -82,30 +125,51 @@ export function class_(
   return { ...documentable, signature, methods, staticMethods }
 }
 
+/**
+ * @since 0.2.0
+ */
 export interface TypeAlias extends Documentable {
   readonly signature: string
 }
 
+/**
+ * @since 0.2.0
+ */
 export function typeAlias(documentable: Documentable, signature: string): TypeAlias {
   return { ...documentable, signature }
 }
 
+/**
+ * @since 0.2.0
+ */
 export interface Constant extends Documentable {
   readonly signature: string
 }
 
+/**
+ * @since 0.2.0
+ */
 export function constant(documentable: Documentable, signature: string): Constant {
   return { ...documentable, signature }
 }
 
+/**
+ * @since 0.2.0
+ */
 export interface Export extends Documentable {
   readonly signature: string
 }
 
+/**
+ * @since 0.2.0
+ */
 export function export_(documentable: Documentable, signature: string): Export {
   return { ...documentable, signature }
 }
 
+/**
+ * @since 0.2.0
+ */
 export interface Module {
   readonly path: Array<string>
   readonly description: O.Option<string>
@@ -118,6 +182,9 @@ export interface Module {
   readonly deprecated: boolean
 }
 
+/**
+ * @since 0.2.0
+ */
 export function module(
   path: Array<string>,
   description: O.Option<string>,
@@ -141,22 +208,11 @@ const sortModules = A.sort(ordModule)
 
 const monoidFailure = A.getMonoid<string>()
 
-export const monadParser = E.getValidation(monoidFailure)
+const monadParser = E.getValidation(monoidFailure)
 
 const traverse = A.array.traverse(monadParser)
 
-export function run(files: Array<File>): Parser<Array<Module>> {
-  return pipe(
-    traverse(files, file => parse(file.path.split(path.sep), file.content)),
-    E.map(modules => sortModules(modules.filter(module => !module.deprecated)))
-  )
-}
-
-export function getSourceFile(name: string, source: string): ast.SourceFile {
-  return new Ast().createSourceFile(`${name}.ts`, source)
-}
-
-export function getModuleName(p: Array<string>): string {
+function getModuleName(p: Array<string>): string {
   return path.parse(p[p.length - 1]).name
 }
 
@@ -227,13 +283,25 @@ function getAnnotationInfo(
   }
 }
 
+function ensureSinceTag<A>(name: string, since: O.Option<string>, f: (since: string) => A): Parser<A> {
+  return pipe(
+    since,
+    O.fold(() => E.left([`missing @since tag in ${name} documentation`]), since => E.right(f(since)))
+  )
+}
+
 function parseInterfaceDeclaration(id: ast.InterfaceDeclaration): Parser<Interface> {
   const annotation = getAnnotation(id.getJsDocs())
   const { description, since, deprecated, examples } = getAnnotationInfo(annotation)
   const signature = id.getText()
-  return E.right(interface_(documentable(id.getName(), description, since, deprecated, examples), signature))
+  return ensureSinceTag(id.getName(), since, since =>
+    interface_(documentable(id.getName(), description, since, deprecated, examples), signature)
+  )
 }
 
+/**
+ * @since 0.2.0
+ */
 export function getInterfaces(sourceFile: ast.SourceFile): Parser<Array<Interface>> {
   const exportedInterfaceDeclarations = sourceFile.getInterfaces().filter(id => id.isExported())
   return pipe(
@@ -297,7 +365,9 @@ function parseFunctionDeclaration(moduleName: string, fd: ast.FunctionDeclaratio
   if (name === undefined || name.trim() === '') {
     return E.left([`Missing function name in module ${moduleName}`])
   } else {
-    return E.right(func(documentable(name, description, since, deprecated, examples), signatures))
+    return ensureSinceTag(name, since, since =>
+      func(documentable(name, description, since, deprecated, examples), signatures)
+    )
   }
 }
 
@@ -307,7 +377,9 @@ function parseFunctionVariableDeclaration(vd: ast.VariableDeclaration): Parser<F
   const { description, since, deprecated, examples } = getAnnotationInfo(annotation)
   const signatures = [getFunctionVariableDeclarationSignature(vd)]
   const name = vd.getName()
-  return E.right(func(documentable(name, description, since, deprecated, examples), signatures))
+  return ensureSinceTag(name, since, since =>
+    func(documentable(name, description, since, deprecated, examples), signatures)
+  )
 }
 
 const byName = pipe(
@@ -315,6 +387,9 @@ const byName = pipe(
   contramap((x: { name: string }) => x.name)
 )
 
+/**
+ * @since 0.2.0
+ */
 export function getFunctions(moduleName: string, sourceFile: ast.SourceFile): Parser<Array<Func>> {
   const exportedFunctionDeclarations = sourceFile
     .getFunctions()
@@ -352,9 +427,14 @@ function parseTypeAliasDeclaration(ta: ast.TypeAliasDeclaration): Parser<TypeAli
   const { description, since, deprecated, examples } = getAnnotationInfo(annotation)
   const signature = ta.getText()
   const name = ta.getName()
-  return E.right(typeAlias(documentable(name, description, since, deprecated, examples), signature))
+  return ensureSinceTag(name, since, since =>
+    typeAlias(documentable(name, description, since, deprecated, examples), signature)
+  )
 }
 
+/**
+ * @since 0.2.0
+ */
 export function getTypeAliases(sourceFile: ast.SourceFile): Parser<Array<TypeAlias>> {
   const exportedTypeAliasDeclarations = sourceFile
     .getTypeAliases()
@@ -366,10 +446,21 @@ export function getTypeAliases(sourceFile: ast.SourceFile): Parser<Array<TypeAli
   )
 }
 
+/**
+ * @internal
+ */
+export function stripImportTypes(s: string): string {
+  return s.replace(/import\("((?!").)*"\)./g, '')
+}
+
 function getConstantVariableDeclarationSignature(vd: ast.VariableDeclaration): string {
   const text = vd.getText()
   const end = text.indexOf(' = ')
-  return `export const ${text.substring(0, end)} = ...`
+  let name = text.substring(0, end)
+  if (name.indexOf(':') === -1) {
+    name += ': ' + stripImportTypes(vd.getType().getText(vd))
+  }
+  return `export const ${name} = ...`
 }
 
 function parseConstantVariableDeclaration(vd: ast.VariableDeclaration): Parser<Constant> {
@@ -378,9 +469,14 @@ function parseConstantVariableDeclaration(vd: ast.VariableDeclaration): Parser<C
   const { description, since, deprecated, examples } = getAnnotationInfo(annotation)
   const signature = getConstantVariableDeclarationSignature(vd)
   const name = vd.getName()
-  return E.right(constant(documentable(name, description, since, deprecated, examples), signature))
+  return ensureSinceTag(name, since, since =>
+    constant(documentable(name, description, since, deprecated, examples), signature)
+  )
 }
 
+/**
+ * @since 0.2.0
+ */
 export function getConstants(sourceFile: ast.SourceFile): Parser<Array<Constant>> {
   const exportedVariableDeclarations = sourceFile.getVariableDeclarations().filter(vd => {
     const vs: ast.VariableStatement = vd.getParent().getParent()
@@ -400,26 +496,34 @@ export function getConstants(sourceFile: ast.SourceFile): Parser<Array<Constant>
   )
 }
 
-function parseExportDeclaration(ed: ast.ExportDeclaration): Parser<Export> {
-  const signature = ed.getText()
-  const specifier = ed.getNamedExports()[0]
-  const name = specifier.compilerNode.name.text
-  const comments = ed.getLeadingCommentRanges()
-  if (comments.length > 0) {
-    const text = comments[0].getText()
-    const annotation = doctrine.parse(text, { unwrap: true })
-    const { description, since, deprecated, examples } = getAnnotationInfo(annotation)
-    return E.right(export_(documentable(name, description, since, deprecated, examples), signature))
-  } else {
-    return E.right(export_(documentable(name, O.none, O.none, false, []), signature))
-  }
+function parseExportSpecifier(es: ast.ExportSpecifier): Parser<Export> {
+  const signature = stripImportTypes(es.getType().getText(es))
+  const name = es.compilerNode.name.text
+  return pipe(
+    E.fromOption(() => [`missing ${name} documentation`])(A.head(es.getLeadingCommentRanges())),
+    E.chain(commentRange => {
+      const text = commentRange.getText()
+      const annotation = doctrine.parse(text, { unwrap: true })
+      const { description, since, deprecated, examples } = getAnnotationInfo(annotation)
+      return ensureSinceTag(name, since, since =>
+        export_(documentable(name, description, since, deprecated, examples), signature)
+      )
+    })
+  )
 }
 
+function parseExportDeclaration(ed: ast.ExportDeclaration): Parser<Array<Export>> {
+  return traverse(ed.getNamedExports(), parseExportSpecifier)
+}
+
+/**
+ * @since 0.2.0
+ */
 export function getExports(sourceFile: ast.SourceFile): Parser<Array<Export>> {
-  const exportDeclarations = sourceFile.getExportDeclarations().filter(ed => ed.getNamedExports().length === 1)
+  const exportDeclarations = sourceFile.getExportDeclarations()
   return pipe(
     traverse(exportDeclarations, parseExportDeclaration),
-    E.map(exports => exports.sort(byName.compare))
+    E.map(exports => A.flatten(exports).sort(byName.compare))
   )
 }
 
@@ -471,7 +575,9 @@ function parseMethod(md: ast.MethodDeclaration): Parser<Method> {
           ...overloads.slice(0, overloads.length - 1).map(md => md.getText()),
           getMethodSignature(overloads[overloads.length - 1])
         ]
-  return E.right(method(documentable(name, description, since, deprecated, examples), signatures))
+  return ensureSinceTag(name, since, since =>
+    method(documentable(name, description, since, deprecated, examples), signatures)
+  )
 }
 
 function parseClass(moduleName: string, c: ast.ClassDeclaration): Parser<Class> {
@@ -482,18 +588,24 @@ function parseClass(moduleName: string, c: ast.ClassDeclaration): Parser<Class> 
     const annotation = getAnnotation(c.getJsDocs())
     const { description, since, deprecated, examples } = getAnnotationInfo(annotation)
     const signature = getClassDeclarationSignature(c)
+    if (O.isNone(since)) {
+      return E.left([`missing @since tag in ${name} documentation`])
+    }
     return pipe(
       sequenceS(E.either)({
         methods: traverse(c.getInstanceMethods(), parseMethod),
         staticMethods: traverse(c.getStaticMethods(), parseMethod)
       }),
       E.map(({ methods, staticMethods }) =>
-        class_(documentable(name, description, since, deprecated, examples), signature, methods, staticMethods)
+        class_(documentable(name, description, since.value, deprecated, examples), signature, methods, staticMethods)
       )
     )
   }
 }
 
+/**
+ * @since 0.2.0
+ */
 export function getClasses(moduleName: string, sourceFile: ast.SourceFile): Parser<Array<Class>> {
   const exportedClasses = sourceFile.getClasses().filter(c => c.isExported())
 
@@ -503,6 +615,9 @@ export function getClasses(moduleName: string, sourceFile: ast.SourceFile): Pars
   )
 }
 
+/**
+ * @since 0.2.0
+ */
 export function getModuleInfo(sourceFile: ast.SourceFile): { description: O.Option<string>; deprecated: boolean } {
   const x = sourceFile.getStatements()
   if (x.length > 0) {
@@ -523,9 +638,8 @@ export function getModuleInfo(sourceFile: ast.SourceFile): { description: O.Opti
   }
 }
 
-export function parse(path: Array<string>, source: string): Parser<Module> {
+function parse(path: Array<string>, sourceFile: ast.SourceFile): Parser<Module> {
   const moduleName = getModuleName(path)
-  const sourceFile = getSourceFile(moduleName, source)
   return pipe(
     sequenceS(monadParser)({
       interfaces: getInterfaces(sourceFile),
@@ -539,5 +653,22 @@ export function parse(path: Array<string>, source: string): Parser<Module> {
       const { description, deprecated } = getModuleInfo(sourceFile)
       return module(path, description, interfaces, typeAliases, functions, classes, constants, exports, deprecated)
     })
+  )
+}
+
+/**
+ * @since 0.2.0
+ */
+export function run(files: Array<File>): Parser<Array<Module>> {
+  const project = new ast.Project()
+  files.forEach(file => {
+    project.addExistingSourceFile(file.path)
+  })
+  return pipe(
+    traverse(files, file => {
+      const sourceFile = project.getSourceFile(file.path)!
+      return parse(file.path.split(path.sep), sourceFile)
+    }),
+    E.map(modules => sortModules(modules.filter(module => !module.deprecated)))
   )
 }

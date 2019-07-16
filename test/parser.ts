@@ -4,28 +4,53 @@ import {
   getClasses,
   getFunctions,
   getInterfaces,
-  getSourceFile,
   getTypeAliases,
   getConstants,
   getModuleInfo,
-  getExports
+  getExports,
+  stripImportTypes
 } from '../src/parser'
 import { right, left } from 'fp-ts/lib/Either'
+import * as ast from 'ts-morph'
+
+const project = new ast.Project()
+
+let counter = 0
+
+function getTestSourceFile(source: string): ast.SourceFile {
+  return project.createSourceFile(`test${counter++}.ts`, source)
+}
+
+describe('stripImportTypes', () => {
+  it('should strip import types', () => {
+    assert.strictEqual(
+      stripImportTypes(
+        '{ <E, A, B>(refinement: import("/Users/giulio/Documents/Projects/github/fp-ts/src/function").Refinement<A, B>, onFalse: (a: A) => E): (ma: Either<E, A>) => Either<E, B>; <E, A>(predicate: Predicate<A>, onFalse: (a: A) => E): (ma: Either<E, A>) => Either<E, A>; }'
+      ),
+      '{ <E, A, B>(refinement: Refinement<A, B>, onFalse: (a: A) => E): (ma: Either<E, A>) => Either<E, B>; <E, A>(predicate: Predicate<A>, onFalse: (a: A) => E): (ma: Either<E, A>) => Either<E, A>; }'
+    )
+    assert.strictEqual(
+      stripImportTypes(
+        '{ <A, B>(refinementWithIndex: import("/Users/giulio/Documents/Projects/github/fp-ts/src/FilterableWithIndex").RefinementWithIndex<number, A, B>): (fa: A[]) => B[]; <A>(predicateWithIndex: import("/Users/giulio/Documents/Projects/github/fp-ts/src/FilterableWithIndex").PredicateWithIndex<number, A>): (fa: A[]) => A[]; }'
+      ),
+      '{ <A, B>(refinementWithIndex: RefinementWithIndex<number, A, B>): (fa: A[]) => B[]; <A>(predicateWithIndex: PredicateWithIndex<number, A>): (fa: A[]) => A[]; }'
+    )
+  })
+})
 
 describe('getInterfaces', () => {
   it('should return no `Interface`s if the file is empty', () => {
-    const sourceFile = getSourceFile('test', '')
+    const sourceFile = getTestSourceFile('')
     assert.deepStrictEqual(getInterfaces(sourceFile), right([]))
   })
 
   it('should return no `Interface`s if there are no exported interfaces', () => {
-    const sourceFile = getSourceFile('test', 'interface A {}')
+    const sourceFile = getTestSourceFile('interface A {}')
     assert.deepStrictEqual(getInterfaces(sourceFile), right([]))
   })
 
   it('should return an `Interface`', () => {
-    const sourceFile = getSourceFile(
-      'test',
+    const sourceFile = getTestSourceFile(
       `/**
  * a description...
  * @since 1.0.0
@@ -41,7 +66,7 @@ export interface A {}`
           description: some('a description...'),
           name: 'A',
           signature: 'export interface A {}',
-          since: some('1.0.0'),
+          since: '1.0.0',
           examples: []
         }
       ])
@@ -51,44 +76,39 @@ export interface A {}`
 
 describe('getFunctions', () => {
   it('should raise an error if the function is anonymous', () => {
-    const sourceFile = getSourceFile('test', `export function(a: number, b: number): number { return a + b }`)
+    const sourceFile = getTestSourceFile(`export function(a: number, b: number): number { return a + b }`)
     assert.deepStrictEqual(getFunctions('test', sourceFile), left(['Missing function name in module test']))
   })
 
   it('should not return private function declarations', () => {
-    const sourceFile = getSourceFile('test', `function sum(a: number, b: number): number { return a + b }`)
+    const sourceFile = getTestSourceFile(`function sum(a: number, b: number): number { return a + b }`)
     assert.deepStrictEqual(getFunctions('test', sourceFile), right([]))
   })
 
   it('should not return internal function declarations', () => {
-    const sourceFile = getSourceFile(
-      'test',
+    const sourceFile = getTestSourceFile(
       `/** @internal */export function sum(a: number, b: number): number { return a + b }`
     )
     assert.deepStrictEqual(getFunctions('test', sourceFile), right([]))
   })
 
   it('should not return private variable declarations', () => {
-    const sourceFile = getSourceFile('test', `const sum = (a: number, b: number): number => a + b `)
+    const sourceFile = getTestSourceFile(`const sum = (a: number, b: number): number => a + b `)
     assert.deepStrictEqual(getFunctions('test', sourceFile), right([]))
   })
 
   it('should not return internal variable declarations', () => {
-    const sourceFile = getSourceFile(
-      'test',
-      `/** @internal */export const sum = (a: number, b: number): number => a + b `
-    )
+    const sourceFile = getTestSourceFile(`/** @internal */export const sum = (a: number, b: number): number => a + b `)
     assert.deepStrictEqual(getFunctions('test', sourceFile), right([]))
   })
 
   it('should not return exported const declarations', () => {
-    const sourceFile = getSourceFile('test', `export const a = 1`)
+    const sourceFile = getTestSourceFile(`export const a = 1`)
     assert.deepStrictEqual(getFunctions('test', sourceFile), right([]))
   })
 
   it('should handle a const function', () => {
-    const sourceFile = getSourceFile(
-      'test',
+    const sourceFile = getTestSourceFile(
       `/**
  * a description...
  * @since 1.0.0
@@ -108,7 +128,7 @@ export const f = (a: number, b: number): { [key: string]: number } => ({ a, b })
           description: some('a description...'),
           name: 'f',
           signatures: ['export const f = (a: number, b: number): { [key: string]: number } => ...'],
-          since: some('1.0.0'),
+          since: '1.0.0',
           examples: ['assert.deeStrictEqual(f(1, 2), { a: 1, b: 2})', 'assert.deeStrictEqual(f(3, 4), { a: 3, b: 4})']
         }
       ])
@@ -116,9 +136,11 @@ export const f = (a: number, b: number): { [key: string]: number } => ({ a, b })
   })
 
   it('should return a `Func` with a body', () => {
-    const sourceFile = getSourceFile(
-      'test',
+    const sourceFile = getTestSourceFile(
       `const a: number = 1
+/**
+ * @since 1.0.0
+ */
 export function f(a: number, b: number): { [key: string]: number } { return { a, b } }`
     )
     assert.deepStrictEqual(
@@ -129,7 +151,7 @@ export function f(a: number, b: number): { [key: string]: number } { return { a,
           description: none,
           name: 'f',
           signatures: ['export function f(a: number, b: number): { [key: string]: number } { ... }'],
-          since: none,
+          since: '1.0.0',
           examples: []
         }
       ])
@@ -137,8 +159,7 @@ export function f(a: number, b: number): { [key: string]: number } { return { a,
   })
 
   it('should return a `Func` with comments', () => {
-    const sourceFile = getSourceFile(
-      'test',
+    const sourceFile = getTestSourceFile(
       `const a: number = 1
 /**
  * a description...
@@ -155,7 +176,7 @@ export function f(a: number, b: number): { [key: string]: number } { return { a,
           description: some('a description...'),
           name: 'f',
           signatures: ['export function f(a: number, b: number): { [key: string]: number } { ... }'],
-          since: some('1.0.0'),
+          since: '1.0.0',
           examples: []
         }
       ])
@@ -163,8 +184,7 @@ export function f(a: number, b: number): { [key: string]: number } { return { a,
   })
 
   it('should handle overloadings', () => {
-    const sourceFile = getSourceFile(
-      'test',
+    const sourceFile = getTestSourceFile(
       `const a: number = 1
 /**
 * a description...
@@ -186,7 +206,7 @@ export function f(a: any, b: any): { [key: string]: number } { return { a, b } }
             'export function f(a: int, b: int): { [key: string]: number }',
             'export function f(a: number, b: number): { [key: string]: number } { ... }'
           ],
-          since: some('1.0.0'),
+          since: '1.0.0',
           examples: []
         }
       ])
@@ -196,8 +216,7 @@ export function f(a: any, b: any): { [key: string]: number } { return { a, b } }
 
 describe('getTypeAliases', () => {
   it('should return a `TypeAlias`', () => {
-    const sourceFile = getSourceFile(
-      'test',
+    const sourceFile = getTestSourceFile(
       `/**
 * a description...
 * @since 1.0.0
@@ -213,7 +232,7 @@ export type Option<A> = None<A> | Some<A>`
           description: some('a description...'),
           name: 'Option',
           signature: 'export type Option<A> = None<A> | Some<A>',
-          since: some('1.0.0'),
+          since: '1.0.0',
           examples: []
         }
       ])
@@ -223,8 +242,7 @@ export type Option<A> = None<A> | Some<A>`
 
 describe('getConstants', () => {
   it('should return a `Constant`', () => {
-    const sourceFile = getSourceFile(
-      'test',
+    const sourceFile = getTestSourceFile(
       `/**
 * a description...
 * @since 1.0.0
@@ -240,7 +258,7 @@ export const setoidString: Setoid<string> = setoidStrict`
           description: some('a description...'),
           name: 'setoidString',
           signature: 'export const setoidString: Setoid<string> = ...',
-          since: some('1.0.0'),
+          since: '1.0.0',
           examples: []
         }
       ])
@@ -250,23 +268,26 @@ export const setoidString: Setoid<string> = setoidStrict`
 
 describe('getClasses', () => {
   it('should raise an error if the class is anonymous', () => {
-    const sourceFile = getSourceFile('test', `export class {}`)
+    const sourceFile = getTestSourceFile(`export class {}`)
     assert.deepStrictEqual(getClasses('test', sourceFile), left(['Missing class name in module test']))
   })
 
   it('should skip the constructor body', () => {
-    const sourceFile = getSourceFile('test', `export class C { constructor() { ... } }`)
+    const sourceFile = getTestSourceFile(`/** description
+ * @since 1.0.0
+ */
+export class C { constructor() { ... } }`)
     assert.deepStrictEqual(
       getClasses('test', sourceFile),
       right([
         {
           deprecated: false,
-          description: none,
+          description: some('description'),
           examples: [],
           methods: [],
           name: 'C',
           signature: 'export class C {\n  constructor() { ... }\n  ... \n}',
-          since: none,
+          since: '1.0.0',
           staticMethods: []
         }
       ])
@@ -274,8 +295,7 @@ describe('getClasses', () => {
   })
 
   it('should return a `Class`', () => {
-    const sourceFile = getSourceFile(
-      'test',
+    const sourceFile = getTestSourceFile(
       `/**
  * a class description...
  * @since 1.0.0
@@ -307,7 +327,7 @@ export class Test {
           description: some('a class description...'),
           name: 'Test',
           signature: 'export class Test {\n  constructor(readonly value: string) { ... }\n  ... \n}',
-          since: some('1.0.0'),
+          since: '1.0.0',
           examples: [],
           methods: [
             {
@@ -315,7 +335,7 @@ export class Test {
               description: some('a method description...'),
               name: 'g',
               signatures: ['g(a: number, b: number): { [key: string]: number } { ... }'],
-              since: some('1.1.0'),
+              since: '1.1.0',
               examples: []
             }
           ],
@@ -325,7 +345,7 @@ export class Test {
               description: some('a static method description...'),
               name: 'f',
               signatures: ['static f() { ... }'],
-              since: some('1.1.0'),
+              since: '1.1.0',
               examples: []
             }
           ]
@@ -335,8 +355,7 @@ export class Test {
   })
 
   it('should handle method overloadings', () => {
-    const sourceFile = getSourceFile(
-      'test',
+    const sourceFile = getTestSourceFile(
       `/**
  * a class description...
  * @since 1.0.0
@@ -372,7 +391,7 @@ export class Test<A> {
           description: some('a class description...'),
           name: 'Test',
           signature: 'export class Test<A> {\n  constructor(readonly value: A) { ... }\n  ... \n}',
-          since: some('1.0.0'),
+          since: '1.0.0',
           examples: [],
           methods: [
             {
@@ -380,7 +399,7 @@ export class Test<A> {
               description: some('a method description...'),
               name: 'map',
               signatures: ['map(f: (a: number) => number): Test', 'map(f: (a: string) => string): Test { ... }'],
-              since: some('1.1.0'),
+              since: '1.1.0',
               examples: []
             }
           ],
@@ -390,7 +409,7 @@ export class Test<A> {
               description: some('a static method description...'),
               name: 'f',
               signatures: ['static f(x: number): number', 'static f(x: string): string { ... }'],
-              since: some('1.1.0'),
+              since: '1.1.0',
               examples: []
             }
           ]
@@ -402,8 +421,7 @@ export class Test<A> {
 
 describe('getModuleInfo', () => {
   it('should not return a file description if there is no @file tag', () => {
-    const sourceFile = getSourceFile(
-      'test',
+    const sourceFile = getTestSourceFile(
       `
 /**
  * @since 1.0.0
@@ -418,8 +436,7 @@ export const a: number = 1
   })
 
   it('should return a description field and a deprecated field', () => {
-    const sourceFile = getSourceFile(
-      'test',
+    const sourceFile = getTestSourceFile(
       `
 /**
  * @file Manages the configuration settings for the widget
@@ -441,17 +458,17 @@ export const a: number = 1
 
 describe('getExports', () => {
   it('should return no `Export`s if the file is empty', () => {
-    const sourceFile = getSourceFile('test', '')
-    assert.deepStrictEqual(getExports(sourceFile), right([]))
-  })
-
-  it('should skip if there are too many named exports', () => {
-    const sourceFile = getSourceFile('test', 'export { a, b }')
+    const sourceFile = getTestSourceFile('')
     assert.deepStrictEqual(getExports(sourceFile), right([]))
   })
 
   it('should handle renamimg', () => {
-    const sourceFile = getSourceFile('test', 'export { a as b }')
+    const sourceFile = getTestSourceFile(`const a = 1; export {
+  /**
+   * @since 1.0.0
+   */
+  a as b
+}`)
     assert.deepStrictEqual(
       getExports(sourceFile),
       right([
@@ -460,33 +477,81 @@ describe('getExports', () => {
           description: none,
           examples: [],
           name: 'b',
-          signature: 'export { a as b }',
-          since: none
+          signature: '1',
+          since: '1.0.0'
         }
       ])
     )
   })
 
   it('should return an `Export`', () => {
-    const sourceFile = getSourceFile(
-      'test',
-      `/**
-* a description...
-* @since 1.0.0
-* @deprecated
-*/
-export { a }`
-    )
+    const sourceFile = getTestSourceFile(`export {
+  /**
+   * description_of_a
+   * @since 1.0.0
+   */
+  a,
+  /**
+   * description_of_b
+   * @since 2.0.0
+   */
+  b
+}
+`)
     assert.deepStrictEqual(
       getExports(sourceFile),
       right([
         {
-          deprecated: true,
-          description: some('a description...'),
+          deprecated: false,
+          description: some('description_of_a'),
           examples: [],
           name: 'a',
-          signature: 'export { a }',
-          since: some('1.0.0')
+          signature: 'any',
+          since: '1.0.0'
+        },
+        {
+          deprecated: false,
+          description: some('description_of_b'),
+          examples: [],
+          name: 'b',
+          signature: 'any',
+          since: '2.0.0'
+        }
+      ])
+    )
+  })
+
+  it('should retrieve an export signature', () => {
+    project.createSourceFile(
+      'a.ts',
+      `
+export const a = 1
+`
+    )
+    project.createSourceFile(
+      'b.ts',
+      `
+import { a } from './a'
+const b = a
+export {
+  /**
+   * @since 1.0.0
+   */
+  b
+}
+`
+    )
+    const sourceFile = project.getSourceFile('b.ts')!
+    assert.deepStrictEqual(
+      getExports(sourceFile),
+      right([
+        {
+          deprecated: false,
+          description: none,
+          examples: [],
+          name: 'b',
+          signature: '1',
+          since: '1.0.0'
         }
       ])
     )

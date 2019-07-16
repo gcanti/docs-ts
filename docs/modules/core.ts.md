@@ -27,6 +27,8 @@ App effect
 export interface AppEff<A> extends RTE.ReaderTaskEither<Capabilities, string, A> {}
 ```
 
+Added in v0.2.0
+
 # Capabilities (interface)
 
 **Signature**
@@ -34,6 +36,8 @@ export interface AppEff<A> extends RTE.ReaderTaskEither<Capabilities, string, A>
 ```ts
 export interface Capabilities extends MonadFileSystem, MonadLog {}
 ```
+
+Added in v0.2.0
 
 # Eff (interface)
 
@@ -44,6 +48,8 @@ capabilities
 ```ts
 export interface Eff<A> extends TE.TaskEither<string, A> {}
 ```
+
+Added in v0.2.0
 
 # MonadFileSystem (interface)
 
@@ -59,6 +65,8 @@ export interface MonadFileSystem {
 }
 ```
 
+Added in v0.2.0
+
 # MonadLog (interface)
 
 **Signature**
@@ -71,6 +79,8 @@ export interface MonadLog {
 }
 ```
 
+Added in v0.2.0
+
 # main (constant)
 
 **Signature**
@@ -78,3 +88,5 @@ export interface MonadLog {
 ```ts
 export const main: AppEff<void> = ...
 ```
+
+Added in v0.2.0

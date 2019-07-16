@@ -132,6 +132,9 @@ function printModuleDescription(description: O.Option<string>): string {
   )
 }
 
+/**
+ * @since 0.2.0
+ */
 export function printExamples(examples: Array<Example>): string {
   if (examples.length === 0) {
     return ''
@@ -146,13 +149,13 @@ export function printExamples(examples: Array<Example>): string {
   )
 }
 
-function printSince(since: O.Option<string>): string {
-  return pipe(
-    since,
-    O.fold(() => '', s => CRLF + `Added in v${s}`)
-  )
+function printSince(since: string): string {
+  return CRLF + `Added in v${since}`
 }
 
+/**
+ * @since 0.2.0
+ */
 export function printHeader(title: string, order: number): string {
   let s = '---\n'
   s += `title: ${title}\n`
@@ -162,6 +165,9 @@ export function printHeader(title: string, order: number): string {
   return s
 }
 
+/**
+ * @since 0.2.0
+ */
 export function printModule(module: Module, counter: number): string {
   const header = printHeader(module.path.slice(1).join('/'), counter)
   const md =

@@ -12,9 +12,14 @@ import * as R from 'fp-ts/lib/Reader'
 
 /**
  * capabilities
+ *
+ * @since 0.2.0
  */
 export interface Eff<A> extends TE.TaskEither<string, A> {}
 
+/**
+ * @since 0.2.0
+ */
 export interface MonadFileSystem {
   readonly getFilenames: (pattern: string) => Eff<Array<string>>
   readonly readFile: (path: string) => Eff<string>
@@ -23,16 +28,24 @@ export interface MonadFileSystem {
   readonly clean: (pattern: string) => Eff<void>
 }
 
+/**
+ * @since 0.2.0
+ */
 export interface MonadLog {
   readonly info: (message: string) => Eff<void>
   readonly log: (message: string) => Eff<void>
   readonly debug: (message: string) => Eff<void>
 }
 
+/**
+ * @since 0.2.0
+ */
 export interface Capabilities extends MonadFileSystem, MonadLog {}
 
 /**
  * App effect
+ *
+ * @since 0.2.0
  */
 export interface AppEff<A> extends RTE.ReaderTaskEither<Capabilities, string, A> {}
 
@@ -309,6 +322,9 @@ function checkHomepage(pkg: PackageJSON): E.Either<string, string> {
   return pkg.homepage === undefined ? E.left('Missing homepage in package.json') : E.right(pkg.homepage)
 }
 
+/**
+ * @since 0.2.0
+ */
 export const main: AppEff<void> = pipe(
   getPackageJSON,
   RTE.chain(pkg =>

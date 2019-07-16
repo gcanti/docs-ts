@@ -36,6 +36,9 @@ function onRight(): T.Task<void> {
   return T.fromIO(log(chalk.bold.green('Docs generation succeeded!')))
 }
 
+/**
+ * @since 0.2.0
+ */
 export const main: T.Task<void> = pipe(
   core.main(capabilities),
   TE.fold(onLeft, onRight)

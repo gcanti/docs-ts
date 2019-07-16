@@ -24,7 +24,6 @@ parser utilities
 - [TypeAlias (interface)](#typealias-interface)
 - [Example (type alias)](#example-type-alias)
 - [Parser (type alias)](#parser-type-alias)
-- [monadParser (constant)](#monadparser-constant)
 - [class\_ (function)](#class_-function)
 - [constant (function)](#constant-function)
 - [documentable (function)](#documentable-function)
@@ -37,13 +36,10 @@ parser utilities
 - [getFunctions (function)](#getfunctions-function)
 - [getInterfaces (function)](#getinterfaces-function)
 - [getModuleInfo (function)](#getmoduleinfo-function)
-- [getModuleName (function)](#getmodulename-function)
-- [getSourceFile (function)](#getsourcefile-function)
 - [getTypeAliases (function)](#gettypealiases-function)
 - [interface\_ (function)](#interface_-function)
 - [method (function)](#method-function)
 - [module (function)](#module-function)
-- [parse (function)](#parse-function)
 - [run (function)](#run-function)
 - [typeAlias (function)](#typealias-function)
 
@@ -61,6 +57,8 @@ export interface Class extends Documentable {
 }
 ```
 
+Added in v0.2.0
+
 # Constant (interface)
 
 **Signature**
@@ -71,6 +69,8 @@ export interface Constant extends Documentable {
 }
 ```
 
+Added in v0.2.0
+
 # Documentable (interface)
 
 **Signature**
@@ -79,11 +79,13 @@ export interface Constant extends Documentable {
 export interface Documentable {
   readonly name: string
   readonly description: O.Option<string>
-  readonly since: O.Option<string>
+  readonly since: string
   readonly deprecated: boolean
   readonly examples: Array<Example>
 }
 ```
+
+Added in v0.2.0
 
 # Export (interface)
 
@@ -94,6 +96,8 @@ export interface Export extends Documentable {
   readonly signature: string
 }
 ```
+
+Added in v0.2.0
 
 # File (interface)
 
@@ -106,6 +110,8 @@ export interface File {
 }
 ```
 
+Added in v0.2.0
+
 # Func (interface)
 
 **Signature**
@@ -115,6 +121,8 @@ export interface Func extends Documentable {
   readonly signatures: Array<string>
 }
 ```
+
+Added in v0.2.0
 
 # Interface (interface)
 
@@ -126,6 +134,8 @@ export interface Interface extends Documentable {
 }
 ```
 
+Added in v0.2.0
+
 # Method (interface)
 
 **Signature**
@@ -135,6 +145,8 @@ export interface Method extends Documentable {
   readonly signatures: Array<string>
 }
 ```
+
+Added in v0.2.0
 
 # Module (interface)
 
@@ -154,6 +166,8 @@ export interface Module {
 }
 ```
 
+Added in v0.2.0
+
 # TypeAlias (interface)
 
 **Signature**
@@ -164,6 +178,8 @@ export interface TypeAlias extends Documentable {
 }
 ```
 
+Added in v0.2.0
+
 # Example (type alias)
 
 **Signature**
@@ -171,6 +187,8 @@ export interface TypeAlias extends Documentable {
 ```ts
 export type Example = string
 ```
+
+Added in v0.2.0
 
 # Parser (type alias)
 
@@ -180,13 +198,7 @@ export type Example = string
 export type Parser<A> = E.Either<Array<string>, A>
 ```
 
-# monadParser (constant)
-
-**Signature**
-
-```ts
-export const monadParser = ...
-```
+Added in v0.2.0
 
 # class\_ (function)
 
@@ -201,6 +213,8 @@ export function class_(
 ): Class { ... }
 ```
 
+Added in v0.2.0
+
 # constant (function)
 
 **Signature**
@@ -208,6 +222,8 @@ export function class_(
 ```ts
 export function constant(documentable: Documentable, signature: string): Constant { ... }
 ```
+
+Added in v0.2.0
 
 # documentable (function)
 
@@ -217,11 +233,13 @@ export function constant(documentable: Documentable, signature: string): Constan
 export function documentable(
   name: string,
   description: O.Option<string>,
-  since: O.Option<string>,
+  since: string,
   deprecated: boolean,
   examples: Array<Example>
 ): Documentable { ... }
 ```
+
+Added in v0.2.0
 
 # example (function)
 
@@ -231,6 +249,8 @@ export function documentable(
 export function example(code: string): Example { ... }
 ```
 
+Added in v0.2.0
+
 # export\_ (function)
 
 **Signature**
@@ -238,6 +258,8 @@ export function example(code: string): Example { ... }
 ```ts
 export function export_(documentable: Documentable, signature: string): Export { ... }
 ```
+
+Added in v0.2.0
 
 # func (function)
 
@@ -247,6 +269,8 @@ export function export_(documentable: Documentable, signature: string): Export {
 export function func(documentable: Documentable, signatures: Array<string>): Func { ... }
 ```
 
+Added in v0.2.0
+
 # getClasses (function)
 
 **Signature**
@@ -254,6 +278,8 @@ export function func(documentable: Documentable, signatures: Array<string>): Fun
 ```ts
 export function getClasses(moduleName: string, sourceFile: ast.SourceFile): Parser<Array<Class>> { ... }
 ```
+
+Added in v0.2.0
 
 # getConstants (function)
 
@@ -263,6 +289,8 @@ export function getClasses(moduleName: string, sourceFile: ast.SourceFile): Pars
 export function getConstants(sourceFile: ast.SourceFile): Parser<Array<Constant>> { ... }
 ```
 
+Added in v0.2.0
+
 # getExports (function)
 
 **Signature**
@@ -270,6 +298,8 @@ export function getConstants(sourceFile: ast.SourceFile): Parser<Array<Constant>
 ```ts
 export function getExports(sourceFile: ast.SourceFile): Parser<Array<Export>> { ... }
 ```
+
+Added in v0.2.0
 
 # getFunctions (function)
 
@@ -279,6 +309,8 @@ export function getExports(sourceFile: ast.SourceFile): Parser<Array<Export>> { 
 export function getFunctions(moduleName: string, sourceFile: ast.SourceFile): Parser<Array<Func>> { ... }
 ```
 
+Added in v0.2.0
+
 # getInterfaces (function)
 
 **Signature**
@@ -286,6 +318,8 @@ export function getFunctions(moduleName: string, sourceFile: ast.SourceFile): Pa
 ```ts
 export function getInterfaces(sourceFile: ast.SourceFile): Parser<Array<Interface>> { ... }
 ```
+
+Added in v0.2.0
 
 # getModuleInfo (function)
 
@@ -295,21 +329,7 @@ export function getInterfaces(sourceFile: ast.SourceFile): Parser<Array<Interfac
 export function getModuleInfo(sourceFile: ast.SourceFile): { description: O.Option<string>; deprecated: boolean } { ... }
 ```
 
-# getModuleName (function)
-
-**Signature**
-
-```ts
-export function getModuleName(p: Array<string>): string { ... }
-```
-
-# getSourceFile (function)
-
-**Signature**
-
-```ts
-export function getSourceFile(name: string, source: string): ast.SourceFile { ... }
-```
+Added in v0.2.0
 
 # getTypeAliases (function)
 
@@ -319,6 +339,8 @@ export function getSourceFile(name: string, source: string): ast.SourceFile { ..
 export function getTypeAliases(sourceFile: ast.SourceFile): Parser<Array<TypeAlias>> { ... }
 ```
 
+Added in v0.2.0
+
 # interface\_ (function)
 
 **Signature**
@@ -327,6 +349,8 @@ export function getTypeAliases(sourceFile: ast.SourceFile): Parser<Array<TypeAli
 export function interface_(documentable: Documentable, signature: string): Interface { ... }
 ```
 
+Added in v0.2.0
+
 # method (function)
 
 **Signature**
@@ -334,6 +358,8 @@ export function interface_(documentable: Documentable, signature: string): Inter
 ```ts
 export function method(documentable: Documentable, signatures: Array<string>): Method { ... }
 ```
+
+Added in v0.2.0
 
 # module (function)
 
@@ -353,13 +379,7 @@ export function module(
 ): Module { ... }
 ```
 
-# parse (function)
-
-**Signature**
-
-```ts
-export function parse(path: Array<string>, source: string): Parser<Module> { ... }
-```
+Added in v0.2.0
 
 # run (function)
 
@@ -369,6 +389,8 @@ export function parse(path: Array<string>, source: string): Parser<Module> { ...
 export function run(files: Array<File>): Parser<Array<Module>> { ... }
 ```
 
+Added in v0.2.0
+
 # typeAlias (function)
 
 **Signature**
@@ -376,3 +398,5 @@ export function run(files: Array<File>): Parser<Array<Module>> { ... }
 ```ts
 export function typeAlias(documentable: Documentable, signature: string): TypeAlias { ... }
 ```
+
+Added in v0.2.0

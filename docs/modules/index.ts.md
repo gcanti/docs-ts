@@ -19,3 +19,5 @@ parent: Modules
 ```ts
 export const main: T.Task<void> = ...
 ```
+
+Added in v0.2.0

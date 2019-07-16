@@ -26,6 +26,8 @@ markdown utilities
 export function printExamples(examples: Array<Example>): string { ... }
 ```
 
+Added in v0.2.0
+
 # printHeader (function)
 
 **Signature**
@@ -34,6 +36,8 @@ export function printExamples(examples: Array<Example>): string { ... }
 export function printHeader(title: string, order: number): string { ... }
 ```
 
+Added in v0.2.0
+
 # printModule (function)
 
 **Signature**
@@ -41,3 +45,5 @@ export function printHeader(title: string, order: number): string { ... }
 ```ts
 export function printModule(module: Module, counter: number): string { ... }
 ```
+
+Added in v0.2.0

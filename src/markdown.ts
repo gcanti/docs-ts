@@ -121,14 +121,20 @@ function printSignatures(signature: Array<string>): string {
 function printDescription(description: O.Option<string>): string {
   return pipe(
     description,
-    O.fold(() => '', s => CRLF + s)
+    O.fold(
+      () => '',
+      s => CRLF + s
+    )
   )
 }
 
 function printModuleDescription(description: O.Option<string>): string {
   return pipe(
     description,
-    O.fold(() => '', s => CRLF + h1('Overview') + CRLF + s + CRLF)
+    O.fold(
+      () => '',
+      s => CRLF + h1('Overview') + CRLF + s + CRLF
+    )
   )
 }
 

@@ -243,17 +243,11 @@ function getSince(annotation: doctrine.Annotation): O.Option<string> {
 }
 
 function isDeprecated(annotation: doctrine.Annotation): boolean {
-  return pipe(
-    O.fromNullable(annotation.tags.filter(tag => tag.title === 'deprecated')[0]),
-    O.isSome
-  )
+  return pipe(O.fromNullable(annotation.tags.filter(tag => tag.title === 'deprecated')[0]), O.isSome)
 }
 
 function isInternal(annotation: doctrine.Annotation): boolean {
-  return pipe(
-    O.fromNullable(annotation.tags.filter(tag => tag.title === 'internal')[0]),
-    O.isSome
-  )
+  return pipe(O.fromNullable(annotation.tags.filter(tag => tag.title === 'internal')[0]), O.isSome)
 }
 
 function getExamples(annotation: doctrine.Annotation): Array<Example> {
@@ -286,7 +280,10 @@ function getAnnotationInfo(
 function ensureSinceTag<A>(name: string, since: O.Option<string>, f: (since: string) => A): Parser<A> {
   return pipe(
     since,
-    O.fold(() => E.left([`missing @since tag in ${name} documentation`]), since => E.right(f(since)))
+    O.fold(
+      () => E.left([`missing @since tag in ${name} documentation`]),
+      since => E.right(f(since))
+    )
   )
 }
 

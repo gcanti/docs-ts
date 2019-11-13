@@ -395,15 +395,21 @@ export function getFunctions(moduleName: string, sourceFile: ast.SourceFile): Pa
   const functionDeclarations = traverse(exportedFunctionDeclarations, fd => parseFunctionDeclaration(moduleName, fd))
 
   const exportedVariableDeclarations = sourceFile.getVariableDeclarations().filter(vd => {
-    const vs: ast.VariableStatement = vd.getParent().getParent()
-    const annotation = getAnnotation(vs.getJsDocs())
-    const initializer = vd.getInitializer()
-    return (
-      !isInternal(annotation) &&
-      initializer !== undefined &&
-      vs.isExported() &&
-      ast.TypeGuards.isFunctionLikeDeclaration(initializer)
-    )
+    const parent = vd.getParent()
+    if (isVariableDeclarationList(parent)) {
+      const vs = parent.getParent()
+      if (isVariableStatement(vs)) {
+        const annotation = getAnnotation(vs.getJsDocs())
+        const initializer = vd.getInitializer()
+        return (
+          !isInternal(annotation) &&
+          initializer !== undefined &&
+          vs.isExported() &&
+          ast.TypeGuards.isFunctionLikeDeclaration(initializer)
+        )
+      }
+    }
+    return false
   })
 
   const variableDeclarations = traverse(exportedVariableDeclarations, parseFunctionVariableDeclaration)
@@ -471,20 +477,34 @@ function parseConstantVariableDeclaration(vd: ast.VariableDeclaration): Parser<C
   )
 }
 
+const isVariableDeclarationList = (
+  u: ast.VariableDeclarationList | ast.CatchClause
+): u is ast.VariableDeclarationList => u.getKind() === ast.ts.SyntaxKind.VariableDeclarationList
+
+const isVariableStatement = (
+  u: ast.VariableStatement | ast.ForStatement | ast.ForOfStatement | ast.ForInStatement
+): u is ast.VariableStatement => u.getKind() === ast.ts.SyntaxKind.VariableStatement
+
 /**
  * @since 0.2.0
  */
 export function getConstants(sourceFile: ast.SourceFile): Parser<Array<Constant>> {
   const exportedVariableDeclarations = sourceFile.getVariableDeclarations().filter(vd => {
-    const vs: ast.VariableStatement = vd.getParent().getParent()
-    const annotation = getAnnotation(vs.getJsDocs())
-    const initializer = vd.getInitializer()
-    return (
-      !isInternal(annotation) &&
-      initializer !== undefined &&
-      vs.isExported() &&
-      !ast.TypeGuards.isFunctionLikeDeclaration(initializer)
-    )
+    const parent = vd.getParent()
+    if (isVariableDeclarationList(parent)) {
+      const vs = parent.getParent()
+      if (isVariableStatement(vs)) {
+        const annotation = getAnnotation(vs.getJsDocs())
+        const initializer = vd.getInitializer()
+        return (
+          !isInternal(annotation) &&
+          initializer !== undefined &&
+          vs.isExported() &&
+          !ast.TypeGuards.isFunctionLikeDeclaration(initializer)
+        )
+      }
+    }
+    return false
   })
 
   return pipe(
@@ -659,7 +679,7 @@ function parse(path: Array<string>, sourceFile: ast.SourceFile): Parser<Module> 
 export function run(files: Array<File>): Parser<Array<Module>> {
   const project = new ast.Project()
   files.forEach(file => {
-    project.addExistingSourceFile(file.path)
+    project.addSourceFileAtPath(file.path)
   })
   return pipe(
     traverse(files, file => {

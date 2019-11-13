@@ -39,7 +39,4 @@ function onRight(): T.Task<void> {
 /**
  * @since 0.2.0
  */
-export const main: T.Task<void> = pipe(
-  core.main(capabilities),
-  TE.fold(onLeft, onRight)
-)
+export const main: T.Task<void> = pipe(core.main(capabilities), TE.fold(onLeft, onRight))

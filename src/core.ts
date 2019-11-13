@@ -136,10 +136,7 @@ const getSrcPaths: AppEff<Array<string>> = C =>
     TE.chainFirst(paths => C.info(`${paths.length} modules found`))
   )
 
-const readSources: AppEff<Array<File>> = pipe(
-  getSrcPaths,
-  RTE.chain(readFiles)
-)
+const readSources: AppEff<Array<File>> = pipe(getSrcPaths, RTE.chain(readFiles))
 
 function parseModules(files: Array<File>): AppEff<Array<parser.Module>> {
   return C =>

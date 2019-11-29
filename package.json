@@ -9,7 +9,7 @@
   "bin": "lib/bin.js",
   "typings": "lib/index.d.ts",
   "scripts": {
-    "lint": "tslint -p tsconfig.json src/**/*.ts test/**/*.ts",
+    "lint": "tslint -p tsconfig.json",
     "jest": "jest",
     "prettier": "prettier --no-semi --single-quote --print-width 120 --parser typescript --list-different \"{src,test}/**/*.ts\"",
     "fix-prettier": "prettier --no-semi --single-quote --print-width 120 --parser typescript --write \"{src,test}/**/*.ts\"",

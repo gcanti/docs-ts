@@ -1,5 +1,7 @@
 /**
- * @file parser utilities
+ * parser utilities
+ *
+ * @since 0.2.0
  */
 
 import * as doctrine from 'doctrine'
@@ -170,33 +172,30 @@ export function export_(documentable: Documentable, signature: string): Export {
 /**
  * @since 0.2.0
  */
-export interface Module {
+export interface Module extends Documentable {
   readonly path: Array<string>
-  readonly description: O.Option<string>
   readonly interfaces: Array<Interface>
   readonly typeAliases: Array<TypeAlias>
   readonly functions: Array<Func>
   readonly classes: Array<Class>
   readonly constants: Array<Constant>
   readonly exports: Array<Export>
-  readonly deprecated: boolean
 }
 
 /**
  * @since 0.2.0
  */
 export function module(
+  documentable: Documentable,
   path: Array<string>,
-  description: O.Option<string>,
   interfaces: Array<Interface>,
   typeAliases: Array<TypeAlias>,
   functions: Array<Func>,
   classes: Array<Class>,
   constants: Array<Constant>,
-  exports: Array<Export>,
-  deprecated: boolean
+  exports: Array<Export>
 ): Module {
-  return { path, description, interfaces, typeAliases, functions, classes, constants, exports, deprecated }
+  return { path, interfaces, typeAliases, functions, classes, constants, exports, ...documentable }
 }
 
 const ordModule: Ord<Module> = pipe(
@@ -217,7 +216,13 @@ function getModuleName(p: Array<string>): string {
 }
 
 function getAnnotation(jsdocs: Array<ast.JSDoc>): doctrine.Annotation {
-  const content = jsdocs.map(doc => doc.getText()).join('\n')
+  const content = pipe(
+    jsdocs,
+    A.foldRight(
+      () => '',
+      (_, last) => last.getText()
+    )
+  )
   return doctrine.parse(content, { unwrap: true })
 }
 
@@ -225,13 +230,6 @@ function getDescription(annotation: doctrine.Annotation): O.Option<string> {
   return pipe(
     O.fromNullable(annotation.description),
     O.filter(s => s !== '')
-  )
-}
-
-function getFile(annotation: doctrine.Annotation): O.Option<string> {
-  return pipe(
-    O.fromNullable(annotation.tags.filter(tag => tag.title === 'file')[0]),
-    O.mapNullable(tag => tag.description)
   )
 }
 
@@ -635,27 +633,21 @@ export function getClasses(moduleName: string, sourceFile: ast.SourceFile): Pars
 /**
  * @since 0.2.0
  */
-export function getModuleInfo(sourceFile: ast.SourceFile): { description: O.Option<string>; deprecated: boolean } {
+export function getModuleDocumentation(sourceFile: ast.SourceFile, name: string): Parser<Documentable> {
   const x = sourceFile.getStatements()
   if (x.length > 0) {
     const comments = x[0].getLeadingCommentRanges()
     if (comments.length > 0) {
       const text = comments[0].getText()
       const annotation = doctrine.parse(text, { unwrap: true })
-      const description = getFile(annotation)
-      return {
-        description,
-        deprecated: isDeprecated(annotation)
-      }
+      const { description, since, deprecated, examples } = getAnnotationInfo(annotation)
+      return ensureSinceTag(name, since, since => documentable(name, description, since, deprecated, examples))
     }
   }
-  return {
-    description: O.none,
-    deprecated: false
-  }
+  return E.left([`missing documentation in ${name} module`])
 }
 
-function parse(path: Array<string>, sourceFile: ast.SourceFile): Parser<Module> {
+function parseModule(path: Array<string>, sourceFile: ast.SourceFile): Parser<Module> {
   const moduleName = getModuleName(path)
   return pipe(
     sequenceS(monadParser)({
@@ -666,9 +658,13 @@ function parse(path: Array<string>, sourceFile: ast.SourceFile): Parser<Module> 
       constants: getConstants(sourceFile),
       exports: getExports(sourceFile)
     }),
-    E.map(({ interfaces, functions, typeAliases, classes, constants, exports }) => {
-      const { description, deprecated } = getModuleInfo(sourceFile)
-      return module(path, description, interfaces, typeAliases, functions, classes, constants, exports, deprecated)
+    E.chain(({ interfaces, functions, typeAliases, classes, constants, exports }) => {
+      return pipe(
+        getModuleDocumentation(sourceFile, moduleName),
+        E.map(documentation =>
+          module(documentation, path, interfaces, typeAliases, functions, classes, constants, exports)
+        )
+      )
     })
   )
 }
@@ -684,7 +680,7 @@ export function run(files: Array<File>): Parser<Array<Module>> {
   return pipe(
     traverse(files, file => {
       const sourceFile = project.getSourceFile(file.path)!
-      return parse(file.path.split(path.sep), sourceFile)
+      return parseModule(file.path.split(path.sep), sourceFile)
     }),
     E.map(modules => sortModules(modules.filter(module => !module.deprecated)))
   )

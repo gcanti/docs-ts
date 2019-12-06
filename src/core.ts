@@ -1,3 +1,6 @@
+/**
+ * @since 0.2.0
+ */
 import * as TE from 'fp-ts/lib/TaskEither'
 import * as parser from './parser'
 import * as path from 'path'
@@ -163,6 +166,7 @@ function getExampleFiles(modules: Array<parser.Module>): Array<File> {
         file(path.join(outDir, 'examples', prefix + '-' + documentable.name + '-' + i + '.ts'), content + '\n', true)
       )
     }
+    const moduleExamples = getDocumentableExamples(module)
     const methods = A.array.chain(module.classes, c =>
       foldFiles([
         A.array.chain(c.methods, getDocumentableExamples),
@@ -174,7 +178,7 @@ function getExampleFiles(modules: Array<parser.Module>): Array<File> {
     const constants = A.array.chain(module.constants, getDocumentableExamples)
     const functions = A.array.chain(module.functions, getDocumentableExamples)
 
-    return foldFiles([methods, interfaces, typeAliases, constants, functions])
+    return foldFiles([moduleExamples, methods, interfaces, typeAliases, constants, functions])
   })
 }
 

@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 
 /**
- * @file bin file
+ * CLI
+ *
+ * @since 0.2.0
  */
 
 import { main } from '.'

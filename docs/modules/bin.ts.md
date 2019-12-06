@@ -4,9 +4,11 @@ nav_order: 1
 parent: Modules
 ---
 
-# Overview
+# bin overview
 
-bin file
+CLI
+
+Added in v0.2.0
 
 ---
 

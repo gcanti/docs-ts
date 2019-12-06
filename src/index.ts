@@ -1,3 +1,6 @@
+/**
+ * @since 0.2.0
+ */
 import chalk from 'chalk'
 import { log } from 'fp-ts/lib/Console'
 import * as IO from 'fp-ts/lib/IO'

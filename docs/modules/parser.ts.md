@@ -4,9 +4,11 @@ nav_order: 5
 parent: Modules
 ---
 
-# Overview
+# parser overview
 
 parser utilities
+
+Added in v0.2.0
 
 ---
 
@@ -35,7 +37,7 @@ parser utilities
 - [getExports (function)](#getexports-function)
 - [getFunctions (function)](#getfunctions-function)
 - [getInterfaces (function)](#getinterfaces-function)
-- [getModuleInfo (function)](#getmoduleinfo-function)
+- [getModuleDocumentation (function)](#getmoduledocumentation-function)
 - [getTypeAliases (function)](#gettypealiases-function)
 - [interface\_ (function)](#interface_-function)
 - [method (function)](#method-function)
@@ -153,16 +155,14 @@ Added in v0.2.0
 **Signature**
 
 ```ts
-export interface Module {
+export interface Module extends Documentable {
   readonly path: Array<string>
-  readonly description: O.Option<string>
   readonly interfaces: Array<Interface>
   readonly typeAliases: Array<TypeAlias>
   readonly functions: Array<Func>
   readonly classes: Array<Class>
   readonly constants: Array<Constant>
   readonly exports: Array<Export>
-  readonly deprecated: boolean
 }
 ```
 
@@ -321,12 +321,12 @@ export function getInterfaces(sourceFile: ast.SourceFile): Parser<Array<Interfac
 
 Added in v0.2.0
 
-# getModuleInfo (function)
+# getModuleDocumentation (function)
 
 **Signature**
 
 ```ts
-export function getModuleInfo(sourceFile: ast.SourceFile): { description: O.Option<string>; deprecated: boolean } { ... }
+export function getModuleDocumentation(sourceFile: ast.SourceFile, name: string): Parser<Documentable> { ... }
 ```
 
 Added in v0.2.0
@@ -367,15 +367,14 @@ Added in v0.2.0
 
 ```ts
 export function module(
+  documentable: Documentable,
   path: Array<string>,
-  description: O.Option<string>,
   interfaces: Array<Interface>,
   typeAliases: Array<TypeAlias>,
   functions: Array<Func>,
   classes: Array<Class>,
   constants: Array<Constant>,
-  exports: Array<Export>,
-  deprecated: boolean
+  exports: Array<Export>
 ): Module { ... }
 ```
 

@@ -1,5 +1,7 @@
 /**
- * @file markdown utilities
+ * markdown utilities
+ *
+ * @since 0.2.0
  */
 
 import * as prettier from 'prettier'
@@ -128,14 +130,14 @@ function printDescription(description: O.Option<string>): string {
   )
 }
 
-function printModuleDescription(description: O.Option<string>): string {
-  return pipe(
-    description,
-    O.fold(
-      () => '',
-      s => CRLF + h1('Overview') + CRLF + s + CRLF
-    )
-  )
+function printModuleDescription(m: Module): string {
+  let s = h1(handleDeprecated(m.name, m.deprecated) + ' overview')
+  s += CRLF
+  s += printDescription(m.description)
+  s += printExamples(m.examples)
+  s += printSince(m.since)
+  s += CRLF
+  return s
 }
 
 /**
@@ -162,7 +164,7 @@ function printSince(since: string): string {
 /**
  * @since 0.2.0
  */
-export function printHeader(title: string, order: number): string {
+function printHeader(title: string, order: number): string {
   let s = '---\n'
   s += `title: ${title}\n`
   s += `nav_order: ${order}\n`
@@ -187,7 +189,7 @@ export function printModule(module: Module, counter: number): string {
 
   const result =
     header +
-    printModuleDescription(module.description) +
+    printModuleDescription(module) +
     CRLF +
     '---' +
     CRLF +

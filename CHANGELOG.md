@@ -13,6 +13,13 @@
 **Note**: Gaps between patch versions are faulty/broken releases.
 **Note**: A feature tagged as Experimental is in a high state of flux, you're at risk of it changing without notice.
 
+# 0.3.0
+
+- **Breaking Change**
+  - modules now can/must be documented as usual (@gcanti)
+    - required `@since` tag
+    - no more `@file` tags (descriptione can be specified as usual)
+
 # 0.2.1
 
 - **Internal**

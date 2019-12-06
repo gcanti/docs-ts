@@ -6,7 +6,7 @@ import {
   getInterfaces,
   getTypeAliases,
   getConstants,
-  getModuleInfo,
+  getModuleDocumentation,
   getExports,
   stripImportTypes
 } from '../src/parser'
@@ -419,40 +419,32 @@ export class Test<A> {
   })
 })
 
-describe('getModuleInfo', () => {
-  it('should not return a file description if there is no @file tag', () => {
-    const sourceFile = getTestSourceFile(
-      `
-/**
- * @since 1.0.0
- */
-export const a: number = 1
-    `
-    )
-    assert.deepStrictEqual(getModuleInfo(sourceFile), {
-      description: none,
-      deprecated: false
-    })
-  })
-
+describe('getModuleDocumentation', () => {
   it('should return a description field and a deprecated field', () => {
     const sourceFile = getTestSourceFile(
       `
 /**
- * @file Manages the configuration settings for the widget
+ * Manages the configuration settings for the widget
  * @deprecated
+ * @since 1.0.0
  */
 
 /**
- * @since 1.0.0
+ * @since 1.2.0
  */
 export const a: number = 1
     `
     )
-    assert.deepStrictEqual(getModuleInfo(sourceFile), {
-      description: some('Manages the configuration settings for the widget'),
-      deprecated: true
-    })
+    assert.deepStrictEqual(
+      getModuleDocumentation(sourceFile, 'name'),
+      right({
+        name: 'name',
+        description: some('Manages the configuration settings for the widget'),
+        deprecated: true,
+        since: '1.0.0',
+        examples: []
+      })
+    )
   })
 })
 

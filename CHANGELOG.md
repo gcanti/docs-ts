@@ -13,6 +13,11 @@
 **Note**: Gaps between patch versions are faulty/broken releases.
 **Note**: A feature tagged as Experimental is in a high state of flux, you're at risk of it changing without notice.
 
+# 0.3.1
+
+- **Bug Fix**
+  - add support for default type parameters (@gcanti)
+
 # 0.3.0
 
 - **Breaking Change**

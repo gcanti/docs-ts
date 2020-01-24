@@ -455,12 +455,18 @@ export function stripImportTypes(s: string): string {
 
 function getConstantVariableDeclarationSignature(vd: ast.VariableDeclaration): string {
   const text = vd.getText()
-  const end = text.indexOf(' = ')
-  let name = text.substring(0, end)
-  if (name.indexOf(':') === -1) {
-    name += ': ' + stripImportTypes(vd.getType().getText(vd))
+  const lt = text.indexOf('<')
+  let end = text.indexOf(' = ')
+  if (lt !== -1 && lt < end) {
+    // default type parameters
+    const gt = text.indexOf('>', lt)
+    end = text.indexOf(' = ', gt)
   }
-  return `export const ${name} = ...`
+  let s = text.substring(0, end)
+  if (s.indexOf(':') === -1) {
+    s += ': ' + stripImportTypes(vd.getType().getText(vd))
+  }
+  return `export const ${s} = ...`
 }
 
 function parseConstantVariableDeclaration(vd: ast.VariableDeclaration): Parser<Constant> {

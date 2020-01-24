@@ -248,7 +248,7 @@ describe('getConstants', () => {
 * @since 1.0.0
 * @deprecated
 */
-export const setoidString: Setoid<string> = setoidStrict`
+export const s: string = ''`
     )
     assert.deepStrictEqual(
       getConstants(sourceFile),
@@ -256,8 +256,82 @@ export const setoidString: Setoid<string> = setoidStrict`
         {
           deprecated: true,
           description: some('a description...'),
-          name: 'setoidString',
-          signature: 'export const setoidString: Setoid<string> = ...',
+          name: 's',
+          signature: 'export const s: string = ...',
+          since: '1.0.0',
+          examples: []
+        }
+      ])
+    )
+  })
+
+  it('should support default type parameters', () => {
+    const sourceFile = getTestSourceFile(
+      `/**
+* @since 1.0.0
+*/
+export const left: <E = never, A = never>(l: E) => string = T.left`
+    )
+    assert.deepStrictEqual(
+      getConstants(sourceFile),
+      right([
+        {
+          deprecated: false,
+          description: none,
+          name: 'left',
+          signature: 'export const left: <E = never, A = never>(l: E) => string = ...',
+          since: '1.0.0',
+          examples: []
+        }
+      ])
+    )
+  })
+
+  it('should support not typed constants', () => {
+    const sourceFile = getTestSourceFile(
+      `/**
+* @since 1.0.0
+*/
+export const empty = new Map<never, never>()`
+    )
+    assert.deepStrictEqual(
+      getConstants(sourceFile),
+      right([
+        {
+          deprecated: false,
+          description: none,
+          name: 'empty',
+          signature: 'export const empty: Map<never, never> = ...',
+          since: '1.0.0',
+          examples: []
+        }
+      ])
+    )
+  })
+
+  it('should typeof annotations', () => {
+    const sourceFile = getTestSourceFile(
+      `
+const task: { a: number } = {
+  a: 1
+}
+
+/**
+* @since 1.0.0
+*/
+export const taskSeq: typeof task = {
+  ...task,
+  ap: (mab, ma) => () => mab().then(f => ma().then(a => f(a)))
+}`
+    )
+    assert.deepStrictEqual(
+      getConstants(sourceFile),
+      right([
+        {
+          deprecated: false,
+          description: none,
+          name: 'taskSeq',
+          signature: 'export const taskSeq: typeof task = ...',
           since: '1.0.0',
           examples: []
         }

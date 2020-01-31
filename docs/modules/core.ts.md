@@ -17,7 +17,7 @@ Added in v0.2.0
 - [Eff (interface)](#eff-interface)
 - [MonadFileSystem (interface)](#monadfilesystem-interface)
 - [MonadLog (interface)](#monadlog-interface)
-- [main (constant)](#main-constant)
+- [main](#main)
 
 ---
 
@@ -85,7 +85,7 @@ export interface MonadLog {
 
 Added in v0.2.0
 
-# main (constant)
+# main
 
 **Signature**
 

@@ -26,24 +26,24 @@ Added in v0.2.0
 - [TypeAlias (interface)](#typealias-interface)
 - [Example (type alias)](#example-type-alias)
 - [Parser (type alias)](#parser-type-alias)
-- [class\_ (function)](#class_-function)
-- [constant (function)](#constant-function)
-- [documentable (function)](#documentable-function)
-- [example (function)](#example-function)
-- [export\_ (function)](#export_-function)
-- [func (function)](#func-function)
-- [getClasses (function)](#getclasses-function)
-- [getConstants (function)](#getconstants-function)
-- [getExports (function)](#getexports-function)
-- [getFunctions (function)](#getfunctions-function)
-- [getInterfaces (function)](#getinterfaces-function)
-- [getModuleDocumentation (function)](#getmoduledocumentation-function)
-- [getTypeAliases (function)](#gettypealiases-function)
-- [interface\_ (function)](#interface_-function)
-- [method (function)](#method-function)
-- [module (function)](#module-function)
-- [run (function)](#run-function)
-- [typeAlias (function)](#typealias-function)
+- [class\_](#class_)
+- [constant](#constant)
+- [documentable](#documentable)
+- [example](#example)
+- [export\_](#export_)
+- [func](#func)
+- [getClasses](#getclasses)
+- [getConstants](#getconstants)
+- [getExports](#getexports)
+- [getFunctions](#getfunctions)
+- [getInterfaces](#getinterfaces)
+- [getModuleDocumentation](#getmoduledocumentation)
+- [getTypeAliases](#gettypealiases)
+- [interface\_](#interface_)
+- [method](#method)
+- [module](#module)
+- [run](#run)
+- [typeAlias](#typealias)
 
 ---
 
@@ -200,7 +200,7 @@ export type Parser<A> = E.Either<Array<string>, A>
 
 Added in v0.2.0
 
-# class\_ (function)
+# class\_
 
 **Signature**
 
@@ -215,7 +215,7 @@ export function class_(
 
 Added in v0.2.0
 
-# constant (function)
+# constant
 
 **Signature**
 
@@ -225,7 +225,7 @@ export function constant(documentable: Documentable, signature: string): Constan
 
 Added in v0.2.0
 
-# documentable (function)
+# documentable
 
 **Signature**
 
@@ -241,7 +241,7 @@ export function documentable(
 
 Added in v0.2.0
 
-# example (function)
+# example
 
 **Signature**
 
@@ -251,7 +251,7 @@ export function example(code: string): Example { ... }
 
 Added in v0.2.0
 
-# export\_ (function)
+# export\_
 
 **Signature**
 
@@ -261,7 +261,7 @@ export function export_(documentable: Documentable, signature: string): Export {
 
 Added in v0.2.0
 
-# func (function)
+# func
 
 **Signature**
 
@@ -271,7 +271,7 @@ export function func(documentable: Documentable, signatures: Array<string>): Fun
 
 Added in v0.2.0
 
-# getClasses (function)
+# getClasses
 
 **Signature**
 
@@ -281,7 +281,7 @@ export function getClasses(moduleName: string, sourceFile: ast.SourceFile): Pars
 
 Added in v0.2.0
 
-# getConstants (function)
+# getConstants
 
 **Signature**
 
@@ -291,7 +291,7 @@ export function getConstants(sourceFile: ast.SourceFile): Parser<Array<Constant>
 
 Added in v0.2.0
 
-# getExports (function)
+# getExports
 
 **Signature**
 
@@ -301,7 +301,7 @@ export function getExports(sourceFile: ast.SourceFile): Parser<Array<Export>> { 
 
 Added in v0.2.0
 
-# getFunctions (function)
+# getFunctions
 
 **Signature**
 
@@ -311,7 +311,7 @@ export function getFunctions(moduleName: string, sourceFile: ast.SourceFile): Pa
 
 Added in v0.2.0
 
-# getInterfaces (function)
+# getInterfaces
 
 **Signature**
 
@@ -321,7 +321,7 @@ export function getInterfaces(sourceFile: ast.SourceFile): Parser<Array<Interfac
 
 Added in v0.2.0
 
-# getModuleDocumentation (function)
+# getModuleDocumentation
 
 **Signature**
 
@@ -331,7 +331,7 @@ export function getModuleDocumentation(sourceFile: ast.SourceFile, name: string)
 
 Added in v0.2.0
 
-# getTypeAliases (function)
+# getTypeAliases
 
 **Signature**
 
@@ -341,7 +341,7 @@ export function getTypeAliases(sourceFile: ast.SourceFile): Parser<Array<TypeAli
 
 Added in v0.2.0
 
-# interface\_ (function)
+# interface\_
 
 **Signature**
 
@@ -351,7 +351,7 @@ export function interface_(documentable: Documentable, signature: string): Inter
 
 Added in v0.2.0
 
-# method (function)
+# method
 
 **Signature**
 
@@ -361,7 +361,7 @@ export function method(documentable: Documentable, signatures: Array<string>): M
 
 Added in v0.2.0
 
-# module (function)
+# module
 
 **Signature**
 
@@ -380,7 +380,7 @@ export function module(
 
 Added in v0.2.0
 
-# run (function)
+# run
 
 **Signature**
 
@@ -390,7 +390,7 @@ export function run(files: Array<File>): Parser<Array<Module>> { ... }
 
 Added in v0.2.0
 
-# typeAlias (function)
+# typeAlias
 
 **Signature**
 

@@ -12,11 +12,11 @@ Added in v0.2.0
 
 <h2 class="text-delta">Table of contents</h2>
 
-- [main (constant)](#main-constant)
+- [main](#main)
 
 ---
 
-# main (constant)
+# main
 
 **Signature**
 

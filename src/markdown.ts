@@ -50,7 +50,7 @@ function printTypeAlias(ta: TypeAlias): string {
 }
 
 function printConstant(c: Constant): string {
-  let s = h1(handleDeprecated(c.name, c.deprecated) + ' (constant)')
+  let s = h1(handleDeprecated(c.name, c.deprecated))
   s += printDescription(c.description)
   s += printSignature(c.signature)
   s += printExamples(c.examples)
@@ -60,7 +60,7 @@ function printConstant(c: Constant): string {
 }
 
 function printFunction(f: Func): string {
-  let s = h1(handleDeprecated(f.name, f.deprecated) + ' (function)')
+  let s = h1(handleDeprecated(f.name, f.deprecated))
   s += printDescription(f.description)
   s += printSignatures(f.signatures)
   s += printExamples(f.examples)
@@ -80,7 +80,7 @@ function printStaticMethod(f: Func): string {
 }
 
 function printExport(e: Export): string {
-  let s = h1(handleDeprecated(e.name, e.deprecated) + ' (export)')
+  let s = h1(handleDeprecated(e.name, e.deprecated))
   s += printDescription(e.description)
   s += printSignature(e.signature)
   s += printExamples(e.examples)

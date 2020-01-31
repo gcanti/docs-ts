@@ -17,6 +17,7 @@ const fence = (language: string) => (code: string): string => '```' + language +
 const ts = fence('ts')
 const bold = (code: string) => '**' + code + '**'
 const strike = (text: string) => '~~' + text + '~~'
+const code = (text: string) => '`' + text + '`'
 
 const prettierOptions: prettier.Options = {
   parser: 'markdown',
@@ -30,7 +31,7 @@ function handleDeprecated(s: string, deprecated: boolean): string {
 }
 
 function printInterface(i: Interface): string {
-  let s = h1(handleDeprecated(i.name, i.deprecated) + ' (interface)')
+  let s = h1(handleDeprecated(code(i.name), i.deprecated) + ' (interface)')
   s += printDescription(i.description)
   s += printSignature(i.signature)
   s += printExamples(i.examples)
@@ -40,7 +41,7 @@ function printInterface(i: Interface): string {
 }
 
 function printTypeAlias(ta: TypeAlias): string {
-  let s = h1(handleDeprecated(ta.name, ta.deprecated) + ' (type alias)')
+  let s = h1(handleDeprecated(code(ta.name), ta.deprecated) + ' (type alias)')
   s += printDescription(ta.description)
   s += printSignature(ta.signature)
   s += printExamples(ta.examples)
@@ -50,7 +51,7 @@ function printTypeAlias(ta: TypeAlias): string {
 }
 
 function printConstant(c: Constant): string {
-  let s = h1(handleDeprecated(c.name, c.deprecated))
+  let s = h1(handleDeprecated(code(c.name), c.deprecated))
   s += printDescription(c.description)
   s += printSignature(c.signature)
   s += printExamples(c.examples)
@@ -60,7 +61,7 @@ function printConstant(c: Constant): string {
 }
 
 function printFunction(f: Func): string {
-  let s = h1(handleDeprecated(f.name, f.deprecated))
+  let s = h1(handleDeprecated(code(f.name), f.deprecated))
   s += printDescription(f.description)
   s += printSignatures(f.signatures)
   s += printExamples(f.examples)
@@ -70,7 +71,7 @@ function printFunction(f: Func): string {
 }
 
 function printStaticMethod(f: Func): string {
-  let s = h2(handleDeprecated(f.name, f.deprecated) + ' (static method)')
+  let s = h2(handleDeprecated(code(f.name), f.deprecated) + ' (static method)')
   s += printDescription(f.description)
   s += printSignatures(f.signatures)
   s += printExamples(f.examples)
@@ -80,7 +81,7 @@ function printStaticMethod(f: Func): string {
 }
 
 function printExport(e: Export): string {
-  let s = h1(handleDeprecated(e.name, e.deprecated))
+  let s = h1(handleDeprecated(code(e.name), e.deprecated))
   s += printDescription(e.description)
   s += printSignature(e.signature)
   s += printExamples(e.examples)
@@ -90,7 +91,7 @@ function printExport(e: Export): string {
 }
 
 function printMethod(m: Method): string {
-  let s = h2(handleDeprecated(m.name, m.deprecated) + ' (method)')
+  let s = h2(handleDeprecated(code(m.name), m.deprecated) + ' (method)')
   s += printDescription(m.description)
   s += printSignatures(m.signatures)
   s += printExamples(m.examples)
@@ -100,7 +101,7 @@ function printMethod(m: Method): string {
 }
 
 function printClass(c: Class): string {
-  let s = h1(handleDeprecated(c.name, c.deprecated) + ' (class)')
+  let s = h1(handleDeprecated(code(c.name), c.deprecated) + ' (class)')
   s += printDescription(c.description)
   s += printSignature(c.signature)
   s += printExamples(c.examples)
@@ -183,9 +184,13 @@ export function printModule(module: Module, counter: number): string {
     module.interfaces.map(i => printInterface(i)).join('') +
     module.typeAliases.map(i => printTypeAlias(i)).join('') +
     module.classes.map(c => printClass(c)).join('') +
-    module.constants.map(c => printConstant(c)).join('') +
-    module.functions.map(f => printFunction(f)).join('') +
-    module.exports.map(e => printExport(e)).join('')
+    [
+      ...module.constants.map(c => printConstant(c)),
+      ...module.functions.map(f => printFunction(f)),
+      ...module.exports.map(e => printExport(e))
+    ]
+      .sort()
+      .join('')
 
   const result =
     header +

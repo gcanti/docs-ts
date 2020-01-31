@@ -14,40 +14,40 @@ Added in v0.2.0
 
 <h2 class="text-delta">Table of contents</h2>
 
-- [Class (interface)](#class-interface)
-- [Constant (interface)](#constant-interface)
-- [Documentable (interface)](#documentable-interface)
-- [Export (interface)](#export-interface)
-- [File (interface)](#file-interface)
-- [Func (interface)](#func-interface)
-- [Interface (interface)](#interface-interface)
-- [Method (interface)](#method-interface)
-- [Module (interface)](#module-interface)
-- [TypeAlias (interface)](#typealias-interface)
-- [Example (type alias)](#example-type-alias)
-- [Parser (type alias)](#parser-type-alias)
-- [class\_](#class_)
-- [constant](#constant)
-- [documentable](#documentable)
-- [example](#example)
-- [export\_](#export_)
-- [func](#func)
-- [getClasses](#getclasses)
-- [getConstants](#getconstants)
-- [getExports](#getexports)
-- [getFunctions](#getfunctions)
-- [getInterfaces](#getinterfaces)
-- [getModuleDocumentation](#getmoduledocumentation)
-- [getTypeAliases](#gettypealiases)
-- [interface\_](#interface_)
-- [method](#method)
-- [module](#module)
-- [run](#run)
-- [typeAlias](#typealias)
+- [`Class` (interface)](#class-interface)
+- [`Constant` (interface)](#constant-interface)
+- [`Documentable` (interface)](#documentable-interface)
+- [`Export` (interface)](#export-interface)
+- [`File` (interface)](#file-interface)
+- [`Func` (interface)](#func-interface)
+- [`Interface` (interface)](#interface-interface)
+- [`Method` (interface)](#method-interface)
+- [`Module` (interface)](#module-interface)
+- [`TypeAlias` (interface)](#typealias-interface)
+- [`Example` (type alias)](#example-type-alias)
+- [`Parser` (type alias)](#parser-type-alias)
+- [`class_`](#class_)
+- [`constant`](#constant)
+- [`documentable`](#documentable)
+- [`example`](#example)
+- [`export_`](#export_)
+- [`func`](#func)
+- [`getClasses`](#getclasses)
+- [`getConstants`](#getconstants)
+- [`getExports`](#getexports)
+- [`getFunctions`](#getfunctions)
+- [`getInterfaces`](#getinterfaces)
+- [`getModuleDocumentation`](#getmoduledocumentation)
+- [`getTypeAliases`](#gettypealiases)
+- [`interface_`](#interface_)
+- [`method`](#method)
+- [`module`](#module)
+- [`run`](#run)
+- [`typeAlias`](#typealias)
 
 ---
 
-# Class (interface)
+# `Class` (interface)
 
 **Signature**
 
@@ -61,7 +61,7 @@ export interface Class extends Documentable {
 
 Added in v0.2.0
 
-# Constant (interface)
+# `Constant` (interface)
 
 **Signature**
 
@@ -73,7 +73,7 @@ export interface Constant extends Documentable {
 
 Added in v0.2.0
 
-# Documentable (interface)
+# `Documentable` (interface)
 
 **Signature**
 
@@ -89,7 +89,7 @@ export interface Documentable {
 
 Added in v0.2.0
 
-# Export (interface)
+# `Export` (interface)
 
 **Signature**
 
@@ -101,7 +101,7 @@ export interface Export extends Documentable {
 
 Added in v0.2.0
 
-# File (interface)
+# `File` (interface)
 
 **Signature**
 
@@ -114,7 +114,7 @@ export interface File {
 
 Added in v0.2.0
 
-# Func (interface)
+# `Func` (interface)
 
 **Signature**
 
@@ -126,7 +126,7 @@ export interface Func extends Documentable {
 
 Added in v0.2.0
 
-# Interface (interface)
+# `Interface` (interface)
 
 **Signature**
 
@@ -138,7 +138,7 @@ export interface Interface extends Documentable {
 
 Added in v0.2.0
 
-# Method (interface)
+# `Method` (interface)
 
 **Signature**
 
@@ -150,7 +150,7 @@ export interface Method extends Documentable {
 
 Added in v0.2.0
 
-# Module (interface)
+# `Module` (interface)
 
 **Signature**
 
@@ -168,7 +168,7 @@ export interface Module extends Documentable {
 
 Added in v0.2.0
 
-# TypeAlias (interface)
+# `TypeAlias` (interface)
 
 **Signature**
 
@@ -180,7 +180,7 @@ export interface TypeAlias extends Documentable {
 
 Added in v0.2.0
 
-# Example (type alias)
+# `Example` (type alias)
 
 **Signature**
 
@@ -190,7 +190,7 @@ export type Example = string
 
 Added in v0.2.0
 
-# Parser (type alias)
+# `Parser` (type alias)
 
 **Signature**
 
@@ -200,7 +200,7 @@ export type Parser<A> = E.Either<Array<string>, A>
 
 Added in v0.2.0
 
-# class\_
+# `class_`
 
 **Signature**
 
@@ -215,7 +215,7 @@ export function class_(
 
 Added in v0.2.0
 
-# constant
+# `constant`
 
 **Signature**
 
@@ -225,7 +225,7 @@ export function constant(documentable: Documentable, signature: string): Constan
 
 Added in v0.2.0
 
-# documentable
+# `documentable`
 
 **Signature**
 
@@ -241,7 +241,7 @@ export function documentable(
 
 Added in v0.2.0
 
-# example
+# `example`
 
 **Signature**
 
@@ -251,7 +251,7 @@ export function example(code: string): Example { ... }
 
 Added in v0.2.0
 
-# export\_
+# `export_`
 
 **Signature**
 
@@ -261,7 +261,7 @@ export function export_(documentable: Documentable, signature: string): Export {
 
 Added in v0.2.0
 
-# func
+# `func`
 
 **Signature**
 
@@ -271,7 +271,7 @@ export function func(documentable: Documentable, signatures: Array<string>): Fun
 
 Added in v0.2.0
 
-# getClasses
+# `getClasses`
 
 **Signature**
 
@@ -281,7 +281,7 @@ export function getClasses(moduleName: string, sourceFile: ast.SourceFile): Pars
 
 Added in v0.2.0
 
-# getConstants
+# `getConstants`
 
 **Signature**
 
@@ -291,7 +291,7 @@ export function getConstants(sourceFile: ast.SourceFile): Parser<Array<Constant>
 
 Added in v0.2.0
 
-# getExports
+# `getExports`
 
 **Signature**
 
@@ -301,7 +301,7 @@ export function getExports(sourceFile: ast.SourceFile): Parser<Array<Export>> { 
 
 Added in v0.2.0
 
-# getFunctions
+# `getFunctions`
 
 **Signature**
 
@@ -311,7 +311,7 @@ export function getFunctions(moduleName: string, sourceFile: ast.SourceFile): Pa
 
 Added in v0.2.0
 
-# getInterfaces
+# `getInterfaces`
 
 **Signature**
 
@@ -321,7 +321,7 @@ export function getInterfaces(sourceFile: ast.SourceFile): Parser<Array<Interfac
 
 Added in v0.2.0
 
-# getModuleDocumentation
+# `getModuleDocumentation`
 
 **Signature**
 
@@ -331,7 +331,7 @@ export function getModuleDocumentation(sourceFile: ast.SourceFile, name: string)
 
 Added in v0.2.0
 
-# getTypeAliases
+# `getTypeAliases`
 
 **Signature**
 
@@ -341,7 +341,7 @@ export function getTypeAliases(sourceFile: ast.SourceFile): Parser<Array<TypeAli
 
 Added in v0.2.0
 
-# interface\_
+# `interface_`
 
 **Signature**
 
@@ -351,7 +351,7 @@ export function interface_(documentable: Documentable, signature: string): Inter
 
 Added in v0.2.0
 
-# method
+# `method`
 
 **Signature**
 
@@ -361,7 +361,7 @@ export function method(documentable: Documentable, signatures: Array<string>): M
 
 Added in v0.2.0
 
-# module
+# `module`
 
 **Signature**
 
@@ -380,7 +380,7 @@ export function module(
 
 Added in v0.2.0
 
-# run
+# `run`
 
 **Signature**
 
@@ -390,7 +390,7 @@ export function run(files: Array<File>): Parser<Array<Module>> { ... }
 
 Added in v0.2.0
 
-# typeAlias
+# `typeAlias`
 
 **Signature**
 

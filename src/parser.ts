@@ -293,6 +293,11 @@ function parseInterfaceDeclaration(id: ast.InterfaceDeclaration): Parser<Interfa
   )
 }
 
+const byName = pipe(
+  ordString,
+  contramap((x: { name: string }) => x.name)
+)
+
 /**
  * @since 0.2.0
  */
@@ -376,11 +381,6 @@ function parseFunctionVariableDeclaration(vd: ast.VariableDeclaration): Parser<F
   )
 }
 
-const byName = pipe(
-  ordString,
-  contramap((x: { name: string }) => x.name)
-)
-
 /**
  * @since 0.2.0
  */
@@ -412,10 +412,7 @@ export function getFunctions(moduleName: string, sourceFile: ast.SourceFile): Pa
   const variableDeclarations = traverse(exportedVariableDeclarations, parseFunctionVariableDeclaration)
 
   const monoidFunc = E.getValidationMonoid(monoidFailure, A.getMonoid<Func>())
-  return pipe(
-    monoidFunc.concat(functionDeclarations, variableDeclarations),
-    E.map(funcs => funcs.sort(byName.compare))
-  )
+  return monoidFunc.concat(functionDeclarations, variableDeclarations)
 }
 
 function getTypeAliasesAnnotation(ta: ast.TypeAliasDeclaration): doctrine.Annotation {
@@ -510,10 +507,7 @@ export function getConstants(sourceFile: ast.SourceFile): Parser<Array<Constant>
     return false
   })
 
-  return pipe(
-    traverse(exportedVariableDeclarations, parseConstantVariableDeclaration),
-    E.map(constants => constants.sort(byName.compare))
-  )
+  return traverse(exportedVariableDeclarations, parseConstantVariableDeclaration)
 }
 
 function parseExportSpecifier(es: ast.ExportSpecifier): Parser<Export> {
@@ -541,10 +535,7 @@ function parseExportDeclaration(ed: ast.ExportDeclaration): Parser<Array<Export>
  */
 export function getExports(sourceFile: ast.SourceFile): Parser<Array<Export>> {
   const exportDeclarations = sourceFile.getExportDeclarations()
-  return pipe(
-    traverse(exportDeclarations, parseExportDeclaration),
-    E.map(exports => A.flatten(exports).sort(byName.compare))
-  )
+  return pipe(traverse(exportDeclarations, parseExportDeclaration), E.map(A.flatten))
 }
 
 function getTypeParameters(typeParameters: Array<ast.TypeParameterDeclaration>): string {

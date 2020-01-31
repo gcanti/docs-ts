@@ -14,12 +14,12 @@ Added in v0.2.0
 
 <h2 class="text-delta">Table of contents</h2>
 
-- [printExamples](#printexamples)
-- [printModule](#printmodule)
+- [`printExamples`](#printexamples)
+- [`printModule`](#printmodule)
 
 ---
 
-# printExamples
+# `printExamples`
 
 **Signature**
 
@@ -29,7 +29,7 @@ export function printExamples(examples: Array<Example>): string { ... }
 
 Added in v0.2.0
 
-# printModule
+# `printModule`
 
 **Signature**
 

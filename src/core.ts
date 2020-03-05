@@ -188,11 +188,14 @@ function addAssertImport(code: string): string {
 
 function handleImports(files: Array<File>, projectName: string): Array<File> {
   function replaceProjectName(source: string): string {
+    // Matches imports of the form:
     // import { foo } from 'projectName'
-    // import { foo } from 'projectName/lib/'
-    // import { foo } from 'projectName/bar'
     const root = new RegExp(`from '${projectName}'`, 'g')
+    // Matches imports of the form:
+    // import { foo } from 'projectName/lib/...'
     const module = new RegExp(`from '${projectName}/lib/`, 'g')
+    // Matches imports of the form:
+    // import { foo } from 'projectName/...'
     const other = new RegExp(`from '${projectName}/`, 'g')
     return source
       .replace(root, `from '../../src'`)

@@ -13,6 +13,11 @@
 **Note**: Gaps between patch versions are faulty/broken releases.
 **Note**: A feature tagged as Experimental is in a high state of flux, you're at risk of it changing without notice.
 
+# 0.3.5
+
+- **Polish**
+  - support any path in `src` in the examples, #12 (@gillchristian)
+
 # 0.3.4
 
 - **Polish**

@@ -21,7 +21,7 @@ Added in v0.2.0
 **Signature**
 
 ```ts
-export const main: T.Task<void> = ...
+export declare const main: T.Task<void>
 ```
 
 Added in v0.2.0

@@ -90,7 +90,7 @@ Added in v0.2.0
 **Signature**
 
 ```ts
-export const main: AppEff<void> = ...
+export declare const main: AppEff<void>
 ```
 
 Added in v0.2.0

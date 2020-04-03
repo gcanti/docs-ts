@@ -14,28 +14,28 @@ Added in v0.2.0
 
 <h2 class="text-delta">Table of contents</h2>
 
-- [hasOwnProperty (function)](#hasownproperty-function)
+- [printClass](#printclass)
 - [printExamples](#printexamples)
 - [printModule](#printmodule)
 
 ---
 
-# hasOwnProperty (function)
+# printClass
 
 **Signature**
 
 ```ts
-export function hasOwnProperty<K extends string>(k: string, r: Record<K, unknown>): k is K { ... }
+export declare function printClass(c: Class): string
 ```
 
-Added in v2.0.0
+Added in v0.4.0
 
 # printExamples
 
 **Signature**
 
 ```ts
-export function printExamples(examples: Array<Example>): string { ... }
+export declare function printExamples(examples: Array<Example>): string
 ```
 
 Added in v0.2.0
@@ -45,7 +45,7 @@ Added in v0.2.0
 **Signature**
 
 ```ts
-export function printModule(module: Module, counter: number): string { ... }
+export declare function printModule(module: Module, counter: number): string
 ```
 
 Added in v0.2.0

@@ -23,6 +23,7 @@ Added in v0.2.0
 - [Interface (interface)](#interface-interface)
 - [Method (interface)](#method-interface)
 - [Module (interface)](#module-interface)
+- [Property (interface)](#property-interface)
 - [TypeAlias (interface)](#typealias-interface)
 - [Example (type alias)](#example-type-alias)
 - [Parser (type alias)](#parser-type-alias)
@@ -42,6 +43,7 @@ Added in v0.2.0
 - [interface\_](#interface_)
 - [method](#method)
 - [module](#module)
+- [property](#property)
 - [run](#run)
 - [typeAlias](#typealias)
 
@@ -56,6 +58,7 @@ export interface Class extends Documentable {
   readonly signature: string
   readonly methods: Array<Method>
   readonly staticMethods: Array<Method>
+  readonly properties: Array<Property>
 }
 ```
 
@@ -168,6 +171,18 @@ export interface Module extends Documentable {
 
 Added in v0.2.0
 
+# Property (interface)
+
+**Signature**
+
+```ts
+export interface Property extends Documentable {
+  readonly signature: string
+}
+```
+
+Added in v0.4.0
+
 # TypeAlias (interface)
 
 **Signature**
@@ -205,12 +220,13 @@ Added in v0.2.0
 **Signature**
 
 ```ts
-export function class_(
+export declare function class_(
   documentable: Documentable,
   signature: string,
   methods: Array<Method>,
-  staticMethods: Array<Method>
-): Class { ... }
+  staticMethods: Array<Method>,
+  properties: Array<Property>
+): Class
 ```
 
 Added in v0.2.0
@@ -220,7 +236,7 @@ Added in v0.2.0
 **Signature**
 
 ```ts
-export function constant(documentable: Documentable, signature: string): Constant { ... }
+export declare function constant(documentable: Documentable, signature: string): Constant
 ```
 
 Added in v0.2.0
@@ -230,13 +246,13 @@ Added in v0.2.0
 **Signature**
 
 ```ts
-export function documentable(
+export declare function documentable(
   name: string,
   description: O.Option<string>,
   since: string,
   deprecated: boolean,
   examples: Array<Example>
-): Documentable { ... }
+): Documentable
 ```
 
 Added in v0.2.0
@@ -246,7 +262,7 @@ Added in v0.2.0
 **Signature**
 
 ```ts
-export function example(code: string): Example { ... }
+export declare function example(code: string): Example
 ```
 
 Added in v0.2.0
@@ -256,7 +272,7 @@ Added in v0.2.0
 **Signature**
 
 ```ts
-export function export_(documentable: Documentable, signature: string): Export { ... }
+export declare function export_(documentable: Documentable, signature: string): Export
 ```
 
 Added in v0.2.0
@@ -266,7 +282,7 @@ Added in v0.2.0
 **Signature**
 
 ```ts
-export function func(documentable: Documentable, signatures: Array<string>): Func { ... }
+export declare function func(documentable: Documentable, signatures: Array<string>): Func
 ```
 
 Added in v0.2.0
@@ -276,7 +292,7 @@ Added in v0.2.0
 **Signature**
 
 ```ts
-export function getClasses(moduleName: string, sourceFile: ast.SourceFile): Parser<Array<Class>> { ... }
+export declare function getClasses(moduleName: string, sourceFile: ast.SourceFile): Parser<Array<Class>>
 ```
 
 Added in v0.2.0
@@ -286,7 +302,7 @@ Added in v0.2.0
 **Signature**
 
 ```ts
-export function getConstants(sourceFile: ast.SourceFile): Parser<Array<Constant>> { ... }
+export declare function getConstants(sourceFile: ast.SourceFile): Parser<Array<Constant>>
 ```
 
 Added in v0.2.0
@@ -296,7 +312,7 @@ Added in v0.2.0
 **Signature**
 
 ```ts
-export function getExports(sourceFile: ast.SourceFile): Parser<Array<Export>> { ... }
+export declare function getExports(sourceFile: ast.SourceFile): Parser<Array<Export>>
 ```
 
 Added in v0.2.0
@@ -306,7 +322,7 @@ Added in v0.2.0
 **Signature**
 
 ```ts
-export function getFunctions(moduleName: string, sourceFile: ast.SourceFile): Parser<Array<Func>> { ... }
+export declare function getFunctions(moduleName: string, sourceFile: ast.SourceFile): Parser<Array<Func>>
 ```
 
 Added in v0.2.0
@@ -316,7 +332,7 @@ Added in v0.2.0
 **Signature**
 
 ```ts
-export function getInterfaces(sourceFile: ast.SourceFile): Parser<Array<Interface>> { ... }
+export declare function getInterfaces(sourceFile: ast.SourceFile): Parser<Array<Interface>>
 ```
 
 Added in v0.2.0
@@ -326,7 +342,7 @@ Added in v0.2.0
 **Signature**
 
 ```ts
-export function getModuleDocumentation(sourceFile: ast.SourceFile, name: string): Parser<Documentable> { ... }
+export declare function getModuleDocumentation(sourceFile: ast.SourceFile, name: string): Parser<Documentable>
 ```
 
 Added in v0.2.0
@@ -336,7 +352,7 @@ Added in v0.2.0
 **Signature**
 
 ```ts
-export function getTypeAliases(sourceFile: ast.SourceFile): Parser<Array<TypeAlias>> { ... }
+export declare function getTypeAliases(sourceFile: ast.SourceFile): Parser<Array<TypeAlias>>
 ```
 
 Added in v0.2.0
@@ -346,7 +362,7 @@ Added in v0.2.0
 **Signature**
 
 ```ts
-export function interface_(documentable: Documentable, signature: string): Interface { ... }
+export declare function interface_(documentable: Documentable, signature: string): Interface
 ```
 
 Added in v0.2.0
@@ -356,7 +372,7 @@ Added in v0.2.0
 **Signature**
 
 ```ts
-export function method(documentable: Documentable, signatures: Array<string>): Method { ... }
+export declare function method(documentable: Documentable, signatures: Array<string>): Method
 ```
 
 Added in v0.2.0
@@ -366,7 +382,7 @@ Added in v0.2.0
 **Signature**
 
 ```ts
-export function module(
+export declare function module(
   documentable: Documentable,
   path: Array<string>,
   interfaces: Array<Interface>,
@@ -375,17 +391,27 @@ export function module(
   classes: Array<Class>,
   constants: Array<Constant>,
   exports: Array<Export>
-): Module { ... }
+): Module
 ```
 
 Added in v0.2.0
+
+# property
+
+**Signature**
+
+```ts
+export declare function property(documentable: Documentable, signature: string): Property
+```
+
+Added in v0.4.0
 
 # run
 
 **Signature**
 
 ```ts
-export function run(files: Array<File>): Parser<Array<Module>> { ... }
+export declare function run(files: Array<File>): Parser<Array<Module>>
 ```
 
 Added in v0.2.0
@@ -395,7 +421,7 @@ Added in v0.2.0
 **Signature**
 
 ```ts
-export function typeAlias(documentable: Documentable, signature: string): TypeAlias { ... }
+export declare function typeAlias(documentable: Documentable, signature: string): TypeAlias
 ```
 
 Added in v0.2.0

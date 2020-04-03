@@ -127,7 +127,7 @@ export const f = (a: number, b: number): { [key: string]: number } => ({ a, b })
           deprecated: true,
           description: some('a description...'),
           name: 'f',
-          signatures: ['export const f = (a: number, b: number): { [key: string]: number } => ...'],
+          signatures: ['export declare const f: (a: number, b: number) => { [key: string]: number; }'],
           since: '1.0.0',
           examples: ['assert.deeStrictEqual(f(1, 2), { a: 1, b: 2})', 'assert.deeStrictEqual(f(3, 4), { a: 3, b: 4})']
         }
@@ -135,7 +135,7 @@ export const f = (a: number, b: number): { [key: string]: number } => ({ a, b })
     )
   })
 
-  it('should return a `Func` with a body', () => {
+  it('should return a function declaration', () => {
     const sourceFile = getTestSourceFile(
       `const a: number = 1
 /**
@@ -150,7 +150,7 @@ export function f(a: number, b: number): { [key: string]: number } { return { a,
           deprecated: false,
           description: none,
           name: 'f',
-          signatures: ['export function f(a: number, b: number): { [key: string]: number } { ... }'],
+          signatures: ['export declare function f(a: number, b: number): { [key: string]: number }'],
           since: '1.0.0',
           examples: []
         }
@@ -175,7 +175,7 @@ export function f(a: number, b: number): { [key: string]: number } { return { a,
           deprecated: true,
           description: some('a description...'),
           name: 'f',
-          signatures: ['export function f(a: number, b: number): { [key: string]: number } { ... }'],
+          signatures: ['export declare function f(a: number, b: number): { [key: string]: number }'],
           since: '1.0.0',
           examples: []
         }
@@ -203,8 +203,8 @@ export function f(a: any, b: any): { [key: string]: number } { return { a, b } }
           description: some('a description...'),
           name: 'f',
           signatures: [
-            'export function f(a: int, b: int): { [key: string]: number }',
-            'export function f(a: number, b: number): { [key: string]: number } { ... }'
+            'export declare function f(a: int, b: int): { [key: string]: number }',
+            'export declare function f(a: number, b: number): { [key: string]: number }'
           ],
           since: '1.0.0',
           examples: []
@@ -241,7 +241,7 @@ export type Option<A> = None<A> | Some<A>`
 })
 
 describe('getConstants', () => {
-  it('should return a `Constant`', () => {
+  it('should handle a constant', () => {
     const sourceFile = getTestSourceFile(
       `/**
 * a description...
@@ -257,7 +257,7 @@ export const s: string = ''`
           deprecated: true,
           description: some('a description...'),
           name: 's',
-          signature: 'export const s: string = ...',
+          signature: 'export declare const s: string',
           since: '1.0.0',
           examples: []
         }
@@ -279,7 +279,7 @@ export const left: <E = never, A = never>(l: E) => string = T.left`
           deprecated: false,
           description: none,
           name: 'left',
-          signature: 'export const left: <E = never, A = never>(l: E) => string = ...',
+          signature: 'export declare const left: <E = never, A = never>(l: E) => string',
           since: '1.0.0',
           examples: []
         }
@@ -287,7 +287,7 @@ export const left: <E = never, A = never>(l: E) => string = T.left`
     )
   })
 
-  it('should support not typed constants', () => {
+  it('should support untyped constants', () => {
     const sourceFile = getTestSourceFile(
       `/**
 * @since 1.0.0
@@ -301,7 +301,7 @@ export const empty = new Map<never, never>()`
           deprecated: false,
           description: none,
           name: 'empty',
-          signature: 'export const empty: Map<never, never> = ...',
+          signature: 'export declare const empty: Map<never, never>',
           since: '1.0.0',
           examples: []
         }
@@ -331,7 +331,7 @@ export const taskSeq: typeof task = {
           deprecated: false,
           description: none,
           name: 'taskSeq',
-          signature: 'export const taskSeq: typeof task = ...',
+          signature: 'export declare const taskSeq: { a: number; }',
           since: '1.0.0',
           examples: []
         }
@@ -350,7 +350,7 @@ describe('getClasses', () => {
     const sourceFile = getTestSourceFile(`/** description
  * @since 1.0.0
  */
-export class C { constructor() { ... } }`)
+export class C { constructor() {} }`)
     assert.deepStrictEqual(
       getClasses('test', sourceFile),
       right([
@@ -360,9 +360,10 @@ export class C { constructor() { ... } }`)
           examples: [],
           methods: [],
           name: 'C',
-          signature: 'export class C {\n  constructor() { ... }\n  ... \n}',
+          signature: 'export declare class C { constructor() }',
           since: '1.0.0',
-          staticMethods: []
+          staticMethods: [],
+          properties: []
         }
       ])
     )
@@ -377,11 +378,18 @@ export class C { constructor() { ... } }`)
  */
 export class Test {
   /**
+   * a property...
+   * @since 1.1.0
+   * @deprecated
+   */
+  readonly a: string
+  private readonly b: number
+  /**
    * a static method description...
    * @since 1.1.0
    * @deprecated
    */
-  static f() {}
+  static f(): void {}
   constructor(readonly value: string) { }
   /**
    * a method description...
@@ -400,7 +408,7 @@ export class Test {
           deprecated: true,
           description: some('a class description...'),
           name: 'Test',
-          signature: 'export class Test {\n  constructor(readonly value: string) { ... }\n  ... \n}',
+          signature: 'export declare class Test { constructor(readonly value: string) }',
           since: '1.0.0',
           examples: [],
           methods: [
@@ -408,7 +416,7 @@ export class Test {
               deprecated: true,
               description: some('a method description...'),
               name: 'g',
-              signatures: ['g(a: number, b: number): { [key: string]: number } { ... }'],
+              signatures: ['g(a: number, b: number): { [key: string]: number }'],
               since: '1.1.0',
               examples: []
             }
@@ -418,9 +426,19 @@ export class Test {
               deprecated: true,
               description: some('a static method description...'),
               name: 'f',
-              signatures: ['static f() { ... }'],
+              signatures: ['static f(): void'],
               since: '1.1.0',
               examples: []
+            }
+          ],
+          properties: [
+            {
+              deprecated: true,
+              description: some('a property...'),
+              examples: [],
+              name: 'a',
+              signature: 'readonly a: string',
+              since: '1.1.0'
             }
           ]
         }
@@ -464,7 +482,7 @@ export class Test<A> {
           deprecated: true,
           description: some('a class description...'),
           name: 'Test',
-          signature: 'export class Test<A> {\n  constructor(readonly value: A) { ... }\n  ... \n}',
+          signature: 'export declare class Test<A> { constructor(readonly value: A) }',
           since: '1.0.0',
           examples: [],
           methods: [
@@ -472,7 +490,7 @@ export class Test<A> {
               deprecated: true,
               description: some('a method description...'),
               name: 'map',
-              signatures: ['map(f: (a: number) => number): Test', 'map(f: (a: string) => string): Test { ... }'],
+              signatures: ['map(f: (a: number) => number): Test', 'map(f: (a: string) => string): Test'],
               since: '1.1.0',
               examples: []
             }
@@ -482,11 +500,12 @@ export class Test<A> {
               deprecated: true,
               description: some('a static method description...'),
               name: 'f',
-              signatures: ['static f(x: number): number', 'static f(x: string): string { ... }'],
+              signatures: ['static f(x: number): number', 'static f(x: string): string'],
               since: '1.1.0',
               examples: []
             }
-          ]
+          ],
+          properties: []
         }
       ])
     )
@@ -543,7 +562,7 @@ describe('getExports', () => {
           description: none,
           examples: [],
           name: 'b',
-          signature: '1',
+          signature: 'export declare const b: 1',
           since: '1.0.0'
         }
       ])
@@ -572,7 +591,7 @@ describe('getExports', () => {
           description: some('description_of_a'),
           examples: [],
           name: 'a',
-          signature: 'any',
+          signature: 'export declare const a: any',
           since: '1.0.0'
         },
         {
@@ -580,7 +599,7 @@ describe('getExports', () => {
           description: some('description_of_b'),
           examples: [],
           name: 'b',
-          signature: 'any',
+          signature: 'export declare const b: any',
           since: '2.0.0'
         }
       ])
@@ -616,7 +635,7 @@ export {
           description: none,
           examples: [],
           name: 'b',
-          signature: '1',
+          signature: 'export declare const b: 1',
           since: '1.0.0'
         }
       ])

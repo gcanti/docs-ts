@@ -106,12 +106,27 @@ export function method(documentable: Documentable, signatures: Array<string>): M
 }
 
 /**
+ * @since 0.4.0
+ */
+export interface Property extends Documentable {
+  readonly signature: string
+}
+
+/**
+ * @since 0.4.0
+ */
+export function property(documentable: Documentable, signature: string): Property {
+  return { ...documentable, signature }
+}
+
+/**
  * @since 0.2.0
  */
 export interface Class extends Documentable {
   readonly signature: string
   readonly methods: Array<Method>
   readonly staticMethods: Array<Method>
+  readonly properties: Array<Property>
 }
 
 /**
@@ -121,9 +136,10 @@ export function class_(
   documentable: Documentable,
   signature: string,
   methods: Array<Method>,
-  staticMethods: Array<Method>
+  staticMethods: Array<Method>,
+  properties: Array<Property>
 ): Class {
-  return { ...documentable, signature, methods, staticMethods }
+  return { ...documentable, signature, methods, staticMethods, properties }
 }
 
 /**
@@ -313,35 +329,10 @@ function getFunctionDeclarationSignature(f: ast.FunctionDeclaration): string {
   const text = f.getText()
   const body = f.compilerNode.body
   if (body === undefined) {
-    return text + ' { ... }'
+    return text.replace('export function ', 'export declare function ')
   }
   const end = body.getStart() - f.getStart() - 1
-  return text.substring(0, end) + ' { ... }'
-}
-
-const indexOf = (big: string, small: string) => {
-  const i = big.indexOf(small)
-  return i !== -1 ? O.some(i) : O.none
-}
-
-const lastIndexOf = (big: string, small: string) => {
-  const i = big.lastIndexOf(small)
-  return i !== -1 ? O.some(i) : O.none
-}
-
-function getFunctionVariableDeclarationSignature(vd: ast.VariableDeclaration): string {
-  const text = vd.getText()
-  const end = pipe(
-    indexOf(text, ' => {'),
-    O.alt(() => lastIndexOf(text, ' =>'))
-  )
-  return `export const ${text.substring(
-    0,
-    pipe(
-      end,
-      O.getOrElse(() => text.length)
-    )
-  )} => ...`
+  return text.substring(0, end).replace('export function ', 'export declare function ')
 }
 
 function getFunctionDeclarationAnnotation(fd: ast.FunctionDeclaration): doctrine.Annotation {
@@ -357,7 +348,7 @@ function parseFunctionDeclaration(moduleName: string, fd: ast.FunctionDeclaratio
     overloads.length === 0
       ? [getFunctionDeclarationSignature(fd)]
       : [
-          ...overloads.slice(0, overloads.length - 1).map(fd => fd.getText()),
+          ...overloads.slice(0, overloads.length - 1).map(getFunctionDeclarationSignature),
           getFunctionDeclarationSignature(overloads[overloads.length - 1])
         ]
   const name = fd.getName()
@@ -374,10 +365,10 @@ function parseFunctionVariableDeclaration(vd: ast.VariableDeclaration): Parser<F
   const vs: any = vd.getParent().getParent()
   const annotation = getAnnotation(vs.getJsDocs())
   const { description, since, deprecated, examples } = getAnnotationInfo(annotation)
-  const signatures = [getFunctionVariableDeclarationSignature(vd)]
   const name = vd.getName()
+  const signature = `export declare const ${name}: ${stripImportTypes(vd.getType().getText(vd))}`
   return ensureSinceTag(name, since, since =>
-    func(documentable(name, description, since, deprecated, examples), signatures)
+    func(documentable(name, description, since, deprecated, examples), [signature])
   )
 }
 
@@ -450,28 +441,13 @@ export function stripImportTypes(s: string): string {
   return s.replace(/import\("((?!").)*"\)./g, '')
 }
 
-function getConstantVariableDeclarationSignature(vd: ast.VariableDeclaration): string {
-  const text = vd.getText()
-  const lt = text.indexOf('<')
-  let end = text.indexOf(' = ')
-  if (lt !== -1 && lt < end) {
-    // default type parameters
-    const gt = text.indexOf('>', lt)
-    end = text.indexOf(' = ', gt)
-  }
-  let s = text.substring(0, end)
-  if (s.indexOf(':') === -1) {
-    s += ': ' + stripImportTypes(vd.getType().getText(vd))
-  }
-  return `export const ${s} = ...`
-}
-
 function parseConstantVariableDeclaration(vd: ast.VariableDeclaration): Parser<Constant> {
   const vs: any = vd.getParent().getParent()
   const annotation = getAnnotation(vs.getJsDocs())
   const { description, since, deprecated, examples } = getAnnotationInfo(annotation)
-  const signature = getConstantVariableDeclarationSignature(vd)
+  const type = stripImportTypes(vd.getType().getText(vd))
   const name = vd.getName()
+  const signature = `export declare const ${name}: ${type}`
   return ensureSinceTag(name, since, since =>
     constant(documentable(name, description, since, deprecated, examples), signature)
   )
@@ -511,8 +487,9 @@ export function getConstants(sourceFile: ast.SourceFile): Parser<Array<Constant>
 }
 
 function parseExportSpecifier(es: ast.ExportSpecifier): Parser<Export> {
-  const signature = stripImportTypes(es.getType().getText(es))
   const name = es.compilerNode.name.text
+  const type = stripImportTypes(es.getType().getText(es))
+  const signature = `export declare const ${name}: ${type}`
   return pipe(
     E.fromOption(() => [`missing ${name} documentation`])(A.head(es.getLeadingCommentRanges())),
     E.chain(commentRange => {
@@ -546,10 +523,10 @@ function getConstructorDeclarationSignature(c: ast.ConstructorDeclaration): stri
   const text = c.getText()
   const body = c.compilerNode.body
   if (body === undefined) {
-    return text + ' { ... }'
+    return text
   }
   const end = body.getStart() - c.getStart() - 1
-  return text.substring(0, end) + ' { ... }'
+  return text.substring(0, end)
 }
 
 function getClassDeclarationSignature(c: ast.ClassDeclaration): string {
@@ -558,9 +535,9 @@ function getClassDeclarationSignature(c: ast.ClassDeclaration): string {
   const constructors = c.getConstructors()
   if (constructors.length > 0) {
     const constructorSignature = getConstructorDeclarationSignature(constructors[0])
-    return `export class ${dataName}${typeParameters} {\n  ${constructorSignature}\n  ... \n}`
+    return `export declare class ${dataName}${typeParameters} { ${constructorSignature} }`
   } else {
-    return `export class ${dataName}${typeParameters} { ... }`
+    return `export declare class ${dataName}${typeParameters}`
   }
 }
 
@@ -568,10 +545,10 @@ function getMethodSignature(md: ast.MethodDeclaration): string {
   const text = md.getText()
   const body = md.compilerNode.body
   if (body === undefined) {
-    return text + ' { ... }'
+    return text
   }
   const end = body.getStart() - md.getStart() - 1
-  return text.substring(0, end) + ' { ... }'
+  return text.substring(0, end)
 }
 
 function parseMethod(md: ast.MethodDeclaration): Parser<Method> {
@@ -591,6 +568,18 @@ function parseMethod(md: ast.MethodDeclaration): Parser<Method> {
   )
 }
 
+function parseProperty(pd: ast.PropertyDeclaration): Parser<Property> {
+  const name = pd.getName()
+  const annotation = getAnnotation(pd.getJsDocs())
+  const { description, since, deprecated, examples } = getAnnotationInfo(annotation)
+  const type = stripImportTypes(pd.getType().getText(pd))
+  const readonly = pd.getFirstModifierByKind(ast.ts.SyntaxKind.ReadonlyKeyword) === undefined ? '' : 'readonly '
+  const signature = `${readonly}${name}: ${type}`
+  return ensureSinceTag(name, since, since =>
+    property(documentable(name, description, since, deprecated, examples), signature)
+  )
+}
+
 function parseClass(moduleName: string, c: ast.ClassDeclaration): Parser<Class> {
   const name = c.getName()
   if (name === undefined) {
@@ -605,10 +594,23 @@ function parseClass(moduleName: string, c: ast.ClassDeclaration): Parser<Class> 
     return pipe(
       sequenceS(E.either)({
         methods: traverse(c.getInstanceMethods(), parseMethod),
-        staticMethods: traverse(c.getStaticMethods(), parseMethod)
+        staticMethods: traverse(c.getStaticMethods(), parseMethod),
+        properties: traverse(
+          c
+            .getProperties()
+            // take public, instance properties
+            .filter(p => !p.isStatic() && p.getFirstModifierByKind(ast.ts.SyntaxKind.PrivateKeyword) === undefined),
+          parseProperty
+        )
       }),
-      E.map(({ methods, staticMethods }) =>
-        class_(documentable(name, description, since.value, deprecated, examples), signature, methods, staticMethods)
+      E.map(({ methods, staticMethods, properties }) =>
+        class_(
+          documentable(name, description, since.value, deprecated, examples),
+          signature,
+          methods,
+          staticMethods,
+          properties
+        )
       )
     )
   }

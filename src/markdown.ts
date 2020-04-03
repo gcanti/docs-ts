@@ -6,7 +6,7 @@
 
 import * as prettier from 'prettier'
 import * as O from 'fp-ts/lib/Option'
-import { Class, Func, Interface, Method, TypeAlias, Constant, Module, Export, Example } from './parser'
+import { Class, Func, Interface, Method, TypeAlias, Constant, Module, Export, Example, Property } from './parser'
 import { pipe } from 'fp-ts/lib/pipeable'
 const toc = require('markdown-toc')
 
@@ -100,7 +100,20 @@ function printMethod(m: Method): string {
   return s
 }
 
-function printClass(c: Class): string {
+function printProperty(p: Property): string {
+  let s = h2(handleTitle(p.name, p.deprecated) + ' (property)')
+  s += printDescription(p.description)
+  s += printSignature(p.signature)
+  s += printExamples(p.examples)
+  s += printSince(p.since)
+  s += CRLF
+  return s
+}
+
+/**
+ * @since 0.4.0
+ */
+export function printClass(c: Class): string {
   let s = h1(handleTitle(c.name, c.deprecated) + ' (class)')
   s += printDescription(c.description)
   s += printSignature(c.signature)
@@ -109,6 +122,7 @@ function printClass(c: Class): string {
   s += CRLF
   s += c.staticMethods.map(printStaticMethod).join(CRLF)
   s += c.methods.map(printMethod).join(CRLF)
+  s += c.properties.map(printProperty).join(CRLF)
   s += CRLF
   return s
 }

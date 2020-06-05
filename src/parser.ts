@@ -89,24 +89,29 @@ function isInternal(comment: Comment): boolean {
  * @since 0.5.0
  */
 export function getCommentInfo(
+  name: string,
   text: string
-): {
+): Parser<{
   description: O.Option<string>
-  since: O.Option<string>
+  since: string
   deprecated: boolean
   examples: Array<Example>
-} {
+}> {
   const comment = parseComment(text)
-  return {
+  const since = pipe(R.lookup('since', comment.tags), O.chain(NEA.head))
+  if (O.isNone(since)) {
+    return env => E.left([`missing @since tag in ${env.moduleName}/${name} documentation`])
+  }
+  return RE.right({
     description: comment.description,
-    since: pipe(R.lookup('since', comment.tags), O.chain(NEA.head)),
+    since: since.value,
     deprecated: pipe(R.lookup('deprecated', comment.tags), O.isSome),
     examples: pipe(
       R.lookup('example', comment.tags),
       O.map(A.compact),
       O.getOrElse((): Array<string> => A.empty)
     )
-  }
+  })
 }
 
 /**
@@ -134,22 +139,17 @@ const monadParser = RE.getReaderValidation(monoidFailure)
 
 const traverse = A.array.traverse(monadParser)
 
-function ensureSinceTag<A>(name: string, since: O.Option<string>, f: (since: string) => A): Parser<A> {
-  return env =>
-    pipe(
-      since,
-      O.fold(
-        () => E.left(NEA.of(`missing @since tag in ${env.moduleName}/${name} documentation`)),
-        since => E.right(f(since))
-      )
-    )
-}
-
 function parseInterfaceDeclaration(id: ast.InterfaceDeclaration): Parser<Interface> {
-  const { description, since, deprecated, examples } = getCommentInfo(getJSDocText(id.getJsDocs()))
-  const signature = id.getText()
-  return ensureSinceTag(id.getName(), since, since =>
-    makeInterface(makeDocumentable(id.getName(), description, since, deprecated, examples), signature)
+  const name = id.getName()
+  return pipe(
+    getCommentInfo(name, getJSDocText(id.getJsDocs())),
+    RE.map(info => {
+      const signature = id.getText()
+      return makeInterface(
+        makeDocumentable(id.getName(), info.description, info.since, info.deprecated, info.examples),
+        signature
+      )
+    })
   )
 }
 
@@ -185,32 +185,40 @@ function getFunctionDeclarationJSDocs(fd: ast.FunctionDeclaration): Array<ast.JS
 }
 
 function parseFunctionDeclaration(fd: ast.FunctionDeclaration): Parser<Function> {
-  const { description, since, deprecated, examples } = getCommentInfo(getJSDocText(getFunctionDeclarationJSDocs(fd)))
-  const overloads = fd.getOverloads()
-  const signatures =
-    overloads.length === 0
-      ? [getFunctionDeclarationSignature(fd)]
-      : [
-          ...overloads.slice(0, overloads.length - 1).map(getFunctionDeclarationSignature),
-          getFunctionDeclarationSignature(overloads[overloads.length - 1])
-        ]
   const name = fd.getName()
   if (name === undefined || name.trim() === '') {
     return env => E.left(NEA.of(`Missing function name in module ${env.moduleName}`))
-  } else {
-    return ensureSinceTag(name, since, since =>
-      makeFunction(makeDocumentable(name, description, since, deprecated, examples), signatures)
-    )
   }
+  return pipe(
+    getCommentInfo(name, getJSDocText(getFunctionDeclarationJSDocs(fd))),
+    RE.map(info => {
+      const overloads = fd.getOverloads()
+      const signatures =
+        overloads.length === 0
+          ? [getFunctionDeclarationSignature(fd)]
+          : [
+              ...overloads.slice(0, overloads.length - 1).map(getFunctionDeclarationSignature),
+              getFunctionDeclarationSignature(overloads[overloads.length - 1])
+            ]
+      return makeFunction(
+        makeDocumentable(name, info.description, info.since, info.deprecated, info.examples),
+        signatures
+      )
+    })
+  )
 }
 
 function parseFunctionVariableDeclaration(vd: ast.VariableDeclaration): Parser<Function> {
   const vs: any = vd.getParent().getParent()
-  const { description, since, deprecated, examples } = getCommentInfo(getJSDocText(vs.getJsDocs()))
   const name = vd.getName()
-  const signature = `export declare const ${name}: ${stripImportTypes(vd.getType().getText(vd))}`
-  return ensureSinceTag(name, since, since =>
-    makeFunction(makeDocumentable(name, description, since, deprecated, examples), [signature])
+  return pipe(
+    getCommentInfo(name, getJSDocText(vs.getJsDocs())),
+    RE.map(info => {
+      const signature = `export declare const ${name}: ${stripImportTypes(vd.getType().getText(vd))}`
+      return makeFunction(makeDocumentable(name, info.description, info.since, info.deprecated, info.examples), [
+        signature
+      ])
+    })
   )
 }
 
@@ -248,11 +256,16 @@ export function getFunctions(sourceFile: ast.SourceFile): Parser<Array<Function>
 }
 
 function parseTypeAliasDeclaration(ta: ast.TypeAliasDeclaration): Parser<TypeAlias> {
-  const { description, since, deprecated, examples } = getCommentInfo(getJSDocText(ta.getJsDocs()))
-  const signature = ta.getText()
   const name = ta.getName()
-  return ensureSinceTag(name, since, since =>
-    makeTypeAlias(makeDocumentable(name, description, since, deprecated, examples), signature)
+  return pipe(
+    getCommentInfo(name, getJSDocText(ta.getJsDocs())),
+    RE.map(info => {
+      const signature = ta.getText()
+      return makeTypeAlias(
+        makeDocumentable(name, info.description, info.since, info.deprecated, info.examples),
+        signature
+      )
+    })
   )
 }
 
@@ -279,12 +292,17 @@ export function stripImportTypes(s: string): string {
 
 function parseConstantVariableDeclaration(vd: ast.VariableDeclaration): Parser<Constant> {
   const vs: any = vd.getParent().getParent()
-  const { description, since, deprecated, examples } = getCommentInfo(getJSDocText(vs.getJsDocs()))
-  const type = stripImportTypes(vd.getType().getText(vd))
   const name = vd.getName()
-  const signature = `export declare const ${name}: ${type}`
-  return ensureSinceTag(name, since, since =>
-    makeConstant(makeDocumentable(name, description, since, deprecated, examples), signature)
+  return pipe(
+    getCommentInfo(name, getJSDocText(vs.getJsDocs())),
+    RE.map(info => {
+      const type = stripImportTypes(vd.getType().getText(vd))
+      const signature = `export declare const ${name}: ${type}`
+      return makeConstant(
+        makeDocumentable(name, info.description, info.since, info.deprecated, info.examples),
+        signature
+      )
+    })
   )
 }
 
@@ -326,12 +344,10 @@ function parseExportSpecifier(es: ast.ExportSpecifier): Parser<Export> {
   const signature = `export declare const ${name}: ${type}`
   return pipe(
     RE.fromOption(() => NEA.of(`missing ${name} documentation`))(A.head(es.getLeadingCommentRanges())),
-    RE.chain(commentRange => {
-      const { description, since, deprecated, examples } = getCommentInfo(commentRange.getText())
-      return ensureSinceTag(name, since, since =>
-        makeExport(makeDocumentable(name, description, since, deprecated, examples), signature)
-      )
-    })
+    RE.chain(commentRange => getCommentInfo(name, commentRange.getText())),
+    RE.map(info =>
+      makeExport(makeDocumentable(name, info.description, info.since, info.deprecated, info.examples), signature)
+    )
   )
 }
 
@@ -387,27 +403,37 @@ function parseMethod(md: ast.MethodDeclaration): Parser<Method> {
   const name = md.getName()
   const overloads = md.getOverloads()
   const jsdocs = overloads.length === 0 ? md.getJsDocs() : overloads[0].getJsDocs()
-  const { description, since, deprecated, examples } = getCommentInfo(getJSDocText(jsdocs))
-  const signatures =
-    overloads.length === 0
-      ? [getMethodSignature(md)]
-      : [
-          ...overloads.slice(0, overloads.length - 1).map(md => md.getText()),
-          getMethodSignature(overloads[overloads.length - 1])
-        ]
-  return ensureSinceTag(name, since, since =>
-    makeMethod(makeDocumentable(name, description, since, deprecated, examples), signatures)
+  return pipe(
+    getCommentInfo(name, getJSDocText(jsdocs)),
+    RE.map(info => {
+      const signatures =
+        overloads.length === 0
+          ? [getMethodSignature(md)]
+          : [
+              ...overloads.slice(0, overloads.length - 1).map(md => md.getText()),
+              getMethodSignature(overloads[overloads.length - 1])
+            ]
+      return makeMethod(
+        makeDocumentable(name, info.description, info.since, info.deprecated, info.examples),
+        signatures
+      )
+    })
   )
 }
 
 function parseProperty(pd: ast.PropertyDeclaration): Parser<Property> {
   const name = pd.getName()
-  const { description, since, deprecated, examples } = getCommentInfo(getJSDocText(pd.getJsDocs()))
-  const type = stripImportTypes(pd.getType().getText(pd))
-  const readonly = pd.getFirstModifierByKind(ast.ts.SyntaxKind.ReadonlyKeyword) === undefined ? '' : 'readonly '
-  const signature = `${readonly}${name}: ${type}`
-  return ensureSinceTag(name, since, since =>
-    makeProperty(makeDocumentable(name, description, since, deprecated, examples), signature)
+  return pipe(
+    getCommentInfo(name, getJSDocText(pd.getJsDocs())),
+    RE.map(info => {
+      const type = stripImportTypes(pd.getType().getText(pd))
+      const readonly = pd.getFirstModifierByKind(ast.ts.SyntaxKind.ReadonlyKeyword) === undefined ? '' : 'readonly '
+      const signature = `${readonly}${name}: ${type}`
+      return makeProperty(
+        makeDocumentable(name, info.description, info.since, info.deprecated, info.examples),
+        signature
+      )
+    })
   )
 }
 
@@ -416,32 +442,33 @@ function parseClass(c: ast.ClassDeclaration): Parser<Class> {
   if (name === undefined) {
     return env => E.left([`Missing class name in module ${env.moduleName}`])
   } else {
-    const { description, since, deprecated, examples } = getCommentInfo(getJSDocText(c.getJsDocs()))
-    const signature = getClassDeclarationSignature(c)
-    if (O.isNone(since)) {
-      return RE.left([`missing @since tag in ${name} documentation`])
-    }
     return pipe(
-      sequenceS(RE.readerEither)({
-        methods: traverse(c.getInstanceMethods(), parseMethod),
-        staticMethods: traverse(c.getStaticMethods(), parseMethod),
-        properties: traverse(
-          c
-            .getProperties()
-            // take public, instance properties
-            .filter(p => !p.isStatic() && p.getFirstModifierByKind(ast.ts.SyntaxKind.PrivateKeyword) === undefined),
-          parseProperty
+      getCommentInfo(name, getJSDocText(c.getJsDocs())),
+      RE.chain(info => {
+        const signature = getClassDeclarationSignature(c)
+        return pipe(
+          sequenceS(RE.readerEither)({
+            methods: traverse(c.getInstanceMethods(), parseMethod),
+            staticMethods: traverse(c.getStaticMethods(), parseMethod),
+            properties: traverse(
+              c
+                .getProperties()
+                // take public, instance properties
+                .filter(p => !p.isStatic() && p.getFirstModifierByKind(ast.ts.SyntaxKind.PrivateKeyword) === undefined),
+              parseProperty
+            )
+          }),
+          RE.map(({ methods, staticMethods, properties }) =>
+            makeClass(
+              makeDocumentable(name, info.description, info.since, info.deprecated, info.examples),
+              signature,
+              methods,
+              staticMethods,
+              properties
+            )
+          )
         )
-      }),
-      RE.map(({ methods, staticMethods, properties }) =>
-        makeClass(
-          makeDocumentable(name, description, since.value, deprecated, examples),
-          signature,
-          methods,
-          staticMethods,
-          properties
-        )
-      )
+      })
     )
   }
 }
@@ -467,11 +494,12 @@ export function getModuleDocumentation(sourceFile: ast.SourceFile): Parser<Docum
     if (x.length > 0) {
       const comments = x[0].getLeadingCommentRanges()
       if (comments.length > 0) {
-        const { description, since, deprecated, examples } = getCommentInfo(comments[0].getText())
-        if (O.isNone(since)) {
+        const e = getCommentInfo(env.moduleName, comments[0].getText())(env)
+        if (E.isLeft(e)) {
           return E.left([`missing @since tag in ${env.moduleName} module documentation`])
         }
-        return E.right(makeDocumentable(env.moduleName, description, since.value, deprecated, examples))
+        const info = e.right
+        return E.right(makeDocumentable(env.moduleName, info.description, info.since, info.deprecated, info.examples))
       }
     }
     return E.left([`missing documentation in ${env.moduleName} module`])

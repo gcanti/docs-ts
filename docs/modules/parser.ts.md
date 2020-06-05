@@ -14,33 +14,21 @@ Added in v0.2.0
 
 <h2 class="text-delta">Table of contents</h2>
 
-- [Comment (interface)](#comment-interface)
 - [File (interface)](#file-interface)
 - [Parser (type alias)](#parser-type-alias)
 - [getClasses](#getclasses)
+- [getCommentInfo](#getcommentinfo)
 - [getConstants](#getconstants)
 - [getExports](#getexports)
 - [getFunctions](#getfunctions)
 - [getInterfaces](#getinterfaces)
+- [getJSDocText](#getjsdoctext)
 - [getModuleDocumentation](#getmoduledocumentation)
 - [getTypeAliases](#gettypealiases)
 - [parseComment](#parsecomment)
-- [run](#run)
+- [parseFiles](#parsefiles)
 
 ---
-
-# Comment (interface)
-
-**Signature**
-
-```ts
-export interface Comment {
-  readonly description: O.Option<string>
-  readonly tags: Record<string, O.Option<string>>
-}
-```
-
-Added in v0.5.0
 
 # File (interface)
 
@@ -60,7 +48,7 @@ Added in v0.2.0
 **Signature**
 
 ```ts
-export type Parser<A> = E.Either<Array<string>, A>
+export type Parser<A> = RE.ReaderEither<Env, NEA.NonEmptyArray<string>, A>
 ```
 
 Added in v0.2.0
@@ -70,10 +58,27 @@ Added in v0.2.0
 **Signature**
 
 ```ts
-export declare function getClasses(moduleName: string, sourceFile: ast.SourceFile): Parser<Array<Class>>
+export declare function getClasses(sourceFile: ast.SourceFile): Parser<Array<Class>>
 ```
 
 Added in v0.2.0
+
+# getCommentInfo
+
+**Signature**
+
+```ts
+export declare function getCommentInfo(
+  text: string
+): {
+  description: O.Option<string>
+  since: O.Option<string>
+  deprecated: boolean
+  examples: Array<Example>
+}
+```
+
+Added in v0.5.0
 
 # getConstants
 
@@ -100,7 +105,7 @@ Added in v0.2.0
 **Signature**
 
 ```ts
-export declare function getFunctions(moduleName: string, sourceFile: ast.SourceFile): Parser<Array<Function>>
+export declare function getFunctions(sourceFile: ast.SourceFile): Parser<Array<Function>>
 ```
 
 Added in v0.2.0
@@ -115,12 +120,22 @@ export declare function getInterfaces(sourceFile: ast.SourceFile): Parser<Array<
 
 Added in v0.2.0
 
+# getJSDocText
+
+**Signature**
+
+```ts
+export declare function getJSDocText(jsdocs: Array<ast.JSDoc>): string
+```
+
+Added in v0.5.0
+
 # getModuleDocumentation
 
 **Signature**
 
 ```ts
-export declare function getModuleDocumentation(sourceFile: ast.SourceFile, name: string): Parser<Documentable>
+export declare function getModuleDocumentation(sourceFile: ast.SourceFile): Parser<Documentable>
 ```
 
 Added in v0.2.0
@@ -145,12 +160,12 @@ export declare const parseComment: (text: string) => Comment
 
 Added in v0.5.0
 
-# run
+# parseFiles
 
 **Signature**
 
 ```ts
-export declare function run(files: Array<File>): Parser<Array<Module>>
+export declare function parseFiles(files: Array<File>): E.Either<NEA.NonEmptyArray<string>, Array<Module>>
 ```
 
-Added in v0.2.0
+Added in v0.5.0

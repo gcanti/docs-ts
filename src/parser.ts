@@ -8,42 +8,43 @@ import * as doctrine from 'doctrine'
 import { sequenceS } from 'fp-ts/lib/Apply'
 import * as A from 'fp-ts/lib/Array'
 import * as E from 'fp-ts/lib/Either'
+import * as NEA from 'fp-ts/lib/NonEmptyArray'
 import * as O from 'fp-ts/lib/Option'
 import { contramap, ordString } from 'fp-ts/lib/Ord'
 import { pipe } from 'fp-ts/lib/pipeable'
-import * as path from 'path'
+import * as R from 'fp-ts/lib/Record'
+import * as RE from 'fp-ts/lib/ReaderEither'
+import * as P from 'path'
 import * as ast from 'ts-morph'
 import {
   Class,
-  makeClass,
   Constant,
-  makeConstant,
-  makeDocumentable,
   Documentable,
   Example,
   Export,
-  makeExport,
   Function,
-  makeFunction,
   Interface,
+  makeClass,
+  makeConstant,
+  makeDocumentable,
+  makeExport,
+  makeFunction,
   makeInterface,
-  Method,
   makeMethod,
+  makeModule,
+  makeProperty,
+  makeTypeAlias,
+  Method,
   Module,
   ordModule,
   Property,
-  makeProperty,
-  TypeAlias,
-  makeTypeAlias,
-  makeModule
+  TypeAlias
 } from './domain'
+import { getFunctionMonoid } from 'fp-ts/lib/Monoid'
 
-/**
- * @since 0.5.0
- */
-export interface Comment {
+interface Comment {
   readonly description: O.Option<string>
-  readonly tags: Record<string, O.Option<string>>
+  readonly tags: Record<string, NEA.NonEmptyArray<O.Option<string>>>
 }
 
 const isNonEmptyString = (s: string) => s.length > 0
@@ -53,10 +54,11 @@ const isNonEmptyString = (s: string) => s.length > 0
  */
 export const parseComment = (text: string): Comment => {
   const annotation: doctrine.Annotation = doctrine.parse(text, { unwrap: true })
-  const tags: Record<string, O.Option<string>> = {}
-  for (const tag of annotation.tags) {
-    tags[tag.title] = pipe(O.fromNullable(tag.description), O.filter(isNonEmptyString))
-  }
+  const tags = pipe(
+    annotation.tags,
+    NEA.groupBy(tag => tag.title),
+    R.map(NEA.map(tag => pipe(O.fromNullable(tag.description), O.filter(isNonEmptyString))))
+  )
   return {
     description: pipe(O.fromNullable(annotation.description), O.filter(isNonEmptyString)),
     tags
@@ -64,9 +66,48 @@ export const parseComment = (text: string): Comment => {
 }
 
 /**
- * @since 0.2.0
+ * @since 0.5.0
  */
-export type Parser<A> = E.Either<Array<string>, A>
+export function getJSDocText(jsdocs: Array<ast.JSDoc>): string {
+  return pipe(
+    jsdocs,
+    A.foldRight(
+      () => '',
+      (_, last) => last.getText()
+    )
+  )
+}
+
+/**
+ * @since 0.5.0
+ */
+function isInternal(comment: Comment): boolean {
+  return pipe(R.lookup('internal', comment.tags), O.isSome)
+}
+
+/**
+ * @since 0.5.0
+ */
+export function getCommentInfo(
+  text: string
+): {
+  description: O.Option<string>
+  since: O.Option<string>
+  deprecated: boolean
+  examples: Array<Example>
+} {
+  const comment = parseComment(text)
+  return {
+    description: comment.description,
+    since: pipe(R.lookup('since', comment.tags), O.chain(NEA.head)),
+    deprecated: pipe(R.lookup('deprecated', comment.tags), O.isSome),
+    examples: pipe(
+      R.lookup('example', comment.tags),
+      O.map(A.compact),
+      O.getOrElse((): Array<string> => A.empty)
+    )
+  }
+}
 
 /**
  * @since 0.2.0
@@ -78,89 +119,34 @@ export interface File {
 
 const sortModules = A.sort(ordModule)
 
-const monoidFailure = A.getMonoid<string>()
+interface Env {
+  moduleName: string
+}
 
-const monadParser = E.getValidation(monoidFailure)
+/**
+ * @since 0.2.0
+ */
+export type Parser<A> = RE.ReaderEither<Env, NEA.NonEmptyArray<string>, A>
+
+const monoidFailure = NEA.getSemigroup<string>()
+
+const monadParser = RE.getReaderValidation(monoidFailure)
 
 const traverse = A.array.traverse(monadParser)
 
-function getModuleName(p: Array<string>): string {
-  return path.parse(p[p.length - 1]).name
-}
-
-function getAnnotation(jsdocs: Array<ast.JSDoc>): doctrine.Annotation {
-  const content = pipe(
-    jsdocs,
-    A.foldRight(
-      () => '',
-      (_, last) => last.getText()
-    )
-  )
-  return doctrine.parse(content, { unwrap: true })
-}
-
-function getDescription(annotation: doctrine.Annotation): O.Option<string> {
-  return pipe(
-    O.fromNullable(annotation.description),
-    O.filter(s => s !== '')
-  )
-}
-
-function getSince(annotation: doctrine.Annotation): O.Option<string> {
-  return pipe(
-    O.fromNullable(annotation.tags.filter(tag => tag.title === 'since')[0]),
-    O.mapNullable(tag => tag.description)
-  )
-}
-
-function isDeprecated(annotation: doctrine.Annotation): boolean {
-  return pipe(O.fromNullable(annotation.tags.filter(tag => tag.title === 'deprecated')[0]), O.isSome)
-}
-
-function isInternal(annotation: doctrine.Annotation): boolean {
-  return pipe(O.fromNullable(annotation.tags.filter(tag => tag.title === 'internal')[0]), O.isSome)
-}
-
-function getExamples(annotation: doctrine.Annotation): Array<Example> {
-  return annotation.tags
-    .filter(tag => tag.title === 'example')
-    .map(tag =>
-      pipe(
-        O.fromNullable(tag.description),
-        O.getOrElse(() => '')
+function ensureSinceTag<A>(name: string, since: O.Option<string>, f: (since: string) => A): Parser<A> {
+  return env =>
+    pipe(
+      since,
+      O.fold(
+        () => E.left(NEA.of(`missing @since tag in ${env.moduleName}/${name} documentation`)),
+        since => E.right(f(since))
       )
     )
 }
 
-function getAnnotationInfo(
-  annotation: doctrine.Annotation
-): {
-  description: O.Option<string>
-  since: O.Option<string>
-  deprecated: boolean
-  examples: Array<Example>
-} {
-  return {
-    description: getDescription(annotation),
-    since: getSince(annotation),
-    deprecated: isDeprecated(annotation),
-    examples: getExamples(annotation)
-  }
-}
-
-function ensureSinceTag<A>(name: string, since: O.Option<string>, f: (since: string) => A): Parser<A> {
-  return pipe(
-    since,
-    O.fold(
-      () => E.left([`missing @since tag in ${name} documentation`]),
-      since => E.right(f(since))
-    )
-  )
-}
-
 function parseInterfaceDeclaration(id: ast.InterfaceDeclaration): Parser<Interface> {
-  const annotation = getAnnotation(id.getJsDocs())
-  const { description, since, deprecated, examples } = getAnnotationInfo(annotation)
+  const { description, since, deprecated, examples } = getCommentInfo(getJSDocText(id.getJsDocs()))
   const signature = id.getText()
   return ensureSinceTag(id.getName(), since, since =>
     makeInterface(makeDocumentable(id.getName(), description, since, deprecated, examples), signature)
@@ -179,7 +165,7 @@ export function getInterfaces(sourceFile: ast.SourceFile): Parser<Array<Interfac
   const exportedInterfaceDeclarations = sourceFile.getInterfaces().filter(id => id.isExported())
   return pipe(
     traverse(exportedInterfaceDeclarations, parseInterfaceDeclaration),
-    E.map(interfaces => interfaces.sort(byName.compare))
+    RE.map(interfaces => interfaces.sort(byName.compare))
   )
 }
 
@@ -193,14 +179,13 @@ function getFunctionDeclarationSignature(f: ast.FunctionDeclaration): string {
   return text.substring(0, end).replace('export function ', 'export declare function ')
 }
 
-function getFunctionDeclarationAnnotation(fd: ast.FunctionDeclaration): doctrine.Annotation {
+function getFunctionDeclarationJSDocs(fd: ast.FunctionDeclaration): Array<ast.JSDoc> {
   const overloads = fd.getOverloads()
-  return overloads.length === 0 ? getAnnotation(fd.getJsDocs()) : getAnnotation(overloads[0].getJsDocs())
+  return overloads.length === 0 ? fd.getJsDocs() : overloads[0].getJsDocs()
 }
 
-function parseFunctionDeclaration(moduleName: string, fd: ast.FunctionDeclaration): Parser<Function> {
-  const annotation = getFunctionDeclarationAnnotation(fd)
-  const { description, since, deprecated, examples } = getAnnotationInfo(annotation)
+function parseFunctionDeclaration(fd: ast.FunctionDeclaration): Parser<Function> {
+  const { description, since, deprecated, examples } = getCommentInfo(getJSDocText(getFunctionDeclarationJSDocs(fd)))
   const overloads = fd.getOverloads()
   const signatures =
     overloads.length === 0
@@ -211,7 +196,7 @@ function parseFunctionDeclaration(moduleName: string, fd: ast.FunctionDeclaratio
         ]
   const name = fd.getName()
   if (name === undefined || name.trim() === '') {
-    return E.left([`Missing function name in module ${moduleName}`])
+    return env => E.left(NEA.of(`Missing function name in module ${env.moduleName}`))
   } else {
     return ensureSinceTag(name, since, since =>
       makeFunction(makeDocumentable(name, description, since, deprecated, examples), signatures)
@@ -221,8 +206,7 @@ function parseFunctionDeclaration(moduleName: string, fd: ast.FunctionDeclaratio
 
 function parseFunctionVariableDeclaration(vd: ast.VariableDeclaration): Parser<Function> {
   const vs: any = vd.getParent().getParent()
-  const annotation = getAnnotation(vs.getJsDocs())
-  const { description, since, deprecated, examples } = getAnnotationInfo(annotation)
+  const { description, since, deprecated, examples } = getCommentInfo(getJSDocText(vs.getJsDocs()))
   const name = vd.getName()
   const signature = `export declare const ${name}: ${stripImportTypes(vd.getType().getText(vd))}`
   return ensureSinceTag(name, since, since =>
@@ -233,22 +217,21 @@ function parseFunctionVariableDeclaration(vd: ast.VariableDeclaration): Parser<F
 /**
  * @since 0.2.0
  */
-export function getFunctions(moduleName: string, sourceFile: ast.SourceFile): Parser<Array<Function>> {
+export function getFunctions(sourceFile: ast.SourceFile): Parser<Array<Function>> {
   const exportedFunctionDeclarations = sourceFile
     .getFunctions()
-    .filter(fd => fd.isExported() && !isInternal(getFunctionDeclarationAnnotation(fd)))
+    .filter(fd => fd.isExported() && !isInternal(parseComment(getJSDocText(fd.getJsDocs()))))
 
-  const functionDeclarations = traverse(exportedFunctionDeclarations, fd => parseFunctionDeclaration(moduleName, fd))
+  const functionDeclarations = traverse(exportedFunctionDeclarations, fd => parseFunctionDeclaration(fd))
 
   const exportedVariableDeclarations = sourceFile.getVariableDeclarations().filter(vd => {
     const parent = vd.getParent()
     if (isVariableDeclarationList(parent)) {
       const vs = parent.getParent()
       if (isVariableStatement(vs)) {
-        const annotation = getAnnotation(vs.getJsDocs())
         const initializer = vd.getInitializer()
         return (
-          !isInternal(annotation) &&
+          !isInternal(parseComment(getJSDocText(vs.getJsDocs()))) &&
           initializer !== undefined &&
           vs.isExported() &&
           ast.TypeGuards.isFunctionLikeDeclaration(initializer)
@@ -260,17 +243,12 @@ export function getFunctions(moduleName: string, sourceFile: ast.SourceFile): Pa
 
   const variableDeclarations = traverse(exportedVariableDeclarations, parseFunctionVariableDeclaration)
 
-  const monoidFunc = E.getValidationMonoid(monoidFailure, A.getMonoid<Function>())
+  const monoidFunc = getFunctionMonoid(E.getValidationMonoid(monoidFailure, A.getMonoid<Function>()))<Env>()
   return monoidFunc.concat(functionDeclarations, variableDeclarations)
 }
 
-function getTypeAliasesAnnotation(ta: ast.TypeAliasDeclaration): doctrine.Annotation {
-  return getAnnotation(ta.getJsDocs())
-}
-
 function parseTypeAliasDeclaration(ta: ast.TypeAliasDeclaration): Parser<TypeAlias> {
-  const annotation = getTypeAliasesAnnotation(ta)
-  const { description, since, deprecated, examples } = getAnnotationInfo(annotation)
+  const { description, since, deprecated, examples } = getCommentInfo(getJSDocText(ta.getJsDocs()))
   const signature = ta.getText()
   const name = ta.getName()
   return ensureSinceTag(name, since, since =>
@@ -284,11 +262,11 @@ function parseTypeAliasDeclaration(ta: ast.TypeAliasDeclaration): Parser<TypeAli
 export function getTypeAliases(sourceFile: ast.SourceFile): Parser<Array<TypeAlias>> {
   const exportedTypeAliasDeclarations = sourceFile
     .getTypeAliases()
-    .filter(ta => ta.isExported() && !isInternal(getTypeAliasesAnnotation(ta)))
+    .filter(ta => ta.isExported() && !isInternal(parseComment(getJSDocText(ta.getJsDocs()))))
 
   return pipe(
     traverse(exportedTypeAliasDeclarations, ta => parseTypeAliasDeclaration(ta)),
-    E.map(typeAliases => typeAliases.sort(byName.compare))
+    RE.map(typeAliases => typeAliases.sort(byName.compare))
   )
 }
 
@@ -301,8 +279,7 @@ export function stripImportTypes(s: string): string {
 
 function parseConstantVariableDeclaration(vd: ast.VariableDeclaration): Parser<Constant> {
   const vs: any = vd.getParent().getParent()
-  const annotation = getAnnotation(vs.getJsDocs())
-  const { description, since, deprecated, examples } = getAnnotationInfo(annotation)
+  const { description, since, deprecated, examples } = getCommentInfo(getJSDocText(vs.getJsDocs()))
   const type = stripImportTypes(vd.getType().getText(vd))
   const name = vd.getName()
   const signature = `export declare const ${name}: ${type}`
@@ -328,10 +305,9 @@ export function getConstants(sourceFile: ast.SourceFile): Parser<Array<Constant>
     if (isVariableDeclarationList(parent)) {
       const vs = parent.getParent()
       if (isVariableStatement(vs)) {
-        const annotation = getAnnotation(vs.getJsDocs())
         const initializer = vd.getInitializer()
         return (
-          !isInternal(annotation) &&
+          !isInternal(parseComment(getJSDocText(vs.getJsDocs()))) &&
           initializer !== undefined &&
           vs.isExported() &&
           !ast.TypeGuards.isFunctionLikeDeclaration(initializer)
@@ -349,11 +325,9 @@ function parseExportSpecifier(es: ast.ExportSpecifier): Parser<Export> {
   const type = stripImportTypes(es.getType().getText(es))
   const signature = `export declare const ${name}: ${type}`
   return pipe(
-    E.fromOption(() => [`missing ${name} documentation`])(A.head(es.getLeadingCommentRanges())),
-    E.chain(commentRange => {
-      const text = commentRange.getText()
-      const annotation = doctrine.parse(text, { unwrap: true })
-      const { description, since, deprecated, examples } = getAnnotationInfo(annotation)
+    RE.fromOption(() => NEA.of(`missing ${name} documentation`))(A.head(es.getLeadingCommentRanges())),
+    RE.chain(commentRange => {
+      const { description, since, deprecated, examples } = getCommentInfo(commentRange.getText())
       return ensureSinceTag(name, since, since =>
         makeExport(makeDocumentable(name, description, since, deprecated, examples), signature)
       )
@@ -370,7 +344,7 @@ function parseExportDeclaration(ed: ast.ExportDeclaration): Parser<Array<Export>
  */
 export function getExports(sourceFile: ast.SourceFile): Parser<Array<Export>> {
   const exportDeclarations = sourceFile.getExportDeclarations()
-  return pipe(traverse(exportDeclarations, parseExportDeclaration), E.map(A.flatten))
+  return pipe(traverse(exportDeclarations, parseExportDeclaration), RE.map(A.flatten))
 }
 
 function getTypeParameters(typeParameters: Array<ast.TypeParameterDeclaration>): string {
@@ -412,8 +386,8 @@ function getMethodSignature(md: ast.MethodDeclaration): string {
 function parseMethod(md: ast.MethodDeclaration): Parser<Method> {
   const name = md.getName()
   const overloads = md.getOverloads()
-  const annotation = overloads.length === 0 ? getAnnotation(md.getJsDocs()) : getAnnotation(overloads[0].getJsDocs())
-  const { description, since, deprecated, examples } = getAnnotationInfo(annotation)
+  const jsdocs = overloads.length === 0 ? md.getJsDocs() : overloads[0].getJsDocs()
+  const { description, since, deprecated, examples } = getCommentInfo(getJSDocText(jsdocs))
   const signatures =
     overloads.length === 0
       ? [getMethodSignature(md)]
@@ -428,8 +402,7 @@ function parseMethod(md: ast.MethodDeclaration): Parser<Method> {
 
 function parseProperty(pd: ast.PropertyDeclaration): Parser<Property> {
   const name = pd.getName()
-  const annotation = getAnnotation(pd.getJsDocs())
-  const { description, since, deprecated, examples } = getAnnotationInfo(annotation)
+  const { description, since, deprecated, examples } = getCommentInfo(getJSDocText(pd.getJsDocs()))
   const type = stripImportTypes(pd.getType().getText(pd))
   const readonly = pd.getFirstModifierByKind(ast.ts.SyntaxKind.ReadonlyKeyword) === undefined ? '' : 'readonly '
   const signature = `${readonly}${name}: ${type}`
@@ -438,19 +411,18 @@ function parseProperty(pd: ast.PropertyDeclaration): Parser<Property> {
   )
 }
 
-function parseClass(moduleName: string, c: ast.ClassDeclaration): Parser<Class> {
+function parseClass(c: ast.ClassDeclaration): Parser<Class> {
   const name = c.getName()
   if (name === undefined) {
-    return E.left([`Missing class name in module ${moduleName}`])
+    return env => E.left([`Missing class name in module ${env.moduleName}`])
   } else {
-    const annotation = getAnnotation(c.getJsDocs())
-    const { description, since, deprecated, examples } = getAnnotationInfo(annotation)
+    const { description, since, deprecated, examples } = getCommentInfo(getJSDocText(c.getJsDocs()))
     const signature = getClassDeclarationSignature(c)
     if (O.isNone(since)) {
-      return E.left([`missing @since tag in ${name} documentation`])
+      return RE.left([`missing @since tag in ${name} documentation`])
     }
     return pipe(
-      sequenceS(E.either)({
+      sequenceS(RE.readerEither)({
         methods: traverse(c.getInstanceMethods(), parseMethod),
         staticMethods: traverse(c.getStaticMethods(), parseMethod),
         properties: traverse(
@@ -461,7 +433,7 @@ function parseClass(moduleName: string, c: ast.ClassDeclaration): Parser<Class> 
           parseProperty
         )
       }),
-      E.map(({ methods, staticMethods, properties }) =>
+      RE.map(({ methods, staticMethods, properties }) =>
         makeClass(
           makeDocumentable(name, description, since.value, deprecated, examples),
           signature,
@@ -477,47 +449,49 @@ function parseClass(moduleName: string, c: ast.ClassDeclaration): Parser<Class> 
 /**
  * @since 0.2.0
  */
-export function getClasses(moduleName: string, sourceFile: ast.SourceFile): Parser<Array<Class>> {
+export function getClasses(sourceFile: ast.SourceFile): Parser<Array<Class>> {
   const exportedClasses = sourceFile.getClasses().filter(c => c.isExported())
 
   return pipe(
-    traverse(exportedClasses, cd => parseClass(moduleName, cd)),
-    E.map(classes => classes.sort(byName.compare))
+    traverse(exportedClasses, cd => parseClass(cd)),
+    RE.map(classes => classes.sort(byName.compare))
   )
 }
 
 /**
  * @since 0.2.0
  */
-export function getModuleDocumentation(sourceFile: ast.SourceFile, name: string): Parser<Documentable> {
-  const x = sourceFile.getStatements()
-  if (x.length > 0) {
-    const comments = x[0].getLeadingCommentRanges()
-    if (comments.length > 0) {
-      const text = comments[0].getText()
-      const annotation = doctrine.parse(text, { unwrap: true })
-      const { description, since, deprecated, examples } = getAnnotationInfo(annotation)
-      return ensureSinceTag(name, since, since => makeDocumentable(name, description, since, deprecated, examples))
+export function getModuleDocumentation(sourceFile: ast.SourceFile): Parser<Documentable> {
+  return env => {
+    const x = sourceFile.getStatements()
+    if (x.length > 0) {
+      const comments = x[0].getLeadingCommentRanges()
+      if (comments.length > 0) {
+        const { description, since, deprecated, examples } = getCommentInfo(comments[0].getText())
+        if (O.isNone(since)) {
+          return E.left([`missing @since tag in ${env.moduleName} module documentation`])
+        }
+        return E.right(makeDocumentable(env.moduleName, description, since.value, deprecated, examples))
+      }
     }
+    return E.left([`missing documentation in ${env.moduleName} module`])
   }
-  return E.left([`missing documentation in ${name} module`])
 }
 
 function parseModule(path: Array<string>, sourceFile: ast.SourceFile): Parser<Module> {
-  const moduleName = getModuleName(path)
   return pipe(
     sequenceS(monadParser)({
       interfaces: getInterfaces(sourceFile),
-      functions: getFunctions(moduleName, sourceFile),
+      functions: getFunctions(sourceFile),
       typeAliases: getTypeAliases(sourceFile),
-      classes: getClasses(moduleName, sourceFile),
+      classes: getClasses(sourceFile),
       constants: getConstants(sourceFile),
       exports: getExports(sourceFile)
     }),
-    E.chain(({ interfaces, functions, typeAliases, classes, constants, exports }) => {
+    RE.chain(({ interfaces, functions, typeAliases, classes, constants, exports }) => {
       return pipe(
-        getModuleDocumentation(sourceFile, moduleName),
-        E.map(documentation =>
+        getModuleDocumentation(sourceFile),
+        RE.map(documentation =>
           makeModule(documentation, path, interfaces, typeAliases, functions, classes, constants, exports)
         )
       )
@@ -525,18 +499,27 @@ function parseModule(path: Array<string>, sourceFile: ast.SourceFile): Parser<Mo
   )
 }
 
+function getModuleName(path: Array<string>): string {
+  return P.parse(path[path.length - 1]).name
+}
+
 /**
- * @since 0.2.0
+ * @since 0.5.0
  */
-export function run(files: Array<File>): Parser<Array<Module>> {
+export function parseFiles(files: Array<File>): E.Either<NEA.NonEmptyArray<string>, Array<Module>> {
   const project = new ast.Project()
   files.forEach(file => {
     project.addSourceFileAtPath(file.path)
   })
   return pipe(
-    traverse(files, file => {
+    A.array.traverse(E.getValidation(monoidFailure))(files, file => {
       const sourceFile = project.getSourceFile(file.path)!
-      return parseModule(file.path.split(path.sep), sourceFile)
+      const path = file.path.split(P.sep)
+      const moduleName = getModuleName(path)
+      const env: Env = {
+        moduleName
+      }
+      return parseModule(path, sourceFile)(env)
     }),
     E.map(modules => sortModules(modules.filter(module => !module.deprecated)))
   )

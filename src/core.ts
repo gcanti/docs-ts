@@ -1,18 +1,18 @@
 /**
  * @since 0.2.0
  */
-import * as TE from 'fp-ts/lib/TaskEither'
-import * as parser from './parser'
-import * as path from 'path'
-import * as A from 'fp-ts/lib/Array'
-import { fold } from 'fp-ts/lib/Monoid'
-import * as markdown from './markdown'
-import * as E from 'fp-ts/lib/Either'
 import { spawnSync } from 'child_process'
+import * as A from 'fp-ts/lib/Array'
+import * as E from 'fp-ts/lib/Either'
+import { fold } from 'fp-ts/lib/Monoid'
 import { pipe } from 'fp-ts/lib/pipeable'
-import * as RTE from 'fp-ts/lib/ReaderTaskEither'
 import * as R from 'fp-ts/lib/Reader'
-import { Module, Documentable } from './domain'
+import * as RTE from 'fp-ts/lib/ReaderTaskEither'
+import * as TE from 'fp-ts/lib/TaskEither'
+import * as path from 'path'
+import { Documentable, Module } from './domain'
+import * as markdown from './markdown'
+import * as P from './parser'
 
 /**
  * capabilities
@@ -149,7 +149,7 @@ function parseModules(files: Array<File>): AppEff<Array<Module>> {
       TE.chain(() =>
         TE.fromEither(
           pipe(
-            parser.run(files),
+            P.parseFiles(files),
             E.mapLeft(errors => errors.join('\n'))
           )
         )

@@ -26,20 +26,20 @@ const capabilities: core.Capabilities = {
 
 const exit = (code: 0 | 1): IO.IO<void> => () => process.exit(code)
 
-function onLeft(e: string): T.Task<void> {
-  return T.fromIO(
+const onLeft = (e: string): T.Task<void> =>
+  T.fromIO(
     pipe(
       log(e),
       IO.chain(() => exit(1))
     )
   )
-}
 
-function onRight(): T.Task<void> {
-  return T.fromIO(log(chalk.bold.green('Docs generation succeeded!')))
-}
+const onRight: T.Task<void> = T.fromIO(log(chalk.bold.green('Docs generation succeeded!')))
 
 /**
  * @since 0.2.0
  */
-export const main: T.Task<void> = pipe(core.main(capabilities), TE.fold(onLeft, onRight))
+export const main: T.Task<void> = pipe(
+  core.main(capabilities),
+  TE.fold(onLeft, () => onRight)
+)

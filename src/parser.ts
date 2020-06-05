@@ -7,12 +7,61 @@
 import * as doctrine from 'doctrine'
 import { sequenceS } from 'fp-ts/lib/Apply'
 import * as A from 'fp-ts/lib/Array'
-import * as O from 'fp-ts/lib/Option'
 import * as E from 'fp-ts/lib/Either'
-import { contramap, Ord, ordString } from 'fp-ts/lib/Ord'
-import * as path from 'path'
+import * as O from 'fp-ts/lib/Option'
+import { contramap, ordString } from 'fp-ts/lib/Ord'
 import { pipe } from 'fp-ts/lib/pipeable'
+import * as path from 'path'
 import * as ast from 'ts-morph'
+import {
+  Class,
+  makeClass,
+  Constant,
+  makeConstant,
+  makeDocumentable,
+  Documentable,
+  Example,
+  Export,
+  makeExport,
+  Function,
+  makeFunction,
+  Interface,
+  makeInterface,
+  Method,
+  makeMethod,
+  Module,
+  ordModule,
+  Property,
+  makeProperty,
+  TypeAlias,
+  makeTypeAlias,
+  makeModule
+} from './domain'
+
+/**
+ * @since 0.5.0
+ */
+export interface Comment {
+  readonly description: O.Option<string>
+  readonly tags: Record<string, O.Option<string>>
+}
+
+const isNonEmptyString = (s: string) => s.length > 0
+
+/**
+ * @since 0.5.0
+ */
+export const parseComment = (text: string): Comment => {
+  const annotation: doctrine.Annotation = doctrine.parse(text, { unwrap: true })
+  const tags: Record<string, O.Option<string>> = {}
+  for (const tag of annotation.tags) {
+    tags[tag.title] = pipe(O.fromNullable(tag.description), O.filter(isNonEmptyString))
+  }
+  return {
+    description: pipe(O.fromNullable(annotation.description), O.filter(isNonEmptyString)),
+    tags
+  }
+}
 
 /**
  * @since 0.2.0
@@ -26,197 +75,6 @@ export interface File {
   path: string
   content: string
 }
-
-/**
- * @since 0.2.0
- */
-export type Example = string
-
-/**
- * @since 0.2.0
- */
-export function example(code: string): Example {
-  return code
-}
-
-/**
- * @since 0.2.0
- */
-export interface Documentable {
-  readonly name: string
-  readonly description: O.Option<string>
-  readonly since: string
-  readonly deprecated: boolean
-  readonly examples: Array<Example>
-}
-
-/**
- * @since 0.2.0
- */
-export function documentable(
-  name: string,
-  description: O.Option<string>,
-  since: string,
-  deprecated: boolean,
-  examples: Array<Example>
-): Documentable {
-  return { name, description, since, deprecated, examples }
-}
-
-/**
- * @since 0.2.0
- */
-export interface Interface extends Documentable {
-  signature: string
-}
-
-/**
- * @since 0.2.0
- */
-export function interface_(documentable: Documentable, signature: string): Interface {
-  return { ...documentable, signature }
-}
-
-/**
- * @since 0.2.0
- */
-export interface Func extends Documentable {
-  readonly signatures: Array<string>
-}
-
-/**
- * @since 0.2.0
- */
-export function func(documentable: Documentable, signatures: Array<string>): Func {
-  return { ...documentable, signatures }
-}
-
-/**
- * @since 0.2.0
- */
-export interface Method extends Documentable {
-  readonly signatures: Array<string>
-}
-
-/**
- * @since 0.2.0
- */
-export function method(documentable: Documentable, signatures: Array<string>): Method {
-  return { ...documentable, signatures }
-}
-
-/**
- * @since 0.4.0
- */
-export interface Property extends Documentable {
-  readonly signature: string
-}
-
-/**
- * @since 0.4.0
- */
-export function property(documentable: Documentable, signature: string): Property {
-  return { ...documentable, signature }
-}
-
-/**
- * @since 0.2.0
- */
-export interface Class extends Documentable {
-  readonly signature: string
-  readonly methods: Array<Method>
-  readonly staticMethods: Array<Method>
-  readonly properties: Array<Property>
-}
-
-/**
- * @since 0.2.0
- */
-export function class_(
-  documentable: Documentable,
-  signature: string,
-  methods: Array<Method>,
-  staticMethods: Array<Method>,
-  properties: Array<Property>
-): Class {
-  return { ...documentable, signature, methods, staticMethods, properties }
-}
-
-/**
- * @since 0.2.0
- */
-export interface TypeAlias extends Documentable {
-  readonly signature: string
-}
-
-/**
- * @since 0.2.0
- */
-export function typeAlias(documentable: Documentable, signature: string): TypeAlias {
-  return { ...documentable, signature }
-}
-
-/**
- * @since 0.2.0
- */
-export interface Constant extends Documentable {
-  readonly signature: string
-}
-
-/**
- * @since 0.2.0
- */
-export function constant(documentable: Documentable, signature: string): Constant {
-  return { ...documentable, signature }
-}
-
-/**
- * @since 0.2.0
- */
-export interface Export extends Documentable {
-  readonly signature: string
-}
-
-/**
- * @since 0.2.0
- */
-export function export_(documentable: Documentable, signature: string): Export {
-  return { ...documentable, signature }
-}
-
-/**
- * @since 0.2.0
- */
-export interface Module extends Documentable {
-  readonly path: Array<string>
-  readonly interfaces: Array<Interface>
-  readonly typeAliases: Array<TypeAlias>
-  readonly functions: Array<Func>
-  readonly classes: Array<Class>
-  readonly constants: Array<Constant>
-  readonly exports: Array<Export>
-}
-
-/**
- * @since 0.2.0
- */
-export function module(
-  documentable: Documentable,
-  path: Array<string>,
-  interfaces: Array<Interface>,
-  typeAliases: Array<TypeAlias>,
-  functions: Array<Func>,
-  classes: Array<Class>,
-  constants: Array<Constant>,
-  exports: Array<Export>
-): Module {
-  return { path, interfaces, typeAliases, functions, classes, constants, exports, ...documentable }
-}
-
-const ordModule: Ord<Module> = pipe(
-  ordString,
-  contramap((module: Module) => module.path.join('/').toLowerCase())
-)
 
 const sortModules = A.sort(ordModule)
 
@@ -305,7 +163,7 @@ function parseInterfaceDeclaration(id: ast.InterfaceDeclaration): Parser<Interfa
   const { description, since, deprecated, examples } = getAnnotationInfo(annotation)
   const signature = id.getText()
   return ensureSinceTag(id.getName(), since, since =>
-    interface_(documentable(id.getName(), description, since, deprecated, examples), signature)
+    makeInterface(makeDocumentable(id.getName(), description, since, deprecated, examples), signature)
   )
 }
 
@@ -340,7 +198,7 @@ function getFunctionDeclarationAnnotation(fd: ast.FunctionDeclaration): doctrine
   return overloads.length === 0 ? getAnnotation(fd.getJsDocs()) : getAnnotation(overloads[0].getJsDocs())
 }
 
-function parseFunctionDeclaration(moduleName: string, fd: ast.FunctionDeclaration): Parser<Func> {
+function parseFunctionDeclaration(moduleName: string, fd: ast.FunctionDeclaration): Parser<Function> {
   const annotation = getFunctionDeclarationAnnotation(fd)
   const { description, since, deprecated, examples } = getAnnotationInfo(annotation)
   const overloads = fd.getOverloads()
@@ -356,26 +214,26 @@ function parseFunctionDeclaration(moduleName: string, fd: ast.FunctionDeclaratio
     return E.left([`Missing function name in module ${moduleName}`])
   } else {
     return ensureSinceTag(name, since, since =>
-      func(documentable(name, description, since, deprecated, examples), signatures)
+      makeFunction(makeDocumentable(name, description, since, deprecated, examples), signatures)
     )
   }
 }
 
-function parseFunctionVariableDeclaration(vd: ast.VariableDeclaration): Parser<Func> {
+function parseFunctionVariableDeclaration(vd: ast.VariableDeclaration): Parser<Function> {
   const vs: any = vd.getParent().getParent()
   const annotation = getAnnotation(vs.getJsDocs())
   const { description, since, deprecated, examples } = getAnnotationInfo(annotation)
   const name = vd.getName()
   const signature = `export declare const ${name}: ${stripImportTypes(vd.getType().getText(vd))}`
   return ensureSinceTag(name, since, since =>
-    func(documentable(name, description, since, deprecated, examples), [signature])
+    makeFunction(makeDocumentable(name, description, since, deprecated, examples), [signature])
   )
 }
 
 /**
  * @since 0.2.0
  */
-export function getFunctions(moduleName: string, sourceFile: ast.SourceFile): Parser<Array<Func>> {
+export function getFunctions(moduleName: string, sourceFile: ast.SourceFile): Parser<Array<Function>> {
   const exportedFunctionDeclarations = sourceFile
     .getFunctions()
     .filter(fd => fd.isExported() && !isInternal(getFunctionDeclarationAnnotation(fd)))
@@ -402,7 +260,7 @@ export function getFunctions(moduleName: string, sourceFile: ast.SourceFile): Pa
 
   const variableDeclarations = traverse(exportedVariableDeclarations, parseFunctionVariableDeclaration)
 
-  const monoidFunc = E.getValidationMonoid(monoidFailure, A.getMonoid<Func>())
+  const monoidFunc = E.getValidationMonoid(monoidFailure, A.getMonoid<Function>())
   return monoidFunc.concat(functionDeclarations, variableDeclarations)
 }
 
@@ -416,7 +274,7 @@ function parseTypeAliasDeclaration(ta: ast.TypeAliasDeclaration): Parser<TypeAli
   const signature = ta.getText()
   const name = ta.getName()
   return ensureSinceTag(name, since, since =>
-    typeAlias(documentable(name, description, since, deprecated, examples), signature)
+    makeTypeAlias(makeDocumentable(name, description, since, deprecated, examples), signature)
   )
 }
 
@@ -449,7 +307,7 @@ function parseConstantVariableDeclaration(vd: ast.VariableDeclaration): Parser<C
   const name = vd.getName()
   const signature = `export declare const ${name}: ${type}`
   return ensureSinceTag(name, since, since =>
-    constant(documentable(name, description, since, deprecated, examples), signature)
+    makeConstant(makeDocumentable(name, description, since, deprecated, examples), signature)
   )
 }
 
@@ -497,7 +355,7 @@ function parseExportSpecifier(es: ast.ExportSpecifier): Parser<Export> {
       const annotation = doctrine.parse(text, { unwrap: true })
       const { description, since, deprecated, examples } = getAnnotationInfo(annotation)
       return ensureSinceTag(name, since, since =>
-        export_(documentable(name, description, since, deprecated, examples), signature)
+        makeExport(makeDocumentable(name, description, since, deprecated, examples), signature)
       )
     })
   )
@@ -564,7 +422,7 @@ function parseMethod(md: ast.MethodDeclaration): Parser<Method> {
           getMethodSignature(overloads[overloads.length - 1])
         ]
   return ensureSinceTag(name, since, since =>
-    method(documentable(name, description, since, deprecated, examples), signatures)
+    makeMethod(makeDocumentable(name, description, since, deprecated, examples), signatures)
   )
 }
 
@@ -576,7 +434,7 @@ function parseProperty(pd: ast.PropertyDeclaration): Parser<Property> {
   const readonly = pd.getFirstModifierByKind(ast.ts.SyntaxKind.ReadonlyKeyword) === undefined ? '' : 'readonly '
   const signature = `${readonly}${name}: ${type}`
   return ensureSinceTag(name, since, since =>
-    property(documentable(name, description, since, deprecated, examples), signature)
+    makeProperty(makeDocumentable(name, description, since, deprecated, examples), signature)
   )
 }
 
@@ -604,8 +462,8 @@ function parseClass(moduleName: string, c: ast.ClassDeclaration): Parser<Class> 
         )
       }),
       E.map(({ methods, staticMethods, properties }) =>
-        class_(
-          documentable(name, description, since.value, deprecated, examples),
+        makeClass(
+          makeDocumentable(name, description, since.value, deprecated, examples),
           signature,
           methods,
           staticMethods,
@@ -639,7 +497,7 @@ export function getModuleDocumentation(sourceFile: ast.SourceFile, name: string)
       const text = comments[0].getText()
       const annotation = doctrine.parse(text, { unwrap: true })
       const { description, since, deprecated, examples } = getAnnotationInfo(annotation)
-      return ensureSinceTag(name, since, since => documentable(name, description, since, deprecated, examples))
+      return ensureSinceTag(name, since, since => makeDocumentable(name, description, since, deprecated, examples))
     }
   }
   return E.left([`missing documentation in ${name} module`])
@@ -660,7 +518,7 @@ function parseModule(path: Array<string>, sourceFile: ast.SourceFile): Parser<Mo
       return pipe(
         getModuleDocumentation(sourceFile, moduleName),
         E.map(documentation =>
-          module(documentation, path, interfaces, typeAliases, functions, classes, constants, exports)
+          makeModule(documentation, path, interfaces, typeAliases, functions, classes, constants, exports)
         )
       )
     })

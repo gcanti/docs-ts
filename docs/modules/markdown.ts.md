@@ -1,6 +1,6 @@
 ---
 title: markdown.ts
-nav_order: 4
+nav_order: 5
 parent: Modules
 ---
 
@@ -35,7 +35,7 @@ Added in v0.4.0
 **Signature**
 
 ```ts
-export declare function printExamples(examples: Array<Example>): string
+export declare function printExamples(examples: Array<string>): string
 ```
 
 Added in v0.2.0

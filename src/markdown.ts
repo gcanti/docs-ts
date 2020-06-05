@@ -6,7 +6,7 @@
 
 import * as prettier from 'prettier'
 import * as O from 'fp-ts/lib/Option'
-import { Class, Func, Interface, Method, TypeAlias, Constant, Module, Export, Example, Property } from './parser'
+import { Class, Function, Interface, Method, TypeAlias, Constant, Module, Export, Property } from './domain'
 import { pipe } from 'fp-ts/lib/pipeable'
 const toc = require('markdown-toc')
 
@@ -60,7 +60,7 @@ function printConstant(c: Constant): string {
   return s
 }
 
-function printFunction(f: Func): string {
+function printFunction(f: Function): string {
   let s = h1(handleTitle(f.name, f.deprecated))
   s += printDescription(f.description)
   s += printSignatures(f.signatures)
@@ -70,7 +70,7 @@ function printFunction(f: Func): string {
   return s
 }
 
-function printStaticMethod(f: Func): string {
+function printStaticMethod(f: Function): string {
   let s = h2(handleTitle(f.name, f.deprecated) + ' (static method)')
   s += printDescription(f.description)
   s += printSignatures(f.signatures)
@@ -158,7 +158,7 @@ function printModuleDescription(m: Module): string {
 /**
  * @since 0.2.0
  */
-export function printExamples(examples: Array<Example>): string {
+export function printExamples(examples: Array<string>): string {
   if (examples.length === 0) {
     return ''
   }

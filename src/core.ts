@@ -12,6 +12,7 @@ import { spawnSync } from 'child_process'
 import { pipe } from 'fp-ts/lib/pipeable'
 import * as RTE from 'fp-ts/lib/ReaderTaskEither'
 import * as R from 'fp-ts/lib/Reader'
+import { Module, Documentable } from './domain'
 
 /**
  * capabilities
@@ -141,7 +142,7 @@ const getSrcPaths: AppEff<Array<string>> = C =>
 
 const readSources: AppEff<Array<File>> = pipe(getSrcPaths, RTE.chain(readFiles))
 
-function parseModules(files: Array<File>): AppEff<Array<parser.Module>> {
+function parseModules(files: Array<File>): AppEff<Array<Module>> {
   return C =>
     pipe(
       C.log('Parsing modules...'),
@@ -158,10 +159,10 @@ function parseModules(files: Array<File>): AppEff<Array<parser.Module>> {
 
 const foldFiles = fold(A.getMonoid<File>())
 
-function getExampleFiles(modules: Array<parser.Module>): Array<File> {
+function getExampleFiles(modules: Array<Module>): Array<File> {
   return A.array.chain(modules, module => {
     const prefix = module.path.join('-')
-    function getDocumentableExamples(documentable: parser.Documentable): Array<File> {
+    function getDocumentableExamples(documentable: Documentable): Array<File> {
       return documentable.examples.map((content, i) =>
         file(path.join(outDir, 'examples', prefix + '-' + documentable.name + '-' + i + '.ts'), content + '\n', true)
       )
@@ -245,7 +246,7 @@ function writeExamples(examples: Array<File>): AppEff<void> {
   )
 }
 
-function typecheckExamples(projectName: string): (modules: Array<parser.Module>) => AppEff<void> {
+function typecheckExamples(projectName: string): (modules: Array<Module>) => AppEff<void> {
   return modules => {
     const examples = handleImports(getExampleFiles(modules), projectName)
     return examples.length === 0
@@ -301,15 +302,15 @@ aux_links:
 
 let counter = 1
 
-function getMarkdownOutpuPath(module: parser.Module): string {
+function getMarkdownOutpuPath(module: Module): string {
   return path.join(outDir, 'modules', module.path.slice(1).join(path.sep) + '.md')
 }
 
-function getModuleMarkdownFiles(modules: Array<parser.Module>): Array<File> {
+function getModuleMarkdownFiles(modules: Array<Module>): Array<File> {
   return modules.map(module => file(getMarkdownOutpuPath(module), markdown.printModule(module, counter++), true))
 }
 
-function getMarkdownFiles(projectName: string, homepage: string): (modules: Array<parser.Module>) => Array<File> {
+function getMarkdownFiles(projectName: string, homepage: string): (modules: Array<Module>) => Array<File> {
   return modules => [home, modulesIndex, getConfigYML(projectName, homepage), ...getModuleMarkdownFiles(modules)]
 }
 

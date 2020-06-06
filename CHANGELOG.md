@@ -16,7 +16,7 @@
 # 0.5.0
 
 - **Breaking Change**
-  - refactor `Example` domain model (@gcanti)
+  - total refactoring (@gcanti)
 
 # 0.4.0
 

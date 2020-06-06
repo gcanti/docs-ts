@@ -51,7 +51,7 @@ export interface Capabilities extends MonadFileSystem, MonadLog {}
  *
  * @since 0.2.0
  */
-export interface AppEff<A> extends RTE.ReaderTaskEither<Capabilities, string, A> {}
+export interface Effect<A> extends RTE.ReaderTaskEither<Capabilities, string, A> {}
 
 const outDir = 'docs'
 const srcDir = 'src'
@@ -75,7 +75,7 @@ function file(path: string, content: string, overwrite: boolean): File {
   }
 }
 
-function readFile(path: string): AppEff<File> {
+function readFile(path: string): Effect<File> {
   return C =>
     pipe(
       C.readFile(path),
@@ -83,11 +83,11 @@ function readFile(path: string): AppEff<File> {
     )
 }
 
-function readFiles(paths: Array<string>): AppEff<Array<File>> {
+function readFiles(paths: Array<string>): Effect<Array<File>> {
   return A.array.traverse(RTE.readerTaskEither)(paths, readFile)
 }
 
-function writeFile(file: File): AppEff<void> {
+function writeFile(file: File): Effect<void> {
   return C => {
     const overwrite = pipe(
       C.debug(`Overwriting file ${file.path}`),
@@ -108,14 +108,14 @@ function writeFile(file: File): AppEff<void> {
   }
 }
 
-function writeFiles(files: Array<File>): AppEff<void> {
+function writeFiles(files: Array<File>): Effect<void> {
   return pipe(
     A.array.traverse(RTE.readerTaskEither)(files, writeFile),
     RTE.map(() => undefined)
   )
 }
 
-const getPackageJSON: AppEff<PackageJSON> = C =>
+const getPackageJSON: Effect<PackageJSON> = C =>
   pipe(
     C.readFile(path.join(process.cwd(), 'package.json')),
     TE.chain(s => {
@@ -133,27 +133,20 @@ const getPackageJSON: AppEff<PackageJSON> = C =>
 
 const srcPattern = path.join(srcDir, '**', '*.ts')
 
-const getSrcPaths: AppEff<Array<string>> = C =>
+const getSrcPaths: Effect<Array<string>> = C =>
   pipe(
     C.getFilenames(srcPattern),
     TE.map(paths => A.array.map(paths, path.normalize)),
     TE.chainFirst(paths => C.info(`${paths.length} modules found`))
   )
 
-const readSources: AppEff<Array<File>> = pipe(getSrcPaths, RTE.chain(readFiles))
+const readSources: Effect<Array<File>> = pipe(getSrcPaths, RTE.chain(readFiles))
 
-function parseModules(files: Array<File>): AppEff<Array<Module>> {
+function parseFiles(files: Array<File>): Effect<Array<Module>> {
   return C =>
     pipe(
-      C.log('Parsing modules...'),
-      TE.chain(() =>
-        TE.fromEither(
-          pipe(
-            P.parseFiles(files),
-            E.mapLeft(errors => errors.join('\n'))
-          )
-        )
-      )
+      C.log('Parsing files...'),
+      TE.chain(() => TE.fromEither(pipe(P.parseFiles(files))))
     )
 }
 
@@ -217,13 +210,13 @@ function getExampleIndex(examples: Array<File>): File {
 
 const examplePattern = path.join(outDir, 'examples')
 
-const cleanExamples: AppEff<void> = C =>
+const cleanExamples: Effect<void> = C =>
   pipe(
     C.debug(`Clean up examples: deleting ${examplePattern}...`),
     TE.chain(() => C.clean(examplePattern))
   )
 
-const spawnTsNode: AppEff<void> = C =>
+const spawnTsNode: Effect<void> = C =>
   pipe(
     C.log(`Type checking examples...`),
     TE.chain(() =>
@@ -234,7 +227,7 @@ const spawnTsNode: AppEff<void> = C =>
     )
   )
 
-function writeExamples(examples: Array<File>): AppEff<void> {
+function writeExamples(examples: Array<File>): Effect<void> {
   return pipe(
     RTE.ask<Capabilities>(),
     RTE.chain(C =>
@@ -246,7 +239,7 @@ function writeExamples(examples: Array<File>): AppEff<void> {
   )
 }
 
-function typecheckExamples(projectName: string): (modules: Array<Module>) => AppEff<void> {
+function typecheckExamples(projectName: string): (modules: Array<Module>) => Effect<void> {
   return modules => {
     const examples = handleImports(getExampleFiles(modules), projectName)
     return examples.length === 0
@@ -316,8 +309,8 @@ function getMarkdownFiles(projectName: string, homepage: string): (modules: Arra
 
 const outPattern = path.join(outDir, '**/*.ts.md')
 
-function writeMarkdownFiles(files: Array<File>): AppEff<void> {
-  const cleanOut: AppEff<void> = C =>
+function writeMarkdownFiles(files: Array<File>): Effect<void> {
+  const cleanOut: Effect<void> = C =>
     pipe(
       C.log(`Writing markdown...`),
       TE.chain(() => C.debug(`Clean up docs folder: deleting ${outPattern}...`)),
@@ -337,7 +330,7 @@ function checkHomepage(pkg: PackageJSON): E.Either<string, string> {
 /**
  * @since 0.2.0
  */
-export const main: AppEff<void> = pipe(
+export const main: Effect<void> = pipe(
   getPackageJSON,
   RTE.chain(pkg =>
     pipe(
@@ -345,7 +338,7 @@ export const main: AppEff<void> = pipe(
       RTE.chain(homepage =>
         pipe(
           readSources,
-          RTE.chain(parseModules),
+          RTE.chain(parseFiles),
           RTE.chainFirst(typecheckExamples(pkg.name)),
           RTE.map(getMarkdownFiles(pkg.name, homepage)),
           RTE.chain(writeMarkdownFiles)

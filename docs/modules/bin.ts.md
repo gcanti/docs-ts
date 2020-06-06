@@ -4,7 +4,7 @@ nav_order: 1
 parent: Modules
 ---
 
-# bin overview
+## bin overview
 
 CLI
 

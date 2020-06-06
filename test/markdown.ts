@@ -19,14 +19,14 @@ describe('makdown', () => {
     assert.deepStrictEqual(
       printClass(
         makeClass(
-          makeDocumentable('A', none, '1.0.0', false, []),
+          makeDocumentable('A', none, '1.0.0', false, [], none),
           'declare class A { constructor() }',
           [],
           [],
-          [makeProperty(makeDocumentable('read', none, '1.0.0', false, []), 'readonly read: IO<A>')]
+          [makeProperty(makeDocumentable('read', none, '1.0.0', false, [], none), 'readonly read: IO<A>')]
         )
       ),
-      `# A (class)
+      `## A (class)
 
 **Signature**
 
@@ -36,7 +36,7 @@ declare class A { constructor() }
 
 Added in v1.0.0
 
-## read (property)
+### read (property)
 
 **Signature**
 

@@ -4,7 +4,7 @@ nav_order: 2
 parent: Modules
 ---
 
-# core overview
+## core overview
 
 Added in v0.2.0
 
@@ -12,28 +12,19 @@ Added in v0.2.0
 
 <h2 class="text-delta">Table of contents</h2>
 
-- [AppEff (interface)](#appeff-interface)
-- [Capabilities (interface)](#capabilities-interface)
-- [Eff (interface)](#eff-interface)
-- [MonadFileSystem (interface)](#monadfilesystem-interface)
-- [MonadLog (interface)](#monadlog-interface)
-- [main](#main)
+- [utils](#utils)
+  - [Capabilities (interface)](#capabilities-interface)
+  - [Eff (interface)](#eff-interface)
+  - [Effect (interface)](#effect-interface)
+  - [MonadFileSystem (interface)](#monadfilesystem-interface)
+  - [MonadLog (interface)](#monadlog-interface)
+  - [main](#main)
 
 ---
 
-# AppEff (interface)
+# utils
 
-App effect
-
-**Signature**
-
-```ts
-export interface AppEff<A> extends RTE.ReaderTaskEither<Capabilities, string, A> {}
-```
-
-Added in v0.2.0
-
-# Capabilities (interface)
+## Capabilities (interface)
 
 **Signature**
 
@@ -43,7 +34,7 @@ export interface Capabilities extends MonadFileSystem, MonadLog {}
 
 Added in v0.2.0
 
-# Eff (interface)
+## Eff (interface)
 
 capabilities
 
@@ -55,7 +46,19 @@ export interface Eff<A> extends TE.TaskEither<string, A> {}
 
 Added in v0.2.0
 
-# MonadFileSystem (interface)
+## Effect (interface)
+
+App effect
+
+**Signature**
+
+```ts
+export interface Effect<A> extends RTE.ReaderTaskEither<Capabilities, string, A> {}
+```
+
+Added in v0.2.0
+
+## MonadFileSystem (interface)
 
 **Signature**
 
@@ -71,7 +74,7 @@ export interface MonadFileSystem {
 
 Added in v0.2.0
 
-# MonadLog (interface)
+## MonadLog (interface)
 
 **Signature**
 
@@ -85,12 +88,12 @@ export interface MonadLog {
 
 Added in v0.2.0
 
-# main
+## main
 
 **Signature**
 
 ```ts
-export declare const main: AppEff<void>
+export declare const main: Effect<void>
 ```
 
 Added in v0.2.0

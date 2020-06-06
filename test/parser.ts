@@ -12,6 +12,11 @@ function getTestSourceFile(source: string): ast.SourceFile {
   return project.createSourceFile(`test${counter++}.ts`, source)
 }
 
+const testEnv: P.Env = {
+  path: ['test'],
+  sourceFile: getTestSourceFile('')
+}
+
 describe('parser', () => {
   it('parseContent', () => {
     assert.deepStrictEqual(P.parseComment(''), {
@@ -34,6 +39,25 @@ describe('parser', () => {
         deprecated: [O.none]
       }
     })
+    assert.deepStrictEqual(P.parseComment('/** description\n * @category instance\n */'), {
+      description: O.some('description'),
+      tags: {
+        category: [O.some('instance')]
+      }
+    })
+  })
+
+  it('getCommentInfo', () => {
+    assert.deepStrictEqual(
+      P.getCommentInfo('name', '/** description\n * @since 1.0.0\n * @category instance\n */')(testEnv),
+      right({
+        category: O.some('instance'),
+        deprecated: false,
+        description: O.some('description'),
+        examples: [],
+        since: '1.0.0'
+      })
+    )
   })
 })
 
@@ -54,15 +78,15 @@ describe('stripImportTypes', () => {
   })
 })
 
-describe('getInterfaces', () => {
+describe('parseInterfaces', () => {
   it('should return no `Interface`s if the file is empty', () => {
     const sourceFile = getTestSourceFile('')
-    assert.deepStrictEqual(P.getInterfaces(sourceFile)({ moduleName: 'test' }), right([]))
+    assert.deepStrictEqual(P.parseInterfaces({ ...testEnv, sourceFile }), right([]))
   })
 
   it('should return no `Interface`s if there are no exported interfaces', () => {
     const sourceFile = getTestSourceFile('interface A {}')
-    assert.deepStrictEqual(P.getInterfaces(sourceFile)({ moduleName: 'test' }), right([]))
+    assert.deepStrictEqual(P.parseInterfaces({ ...testEnv, sourceFile }), right([]))
   })
 
   it('should return an `Interface`', () => {
@@ -75,55 +99,54 @@ describe('getInterfaces', () => {
 export interface A {}`
     )
     assert.deepStrictEqual(
-      P.getInterfaces(sourceFile)({ moduleName: 'test' }),
+      P.parseInterfaces({ ...testEnv, sourceFile }),
       right([
         {
+          _tag: 'Interface',
           deprecated: true,
           description: O.some('a description...'),
           name: 'A',
           signature: 'export interface A {}',
           since: '1.0.0',
-          examples: []
+          examples: [],
+          category: O.none
         }
       ])
     )
   })
 })
 
-describe('getFunctions', () => {
+describe('parseFunctions', () => {
   it('should raise an error if the function is anonymous', () => {
     const sourceFile = getTestSourceFile(`export function(a: number, b: number): number { return a + b }`)
-    assert.deepStrictEqual(
-      P.getFunctions(sourceFile)({ moduleName: 'test' }),
-      left(['Missing function name in module test'])
-    )
+    assert.deepStrictEqual(P.parseFunctions({ ...testEnv, sourceFile }), left('Missing function name in module test'))
   })
 
   it('should not return private function declarations', () => {
     const sourceFile = getTestSourceFile(`function sum(a: number, b: number): number { return a + b }`)
-    assert.deepStrictEqual(P.getFunctions(sourceFile)({ moduleName: 'test' }), right([]))
+    assert.deepStrictEqual(P.parseFunctions({ ...testEnv, sourceFile }), right([]))
   })
 
   it('should not return internal function declarations', () => {
     const sourceFile = getTestSourceFile(
       `/** @internal */export function sum(a: number, b: number): number { return a + b }`
     )
-    assert.deepStrictEqual(P.getFunctions(sourceFile)({ moduleName: 'test' }), right([]))
+    assert.deepStrictEqual(P.parseFunctions({ ...testEnv, sourceFile }), right([]))
   })
 
   it('should not return private variable declarations', () => {
     const sourceFile = getTestSourceFile(`const sum = (a: number, b: number): number => a + b `)
-    assert.deepStrictEqual(P.getFunctions(sourceFile)({ moduleName: 'test' }), right([]))
+    assert.deepStrictEqual(P.parseFunctions({ ...testEnv, sourceFile }), right([]))
   })
 
   it('should not return internal variable declarations', () => {
     const sourceFile = getTestSourceFile(`/** @internal */export const sum = (a: number, b: number): number => a + b `)
-    assert.deepStrictEqual(P.getFunctions(sourceFile)({ moduleName: 'test' }), right([]))
+    assert.deepStrictEqual(P.parseFunctions({ ...testEnv, sourceFile }), right([]))
   })
 
   it('should not return exported const declarations', () => {
     const sourceFile = getTestSourceFile(`export const a = 1`)
-    assert.deepStrictEqual(P.getFunctions(sourceFile)({ moduleName: 'test' }), right([]))
+    assert.deepStrictEqual(P.parseFunctions({ ...testEnv, sourceFile }), right([]))
   })
 
   it('should handle a const function', () => {
@@ -140,15 +163,17 @@ describe('getFunctions', () => {
 export const f = (a: number, b: number): { [key: string]: number } => ({ a, b })`
     )
     assert.deepStrictEqual(
-      P.getFunctions(sourceFile)({ moduleName: 'test' }),
+      P.parseFunctions({ ...testEnv, sourceFile }),
       right([
         {
+          _tag: 'Function',
           deprecated: true,
           description: O.some('a description...'),
           name: 'f',
           signatures: ['export declare const f: (a: number, b: number) => { [key: string]: number; }'],
           since: '1.0.0',
-          examples: ['assert.deeStrictEqual(f(1, 2), { a: 1, b: 2})', 'assert.deeStrictEqual(f(3, 4), { a: 3, b: 4})']
+          examples: ['assert.deeStrictEqual(f(1, 2), { a: 1, b: 2})', 'assert.deeStrictEqual(f(3, 4), { a: 3, b: 4})'],
+          category: O.none
         }
       ])
     )
@@ -163,15 +188,17 @@ export const f = (a: number, b: number): { [key: string]: number } => ({ a, b })
 export function f(a: number, b: number): { [key: string]: number } { return { a, b } }`
     )
     assert.deepStrictEqual(
-      P.getFunctions(sourceFile)({ moduleName: 'test' }),
+      P.parseFunctions({ ...testEnv, sourceFile }),
       right([
         {
+          _tag: 'Function',
           deprecated: false,
           description: O.none,
           name: 'f',
           signatures: ['export declare function f(a: number, b: number): { [key: string]: number }'],
           since: '1.0.0',
-          examples: []
+          examples: [],
+          category: O.none
         }
       ])
     )
@@ -188,15 +215,17 @@ export function f(a: number, b: number): { [key: string]: number } { return { a,
 export function f(a: number, b: number): { [key: string]: number } { return { a, b } }`
     )
     assert.deepStrictEqual(
-      P.getFunctions(sourceFile)({ moduleName: 'test' }),
+      P.parseFunctions({ ...testEnv, sourceFile }),
       right([
         {
+          _tag: 'Function',
           deprecated: true,
           description: O.some('a description...'),
           name: 'f',
           signatures: ['export declare function f(a: number, b: number): { [key: string]: number }'],
           since: '1.0.0',
-          examples: []
+          examples: [],
+          category: O.none
         }
       ])
     )
@@ -215,9 +244,10 @@ export function f(a: number, b: number): { [key: string]: number }
 export function f(a: any, b: any): { [key: string]: number } { return { a, b } }`
     )
     assert.deepStrictEqual(
-      P.getFunctions(sourceFile)({ moduleName: 'test' }),
+      P.parseFunctions({ ...testEnv, sourceFile }),
       right([
         {
+          _tag: 'Function',
           deprecated: true,
           description: O.some('a description...'),
           name: 'f',
@@ -226,14 +256,15 @@ export function f(a: any, b: any): { [key: string]: number } { return { a, b } }
             'export declare function f(a: number, b: number): { [key: string]: number }'
           ],
           since: '1.0.0',
-          examples: []
+          examples: [],
+          category: O.none
         }
       ])
     )
   })
 })
 
-describe('getTypeAliases', () => {
+describe('parseTypeAliases', () => {
   it('should return a `TypeAlias`', () => {
     const sourceFile = getTestSourceFile(
       `/**
@@ -244,22 +275,24 @@ describe('getTypeAliases', () => {
 export type Option<A> = None<A> | Some<A>`
     )
     assert.deepStrictEqual(
-      P.getTypeAliases(sourceFile)({ moduleName: 'test' }),
+      P.parseTypeAliases({ ...testEnv, sourceFile }),
       right([
         {
+          _tag: 'TypeAlias',
           deprecated: true,
           description: O.some('a description...'),
           name: 'Option',
           signature: 'export type Option<A> = None<A> | Some<A>',
           since: '1.0.0',
-          examples: []
+          examples: [],
+          category: O.none
         }
       ])
     )
   })
 })
 
-describe('getConstants', () => {
+describe('parseConstants', () => {
   it('should handle a constant', () => {
     const sourceFile = getTestSourceFile(
       `/**
@@ -270,15 +303,17 @@ describe('getConstants', () => {
 export const s: string = ''`
     )
     assert.deepStrictEqual(
-      P.getConstants(sourceFile)({ moduleName: 'test' }),
+      P.parseConstants({ ...testEnv, sourceFile }),
       right([
         {
+          _tag: 'Constant',
           deprecated: true,
           description: O.some('a description...'),
           name: 's',
           signature: 'export declare const s: string',
           since: '1.0.0',
-          examples: []
+          examples: [],
+          category: O.none
         }
       ])
     )
@@ -292,15 +327,17 @@ export const s: string = ''`
 export const left: <E = never, A = never>(l: E) => string = T.left`
     )
     assert.deepStrictEqual(
-      P.getConstants(sourceFile)({ moduleName: 'test' }),
+      P.parseConstants({ ...testEnv, sourceFile }),
       right([
         {
+          _tag: 'Constant',
           deprecated: false,
           description: O.none,
           name: 'left',
           signature: 'export declare const left: <E = never, A = never>(l: E) => string',
           since: '1.0.0',
-          examples: []
+          examples: [],
+          category: O.none
         }
       ])
     )
@@ -314,15 +351,17 @@ export const left: <E = never, A = never>(l: E) => string = T.left`
 export const empty = new Map<never, never>()`
     )
     assert.deepStrictEqual(
-      P.getConstants(sourceFile)({ moduleName: 'test' }),
+      P.parseConstants({ ...testEnv, sourceFile }),
       right([
         {
+          _tag: 'Constant',
           deprecated: false,
           description: O.none,
           name: 'empty',
           signature: 'export declare const empty: Map<never, never>',
           since: '1.0.0',
-          examples: []
+          examples: [],
+          category: O.none
         }
       ])
     )
@@ -344,28 +383,27 @@ export const taskSeq: typeof task = {
 }`
     )
     assert.deepStrictEqual(
-      P.getConstants(sourceFile)({ moduleName: 'test' }),
+      P.parseConstants({ ...testEnv, sourceFile }),
       right([
         {
+          _tag: 'Constant',
           deprecated: false,
           description: O.none,
           name: 'taskSeq',
           signature: 'export declare const taskSeq: { a: number; }',
           since: '1.0.0',
-          examples: []
+          examples: [],
+          category: O.none
         }
       ])
     )
   })
 })
 
-describe('getClasses', () => {
+describe('parseClasses', () => {
   it('should raise an error if the class is anonymous', () => {
     const sourceFile = getTestSourceFile(`export class {}`)
-    assert.deepStrictEqual(
-      P.getClasses(sourceFile)({ moduleName: 'test' }),
-      left(['Missing class name in module test'])
-    )
+    assert.deepStrictEqual(P.parseClasses({ ...testEnv, sourceFile }), left('Missing class name in module test'))
   })
 
   it('should skip the constructor body', () => {
@@ -374,12 +412,14 @@ describe('getClasses', () => {
  */
 export class C { constructor() {} }`)
     assert.deepStrictEqual(
-      P.getClasses(sourceFile)({ moduleName: 'test' }),
+      P.parseClasses({ ...testEnv, sourceFile }),
       right([
         {
+          _tag: 'Class',
           deprecated: false,
           description: O.some('description'),
           examples: [],
+          category: O.none,
           methods: [],
           name: 'C',
           signature: 'export declare class C { constructor() }',
@@ -424,15 +464,17 @@ export class Test {
 }`
     )
     assert.deepStrictEqual(
-      P.getClasses(sourceFile)({ moduleName: 'test' }),
+      P.parseClasses({ ...testEnv, sourceFile }),
       right([
         {
+          _tag: 'Class',
           deprecated: true,
           description: O.some('a class description...'),
           name: 'Test',
           signature: 'export declare class Test { constructor(readonly value: string) }',
           since: '1.0.0',
           examples: [],
+          category: O.none,
           methods: [
             {
               deprecated: true,
@@ -440,7 +482,8 @@ export class Test {
               name: 'g',
               signatures: ['g(a: number, b: number): { [key: string]: number }'],
               since: '1.1.0',
-              examples: []
+              examples: [],
+              category: O.none
             }
           ],
           staticMethods: [
@@ -450,7 +493,8 @@ export class Test {
               name: 'f',
               signatures: ['static f(): void'],
               since: '1.1.0',
-              examples: []
+              examples: [],
+              category: O.none
             }
           ],
           properties: [
@@ -458,6 +502,7 @@ export class Test {
               deprecated: true,
               description: O.some('a property...'),
               examples: [],
+              category: O.none,
               name: 'a',
               signature: 'readonly a: string',
               since: '1.1.0'
@@ -498,15 +543,17 @@ export class Test<A> {
 }`
     )
     assert.deepStrictEqual(
-      P.getClasses(sourceFile)({ moduleName: 'test' }),
+      P.parseClasses({ ...testEnv, sourceFile }),
       right([
         {
+          _tag: 'Class',
           deprecated: true,
           description: O.some('a class description...'),
           name: 'Test',
           signature: 'export declare class Test<A> { constructor(readonly value: A) }',
           since: '1.0.0',
           examples: [],
+          category: O.none,
           methods: [
             {
               deprecated: true,
@@ -514,7 +561,8 @@ export class Test<A> {
               name: 'map',
               signatures: ['map(f: (a: number) => number): Test', 'map(f: (a: string) => string): Test'],
               since: '1.1.0',
-              examples: []
+              examples: [],
+              category: O.none
             }
           ],
           staticMethods: [
@@ -524,7 +572,8 @@ export class Test<A> {
               name: 'f',
               signatures: ['static f(x: number): number', 'static f(x: string): string'],
               since: '1.1.0',
-              examples: []
+              examples: [],
+              category: O.none
             }
           ],
           properties: []
@@ -534,7 +583,7 @@ export class Test<A> {
   })
 })
 
-describe('getModuleDocumentation', () => {
+describe('parseModuleDocumentation', () => {
   it('should return a description field and a deprecated field', () => {
     const sourceFile = getTestSourceFile(
       `
@@ -551,22 +600,23 @@ export const a: number = 1
     `
     )
     assert.deepStrictEqual(
-      P.getModuleDocumentation(sourceFile)({ moduleName: 'test' }),
+      P.parseModuleDocumentation({ ...testEnv, sourceFile }),
       right({
         name: 'test',
         description: O.some('Manages the configuration settings for the widget'),
         deprecated: true,
         since: '1.0.0',
-        examples: []
+        examples: [],
+        category: O.none
       })
     )
   })
 })
 
-describe('getExports', () => {
+describe('parseExports', () => {
   it('should return no `Export`s if the file is empty', () => {
     const sourceFile = getTestSourceFile('')
-    assert.deepStrictEqual(P.getExports(sourceFile)({ moduleName: 'test' }), right([]))
+    assert.deepStrictEqual(P.parseExports({ ...testEnv, sourceFile }), right([]))
   })
 
   it('should handle renamimg', () => {
@@ -577,12 +627,14 @@ describe('getExports', () => {
   a as b
 }`)
     assert.deepStrictEqual(
-      P.getExports(sourceFile)({ moduleName: 'test' }),
+      P.parseExports({ ...testEnv, sourceFile }),
       right([
         {
+          _tag: 'Export',
           deprecated: false,
           description: O.none,
           examples: [],
+          category: O.none,
           name: 'b',
           signature: 'export declare const b: 1',
           since: '1.0.0'
@@ -606,20 +658,24 @@ describe('getExports', () => {
 }
 `)
     assert.deepStrictEqual(
-      P.getExports(sourceFile)({ moduleName: 'test' }),
+      P.parseExports({ ...testEnv, sourceFile }),
       right([
         {
+          _tag: 'Export',
           deprecated: false,
           description: O.some('description_of_a'),
           examples: [],
+          category: O.none,
           name: 'a',
           signature: 'export declare const a: any',
           since: '1.0.0'
         },
         {
+          _tag: 'Export',
           deprecated: false,
           description: O.some('description_of_b'),
           examples: [],
+          category: O.none,
           name: 'b',
           signature: 'export declare const b: any',
           since: '2.0.0'
@@ -650,12 +706,14 @@ export {
     )
     const sourceFile = project.getSourceFile('b.ts')!
     assert.deepStrictEqual(
-      P.getExports(sourceFile)({ moduleName: 'test' }),
+      P.parseExports({ ...testEnv, sourceFile }),
       right([
         {
+          _tag: 'Export',
           deprecated: false,
           description: O.none,
           examples: [],
+          category: O.none,
           name: 'b',
           signature: 'export declare const b: 1',
           since: '1.0.0'

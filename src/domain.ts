@@ -25,6 +25,7 @@ export interface Documentable {
   readonly since: string
   readonly deprecated: boolean
   readonly examples: Array<Example>
+  readonly category: O.Option<string>
 }
 
 /**
@@ -32,6 +33,7 @@ export interface Documentable {
  * @since 0.5.0
  */
 export interface Interface extends Documentable {
+  readonly _tag: 'Interface'
   readonly signature: string
 }
 
@@ -40,6 +42,7 @@ export interface Interface extends Documentable {
  * @since 0.5.0
  */
 export interface Function extends Documentable {
+  readonly _tag: 'Function'
   readonly signatures: Array<string>
 }
 
@@ -64,6 +67,7 @@ export interface Property extends Documentable {
  * @since 0.5.0
  */
 export interface Class extends Documentable {
+  readonly _tag: 'Class'
   readonly signature: string
   readonly methods: Array<Method>
   readonly staticMethods: Array<Method>
@@ -75,6 +79,7 @@ export interface Class extends Documentable {
  * @since 0.5.0
  */
 export interface TypeAlias extends Documentable {
+  readonly _tag: 'TypeAlias'
   readonly signature: string
 }
 
@@ -83,6 +88,7 @@ export interface TypeAlias extends Documentable {
  * @since 0.5.0
  */
 export interface Constant extends Documentable {
+  readonly _tag: 'Constant'
   readonly signature: string
 }
 
@@ -91,6 +97,7 @@ export interface Constant extends Documentable {
  * @since 0.5.0
  */
 export interface Export extends Documentable {
+  readonly _tag: 'Export'
   readonly signature: string
 }
 
@@ -127,9 +134,10 @@ export function makeDocumentable(
   description: O.Option<string>,
   since: string,
   deprecated: boolean,
-  examples: Array<Example>
+  examples: Array<Example>,
+  category: O.Option<string>
 ): Documentable {
-  return { name, description, since, deprecated, examples }
+  return { name, description, since, deprecated, examples, category }
 }
 
 /**
@@ -137,7 +145,7 @@ export function makeDocumentable(
  * @since 0.5.0
  */
 export function makeInterface(documentable: Documentable, signature: string): Interface {
-  return { ...documentable, signature }
+  return { _tag: 'Interface', ...documentable, signature }
 }
 
 /**
@@ -145,7 +153,7 @@ export function makeInterface(documentable: Documentable, signature: string): In
  * @since 0.5.0
  */
 export function makeFunction(documentable: Documentable, signatures: Array<string>): Function {
-  return { ...documentable, signatures }
+  return { _tag: 'Function', ...documentable, signatures }
 }
 
 /**
@@ -175,7 +183,7 @@ export function makeClass(
   staticMethods: Array<Method>,
   properties: Array<Property>
 ): Class {
-  return { ...documentable, signature, methods, staticMethods, properties }
+  return { _tag: 'Class', ...documentable, signature, methods, staticMethods, properties }
 }
 
 /**
@@ -183,7 +191,7 @@ export function makeClass(
  * @since 0.5.0
  */
 export function makeTypeAlias(documentable: Documentable, signature: string): TypeAlias {
-  return { ...documentable, signature }
+  return { _tag: 'TypeAlias', ...documentable, signature }
 }
 
 /**
@@ -191,7 +199,7 @@ export function makeTypeAlias(documentable: Documentable, signature: string): Ty
  * @since 0.5.0
  */
 export function makeConstant(documentable: Documentable, signature: string): Constant {
-  return { ...documentable, signature }
+  return { _tag: 'Constant', ...documentable, signature }
 }
 
 /**
@@ -199,7 +207,7 @@ export function makeConstant(documentable: Documentable, signature: string): Con
  * @since 0.5.0
  */
 export function makeExport(documentable: Documentable, signature: string): Export {
-  return { ...documentable, signature }
+  return { _tag: 'Export', ...documentable, signature }
 }
 
 /**

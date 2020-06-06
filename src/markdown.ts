@@ -8,11 +8,14 @@ import * as prettier from 'prettier'
 import * as O from 'fp-ts/lib/Option'
 import { Class, Function, Interface, Method, TypeAlias, Constant, Module, Export, Property } from './domain'
 import { pipe } from 'fp-ts/lib/pipeable'
+import * as NEA from 'fp-ts/lib/NonEmptyArray'
+import * as R from 'fp-ts/lib/Record'
 const toc = require('markdown-toc')
 
 const CRLF = '\n\n'
 const h1 = (title: string) => `# ${title}`
 const h2 = (title: string) => `## ${title}`
+const h3 = (title: string) => `### ${title}`
 const fence = (language: string) => (code: string): string => '```' + language + '\n' + code + '\n' + '```'
 const ts = fence('ts')
 const bold = (code: string) => '**' + code + '**'
@@ -30,8 +33,11 @@ function handleTitle(s: string, deprecated: boolean): string {
   return deprecated ? strike(title) : title
 }
 
-function printInterface(i: Interface): string {
-  let s = h1(handleTitle(i.name, i.deprecated) + ' (interface)')
+/**
+ * @since 0.5.0
+ */
+export function printInterface(i: Interface): string {
+  let s = h2(handleTitle(i.name, i.deprecated) + ' (interface)')
   s += printDescription(i.description)
   s += printSignature(i.signature)
   s += printExamples(i.examples)
@@ -40,8 +46,11 @@ function printInterface(i: Interface): string {
   return s
 }
 
-function printTypeAlias(ta: TypeAlias): string {
-  let s = h1(handleTitle(ta.name, ta.deprecated) + ' (type alias)')
+/**
+ * @since 0.5.0
+ */
+export function printTypeAlias(ta: TypeAlias): string {
+  let s = h2(handleTitle(ta.name, ta.deprecated) + ' (type alias)')
   s += printDescription(ta.description)
   s += printSignature(ta.signature)
   s += printExamples(ta.examples)
@@ -50,8 +59,11 @@ function printTypeAlias(ta: TypeAlias): string {
   return s
 }
 
-function printConstant(c: Constant): string {
-  let s = h1(handleTitle(c.name, c.deprecated))
+/**
+ * @since 0.5.0
+ */
+export function printConstant(c: Constant): string {
+  let s = h2(handleTitle(c.name, c.deprecated))
   s += printDescription(c.description)
   s += printSignature(c.signature)
   s += printExamples(c.examples)
@@ -60,8 +72,11 @@ function printConstant(c: Constant): string {
   return s
 }
 
-function printFunction(f: Function): string {
-  let s = h1(handleTitle(f.name, f.deprecated))
+/**
+ * @since 0.5.0
+ */
+export function printFunction(f: Function): string {
+  let s = h2(handleTitle(f.name, f.deprecated))
   s += printDescription(f.description)
   s += printSignatures(f.signatures)
   s += printExamples(f.examples)
@@ -70,8 +85,8 @@ function printFunction(f: Function): string {
   return s
 }
 
-function printStaticMethod(f: Function): string {
-  let s = h2(handleTitle(f.name, f.deprecated) + ' (static method)')
+function printStaticMethod(f: Method): string {
+  let s = h3(handleTitle(f.name, f.deprecated) + ' (static method)')
   s += printDescription(f.description)
   s += printSignatures(f.signatures)
   s += printExamples(f.examples)
@@ -80,8 +95,11 @@ function printStaticMethod(f: Function): string {
   return s
 }
 
-function printExport(e: Export): string {
-  let s = h1(handleTitle(e.name, e.deprecated))
+/**
+ * @since 0.5.0
+ */
+export function printExport(e: Export): string {
+  let s = h2(handleTitle(e.name, e.deprecated))
   s += printDescription(e.description)
   s += printSignature(e.signature)
   s += printExamples(e.examples)
@@ -91,7 +109,7 @@ function printExport(e: Export): string {
 }
 
 function printMethod(m: Method): string {
-  let s = h2(handleTitle(m.name, m.deprecated) + ' (method)')
+  let s = h3(handleTitle(m.name, m.deprecated) + ' (method)')
   s += printDescription(m.description)
   s += printSignatures(m.signatures)
   s += printExamples(m.examples)
@@ -101,7 +119,7 @@ function printMethod(m: Method): string {
 }
 
 function printProperty(p: Property): string {
-  let s = h2(handleTitle(p.name, p.deprecated) + ' (property)')
+  let s = h3(handleTitle(p.name, p.deprecated) + ' (property)')
   s += printDescription(p.description)
   s += printSignature(p.signature)
   s += printExamples(p.examples)
@@ -114,7 +132,7 @@ function printProperty(p: Property): string {
  * @since 0.4.0
  */
 export function printClass(c: Class): string {
-  let s = h1(handleTitle(c.name, c.deprecated) + ' (class)')
+  let s = h2(handleTitle(c.name, c.deprecated) + ' (class)')
   s += printDescription(c.description)
   s += printSignature(c.signature)
   s += printExamples(c.examples)
@@ -146,7 +164,7 @@ function printDescription(description: O.Option<string>): string {
 }
 
 function printModuleDescription(m: Module): string {
-  let s = h1(handleTitle(m.name, m.deprecated) + ' overview')
+  let s = h2(handleTitle(m.name, m.deprecated) + ' overview')
   s += CRLF
   s += printDescription(m.description)
   s += printExamples(m.examples)
@@ -176,9 +194,6 @@ function printSince(since: string): string {
   return CRLF + `Added in v${since}`
 }
 
-/**
- * @since 0.2.0
- */
 function printHeader(title: string, order: number): string {
   let s = '---\n'
   s += `title: ${title}\n`
@@ -188,23 +203,62 @@ function printHeader(title: string, order: number): string {
   return s
 }
 
+type Item = Interface | TypeAlias | Function | Class | Constant | Export
+
+function printItem(item: Item): string {
+  switch (item._tag) {
+    case 'Class':
+      return printClass(item)
+    case 'Constant':
+      return printConstant(item)
+    case 'Export':
+      return printExport(item)
+    case 'Function':
+      return printFunction(item)
+    case 'Interface':
+      return printInterface(item)
+    case 'TypeAlias':
+      return printTypeAlias(item)
+  }
+}
+
 /**
  * @since 0.2.0
  */
-export function printModule(module: Module, counter: number): string {
-  const header = printHeader(module.path.slice(1).join('/'), counter)
-  const md =
-    CRLF +
-    module.interfaces.map(i => printInterface(i)).join('') +
-    module.typeAliases.map(i => printTypeAlias(i)).join('') +
-    module.classes.map(c => printClass(c)).join('') +
-    [
-      ...module.constants.map(c => printConstant(c)),
-      ...module.functions.map(f => printFunction(f)),
-      ...module.exports.map(e => printExport(e))
-    ]
-      .sort()
-      .join('')
+export function printModule(module: Module, order: number): string {
+  const header = printHeader(module.path.slice(1).join('/'), order)
+  const items = [
+    ...module.interfaces,
+    ...module.typeAliases,
+    ...module.classes,
+    ...module.constants,
+    ...module.functions,
+    ...module.exports
+  ]
+  const DEFAULT_CATEGORY = 'utils'
+  const groups = pipe(
+    items,
+    NEA.groupBy(item =>
+      pipe(
+        item.category,
+        O.getOrElse(() => DEFAULT_CATEGORY)
+      )
+    )
+  )
+  const md = pipe(
+    groups,
+    R.collect(
+      (category, items) =>
+        h1(category) +
+        CRLF +
+        items
+          .map(printItem)
+          .sort()
+          .join('')
+    )
+  )
+    .sort()
+    .join('')
 
   const result =
     header +

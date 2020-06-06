@@ -89,8 +89,8 @@ function getJSDocText(jsdocs: Array<ast.JSDoc>): string {
 /**
  * @since 0.5.0
  */
-function isInternal(comment: Comment): boolean {
-  return pipe(R.lookup('internal', comment.tags), O.isSome)
+function doIgnore(comment: Comment): boolean {
+  return pipe(R.lookup('internal', comment.tags), O.isSome) || pipe(R.lookup('ignore', comment.tags), O.isSome)
 }
 
 /**
@@ -220,7 +220,7 @@ function parseFunctionVariableDeclaration(vd: ast.VariableDeclaration): Parser<D
 const getFunctionDeclarations = RE.asks((env: Env) => ({
   functions: env.sourceFile
     .getFunctions()
-    .filter(fd => fd.isExported() && !isInternal(parseComment(getJSDocText(fd.getJsDocs())))),
+    .filter(fd => fd.isExported() && !doIgnore(parseComment(getJSDocText(fd.getJsDocs())))),
   arrows: env.sourceFile.getVariableDeclarations().filter(vd => {
     const parent = vd.getParent()
     if (isVariableDeclarationList(parent)) {
@@ -228,7 +228,7 @@ const getFunctionDeclarations = RE.asks((env: Env) => ({
       if (isVariableStatement(vs)) {
         const initializer = vd.getInitializer()
         return (
-          !isInternal(parseComment(getJSDocText(vs.getJsDocs()))) &&
+          !doIgnore(parseComment(getJSDocText(vs.getJsDocs()))) &&
           initializer !== undefined &&
           vs.isExported() &&
           ast.TypeGuards.isFunctionLikeDeclaration(initializer)
@@ -276,7 +276,7 @@ export const parseTypeAliases: Parser<Array<D.TypeAlias>> = pipe(
   RE.asks((env: Env) =>
     env.sourceFile
       .getTypeAliases()
-      .filter(ta => ta.isExported() && !isInternal(parseComment(getJSDocText(ta.getJsDocs()))))
+      .filter(ta => ta.isExported() && !doIgnore(parseComment(getJSDocText(ta.getJsDocs()))))
   ),
   RE.chain(typeAliaseDeclarations => traverse(typeAliaseDeclarations, ta => parseTypeAliasDeclaration(ta))),
   RE.map(typeAliases => typeAliases.sort(byName.compare))
@@ -326,7 +326,7 @@ export const parseConstants: Parser<Array<D.Constant>> = pipe(
         if (isVariableStatement(vs)) {
           const initializer = vd.getInitializer()
           return (
-            !isInternal(parseComment(getJSDocText(vs.getJsDocs()))) &&
+            !doIgnore(parseComment(getJSDocText(vs.getJsDocs()))) &&
             initializer !== undefined &&
             vs.isExported() &&
             !ast.TypeGuards.isFunctionLikeDeclaration(initializer)

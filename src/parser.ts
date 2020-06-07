@@ -220,7 +220,7 @@ function parseFunctionVariableDeclaration(vd: ast.VariableDeclaration): Parser<D
 const getFunctionDeclarations = RE.asks((env: Env) => ({
   functions: env.sourceFile
     .getFunctions()
-    .filter(fd => fd.isExported() && !doIgnore(parseComment(getJSDocText(fd.getJsDocs())))),
+    .filter(fd => fd.isExported() && !doIgnore(parseComment(getJSDocText(getFunctionDeclarationJSDocs(fd))))),
   arrows: env.sourceFile.getVariableDeclarations().filter(vd => {
     const parent = vd.getParent()
     if (isVariableDeclarationList(parent)) {
@@ -405,10 +405,10 @@ function parseMethod(md: ast.MethodDeclaration): Parser<D.Method> {
   )
 }
 
-function parseProperty(pd: ast.PropertyDeclaration): Parser<D.Property> {
+function parseProperty(className: string, pd: ast.PropertyDeclaration): Parser<D.Property> {
   const name = pd.getName()
   return pipe(
-    getCommentInfo(name, getJSDocText(pd.getJsDocs())),
+    getCommentInfo(`${className}#${name}`, getJSDocText(pd.getJsDocs())),
     RE.map(info => {
       const type = stripImportTypes(pd.getType().getText(pd))
       const readonly = pd.getFirstModifierByKind(ast.ts.SyntaxKind.ReadonlyKeyword) === undefined ? '' : 'readonly '
@@ -469,9 +469,12 @@ function parseClass(c: ast.ClassDeclaration): Parser<D.Class> {
                     .getProperties()
                     // take public, instance properties
                     .filter(
-                      p => !p.isStatic() && p.getFirstModifierByKind(ast.ts.SyntaxKind.PrivateKeyword) === undefined
+                      p =>
+                        !p.isStatic() &&
+                        p.getFirstModifierByKind(ast.ts.SyntaxKind.PrivateKeyword) === undefined &&
+                        !doIgnore(parseComment(getJSDocText(p.getJsDocs())))
                     ),
-                  parseProperty
+                  p => parseProperty(name, p)
                 )
               }),
               RE.map(({ methods, staticMethods, properties }) =>

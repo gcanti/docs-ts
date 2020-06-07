@@ -3,6 +3,7 @@ import * as P from '../src/parser'
 import { right, left } from 'fp-ts/lib/Either'
 import * as ast from 'ts-morph'
 import * as O from 'fp-ts/lib/Option'
+import * as D from '../src/domain'
 
 const project = new ast.Project()
 
@@ -127,11 +128,42 @@ describe('parseFunctions', () => {
     assert.deepStrictEqual(P.parseFunctions({ ...testEnv, sourceFile }), right([]))
   })
 
-  it('should not return internal function declarations', () => {
-    const sourceFile = getTestSourceFile(
-      `/** @internal */export function sum(a: number, b: number): number { return a + b }`
-    )
-    assert.deepStrictEqual(P.parseFunctions({ ...testEnv, sourceFile }), right([]))
+  describe('@ignore', () => {
+    it('should not return ignore function declarations...', () => {
+      const sourceFile = getTestSourceFile(
+        `/** @ignore */
+        export function sum(a: number, b: number): number { return a + b }`
+      )
+      assert.deepStrictEqual(P.parseFunctions({ ...testEnv, sourceFile }), right([]))
+    })
+
+    it('...even with overloads', () => {
+      const sourceFile = getTestSourceFile(
+        `/** @ignore */
+        export function sum(a: number, b: number)
+        export function sum(a: number, b: number): number { return a + b }`
+      )
+      assert.deepStrictEqual(P.parseFunctions({ ...testEnv, sourceFile }), right([]))
+    })
+  })
+
+  describe('@internal', () => {
+    it('should not return internal function declarations...', () => {
+      const sourceFile = getTestSourceFile(
+        `/** @internal */
+        export function sum(a: number, b: number): number { return a + b }`
+      )
+      assert.deepStrictEqual(P.parseFunctions({ ...testEnv, sourceFile }), right([]))
+    })
+
+    it('...even with overloads', () => {
+      const sourceFile = getTestSourceFile(
+        `/** @internal */
+        export function sum(a: number, b: number)
+        export function sum(a: number, b: number): number { return a + b }`
+      )
+      assert.deepStrictEqual(P.parseFunctions({ ...testEnv, sourceFile }), right([]))
+    })
   })
 
   it('should not return private variable declarations', () => {
@@ -404,6 +436,47 @@ describe('parseClasses', () => {
   it('should raise an error if the class is anonymous', () => {
     const sourceFile = getTestSourceFile(`export class {}`)
     assert.deepStrictEqual(P.parseClasses({ ...testEnv, sourceFile }), left('Missing class name in module test'))
+  })
+
+  it('should raise an error if since is missing', () => {
+    const sourceFile = getTestSourceFile(`export class MyClass {}`)
+    assert.deepStrictEqual(
+      P.parseClasses({ ...testEnv, sourceFile }),
+      left('missing @since tag in test#MyClass documentation')
+    )
+  })
+
+  it('should raise an error if since is missing in a property', () => {
+    const sourceFile = getTestSourceFile(`
+    /** @since 1.0.0 */
+    export class MyClass<A> {
+      readonly _A!: A
+    }`)
+    assert.deepStrictEqual(
+      P.parseClasses({ ...testEnv, sourceFile }),
+      left('missing @since tag in test#MyClass#_A documentation')
+    )
+  })
+
+  it('should skip the ignored properties', () => {
+    const sourceFile = getTestSourceFile(`
+    /** @since 1.0.0 */
+    export class MyClass<A> {
+      /** @ignore */
+      readonly _A!: A
+    }`)
+    assert.deepStrictEqual(
+      P.parseClasses({ ...testEnv, sourceFile }),
+      right([
+        D.makeClass(
+          D.makeDocumentable('MyClass', O.none, '1.0.0', false, [], O.none),
+          'export declare class MyClass<A>',
+          [],
+          [],
+          []
+        )
+      ])
+    )
   })
 
   it('should skip the constructor body', () => {

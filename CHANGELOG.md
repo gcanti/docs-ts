@@ -13,6 +13,13 @@
 **Note**: Gaps between patch versions are faulty/broken releases.
 **Note**: A feature tagged as Experimental is in a high state of flux, you're at risk of it changing without notice.
 
+# 0.5.1
+
+- **Bug Fix**
+  - should not return ignore function declarations (@gcanti)
+  - should not return internal function declarations (@gcanti)
+  - should output the class name when there's an error in a property (@gcanti)
+
 # 0.5.0
 
 - **Breaking Change**

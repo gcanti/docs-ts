@@ -221,7 +221,8 @@ const spawnTsNode: Effect<void> = C =>
     C.log(`Type checking examples...`),
     TE.chain(() =>
       TE.fromIOEither(() => {
-        const { status } = spawnSync('ts-node', [path.join(outDir, 'examples', 'index.ts')], { stdio: 'inherit' })
+        const executableName = process.platform === 'win32' ? 'ts-node.cmd' : 'ts-node'
+        const { status } = spawnSync(executableName, [path.join(outDir, 'examples', 'index.ts')], { stdio: 'inherit' })
         return status === 0 ? E.right(undefined) : E.left('Type checking error')
       })
     )

@@ -3,9 +3,11 @@ title: Module.ts
 nav_order: 7
 parent: Modules
 ---
+
 ## Module overview
 
 Added in v0.6.0
+
 ---
 
 <h2 class="text-delta">Table of contents</h2>
@@ -35,9 +37,11 @@ Added in v0.6.0
   - [Module (interface)](#module-interface)
   - [Property (interface)](#property-interface)
   - [TypeAlias (interface)](#typealias-interface)
+
 ---
 
 # constructors
+
 ## Class
 
 **Signature**
@@ -53,6 +57,7 @@ export declare const Class: (
 ```
 
 Added in v0.6.0
+
 ## Constant
 
 **Signature**
@@ -62,6 +67,7 @@ export declare const Constant: (documentable: Documentable, signature: string) =
 ```
 
 Added in v0.6.0
+
 ## Documentable
 
 **Signature**
@@ -78,6 +84,7 @@ export declare const Documentable: (
 ```
 
 Added in v0.6.0
+
 ## Export
 
 **Signature**
@@ -87,6 +94,7 @@ export declare const Export: (documentable: Documentable, signature: string) => 
 ```
 
 Added in v0.6.0
+
 ## Function
 
 **Signature**
@@ -96,6 +104,7 @@ export declare const Function: (documentable: Documentable, signatures: readonly
 ```
 
 Added in v0.6.0
+
 ## Interface
 
 **Signature**
@@ -105,6 +114,7 @@ export declare const Interface: (documentable: Documentable, signature: string) 
 ```
 
 Added in v0.6.0
+
 ## Method
 
 **Signature**
@@ -114,6 +124,7 @@ export declare const Method: (documentable: Documentable, signatures: readonly s
 ```
 
 Added in v0.6.0
+
 ## Module
 
 **Signature**
@@ -132,6 +143,7 @@ export declare const Module: (
 ```
 
 Added in v0.6.0
+
 ## Property
 
 **Signature**
@@ -141,6 +153,7 @@ export declare const Property: (documentable: Documentable, signature: string) =
 ```
 
 Added in v0.6.0
+
 ## TypeAlias
 
 **Signature**
@@ -150,7 +163,9 @@ export declare const TypeAlias: (documentable: Documentable, signature: string) 
 ```
 
 Added in v0.6.0
+
 # instances
+
 ## ordModule
 
 **Signature**
@@ -160,7 +175,9 @@ export declare const ordModule: Ord.Ord<Module>
 ```
 
 Added in v0.6.0
+
 # model
+
 ## Class (interface)
 
 **Signature**
@@ -176,6 +193,7 @@ export interface Class extends Documentable {
 ```
 
 Added in v0.6.0
+
 ## Constant (interface)
 
 **Signature**
@@ -188,6 +206,7 @@ export interface Constant extends Documentable {
 ```
 
 Added in v0.6.0
+
 ## Documentable (interface)
 
 **Signature**
@@ -204,6 +223,7 @@ export interface Documentable {
 ```
 
 Added in v0.6.0
+
 ## Example (type alias)
 
 **Signature**
@@ -213,6 +233,7 @@ export type Example = string
 ```
 
 Added in v0.6.0
+
 ## Export (interface)
 
 **Signature**
@@ -225,6 +246,7 @@ export interface Export extends Documentable {
 ```
 
 Added in v0.6.0
+
 ## Function (interface)
 
 **Signature**
@@ -237,6 +259,7 @@ export interface Function extends Documentable {
 ```
 
 Added in v0.6.0
+
 ## Interface (interface)
 
 **Signature**
@@ -249,6 +272,7 @@ export interface Interface extends Documentable {
 ```
 
 Added in v0.6.0
+
 ## Method (interface)
 
 **Signature**
@@ -260,6 +284,7 @@ export interface Method extends Documentable {
 ```
 
 Added in v0.6.0
+
 ## Module (interface)
 
 **Signature**
@@ -277,6 +302,7 @@ export interface Module extends Documentable {
 ```
 
 Added in v0.6.0
+
 ## Property (interface)
 
 **Signature**
@@ -288,6 +314,7 @@ export interface Property extends Documentable {
 ```
 
 Added in v0.6.0
+
 ## TypeAlias (interface)
 
 **Signature**

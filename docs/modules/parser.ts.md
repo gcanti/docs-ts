@@ -3,9 +3,11 @@ title: Parser.ts
 nav_order: 8
 parent: Modules
 ---
+
 ## Parser overview
 
 Added in v0.6.0
+
 ---
 
 <h2 class="text-delta">Table of contents</h2>
@@ -22,9 +24,11 @@ Added in v0.6.0
   - [parseInterfaces](#parseinterfaces)
   - [parseModule](#parsemodule)
   - [parseTypeAliases](#parsetypealiases)
+
 ---
 
 # model
+
 ## Env (interface)
 
 **Signature**
@@ -37,6 +41,7 @@ export interface Env extends Settings {
 ```
 
 Added in v0.6.0
+
 ## Parser (interface)
 
 **Signature**
@@ -46,7 +51,9 @@ export interface Parser<A> extends RE.ReaderEither<Env, string, A> {}
 ```
 
 Added in v0.6.0
+
 # parsers
+
 ## parseClasses
 
 **Signature**
@@ -56,6 +63,7 @@ export declare const parseClasses: Parser<readonly Class[]>
 ```
 
 Added in v0.6.0
+
 ## parseConstants
 
 **Signature**
@@ -65,6 +73,7 @@ export declare const parseConstants: Parser<readonly Constant[]>
 ```
 
 Added in v0.6.0
+
 ## parseExports
 
 **Signature**
@@ -74,6 +83,7 @@ export declare const parseExports: Parser<readonly Export[]>
 ```
 
 Added in v0.6.0
+
 ## parseFiles
 
 **Signature**
@@ -83,6 +93,7 @@ export declare const parseFiles: (files: readonly File[]) => RTE.ReaderTaskEithe
 ```
 
 Added in v0.6.0
+
 ## parseFunctions
 
 **Signature**
@@ -92,6 +103,7 @@ export declare const parseFunctions: Parser<readonly Function[]>
 ```
 
 Added in v0.6.0
+
 ## parseInterfaces
 
 **Signature**
@@ -101,6 +113,7 @@ export declare const parseInterfaces: Parser<readonly Interface[]>
 ```
 
 Added in v0.6.0
+
 ## parseModule
 
 **Signature**
@@ -110,6 +123,7 @@ export declare const parseModule: Parser<Module>
 ```
 
 Added in v0.6.0
+
 ## parseTypeAliases
 
 **Signature**

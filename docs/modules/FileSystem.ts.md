@@ -3,9 +3,11 @@ title: FileSystem.ts
 nav_order: 3
 parent: Modules
 ---
+
 ## FileSystem overview
 
 Added in v0.6.0
+
 ---
 
 <h2 class="text-delta">Table of contents</h2>
@@ -23,9 +25,11 @@ Added in v0.6.0
   - [remove](#remove)
   - [search](#search)
   - [writeFile](#writefile)
+
 ---
 
 # constructors
+
 ## File
 
 **Signature**
@@ -35,7 +39,9 @@ export declare const File: (path: string, content: string, overwrite?: boolean) 
 ```
 
 Added in v0.6.0
+
 # instances
+
 ## FileSystem
 
 **Signature**
@@ -45,7 +51,9 @@ export declare const FileSystem: FileSystem
 ```
 
 Added in v0.6.0
+
 # model
+
 ## File (interface)
 
 Represents a file which can be optionally overwriteable.
@@ -61,6 +69,7 @@ export interface File {
 ```
 
 Added in v0.6.0
+
 ## FileSystem (interface)
 
 Represents operations that can be performed on a file system.
@@ -78,7 +87,9 @@ export interface FileSystem {
 ```
 
 Added in v0.6.0
+
 # utils
+
 ## exists
 
 **Signature**
@@ -88,6 +99,7 @@ export declare const exists: (path: string) => TE.TaskEither<Error, boolean>
 ```
 
 Added in v0.6.0
+
 ## readFile
 
 Reads a file.
@@ -99,6 +111,7 @@ export declare const readFile: (path: string, encoding: string) => TE.TaskEither
 ```
 
 Added in v0.6.0
+
 ## remove
 
 Removes a file or directory based upon the specified pattern. The directory can have contents.
@@ -111,6 +124,7 @@ export declare const remove: (path: string, options: rimraf.Options) => TE.TaskE
 ```
 
 Added in v0.6.0
+
 ## search
 
 Searches for files matching the specified glob pattern.
@@ -122,6 +136,7 @@ export declare const search: (pattern: string, options: glob.IOptions) => TE.Tas
 ```
 
 Added in v0.6.0
+
 ## writeFile
 
 Similar to `writeFile` (i.e. it overwrites), except that if the parent directory does not exist, it's created.

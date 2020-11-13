@@ -3,9 +3,11 @@ title: Logger.ts
 nav_order: 5
 parent: Modules
 ---
+
 ## Logger overview
 
 Added in v0.6.0
+
 ---
 
 <h2 class="text-delta">Table of contents</h2>
@@ -21,9 +23,11 @@ Added in v0.6.0
   - [debug](#debug)
   - [error](#error)
   - [info](#info)
+
 ---
 
 # instances
+
 ## Logger
 
 **Signature**
@@ -33,6 +37,7 @@ export declare const Logger: Logger
 ```
 
 Added in v0.6.0
+
 ## showEntry
 
 **Signature**
@@ -42,7 +47,9 @@ export declare const showEntry: S.Show<LogEntry>
 ```
 
 Added in v0.6.0
+
 # model
+
 ## LogEntry (interface)
 
 **Signature**
@@ -56,6 +63,7 @@ export interface LogEntry {
 ```
 
 Added in v0.6.0
+
 ## LogLevel (type alias)
 
 **Signature**
@@ -65,6 +73,7 @@ export type LogLevel = 'DEBUG' | 'ERROR' | 'INFO'
 ```
 
 Added in v0.6.0
+
 ## Logger (interface)
 
 **Signature**
@@ -78,7 +87,9 @@ export interface Logger {
 ```
 
 Added in v0.6.0
+
 # utils
+
 ## debug
 
 **Signature**
@@ -88,6 +99,7 @@ export declare const debug: (message: string) => T.Task<void>
 ```
 
 Added in v0.6.0
+
 ## error
 
 **Signature**
@@ -97,6 +109,7 @@ export declare const error: (message: string) => T.Task<void>
 ```
 
 Added in v0.6.0
+
 ## info
 
 **Signature**

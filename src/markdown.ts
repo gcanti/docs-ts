@@ -1,25 +1,523 @@
 /**
- * markdown utilities
- *
- * @since 0.2.0
+ * @since 0.6.0
  */
-
+import { intercalate } from 'fp-ts/Foldable'
+import * as M from 'fp-ts/Monoid'
+import * as O from 'fp-ts/Option'
+import * as Ord from 'fp-ts/Ord'
+import * as RA from 'fp-ts/ReadonlyArray'
+import * as RNEA from 'fp-ts/ReadonlyNonEmptyArray'
+import * as RR from 'fp-ts/ReadonlyRecord'
+import { Semigroup } from 'fp-ts/Semigroup'
+import { Show } from 'fp-ts/Show'
+import { absurd, flow, pipe, Endomorphism } from 'fp-ts/function'
 import * as prettier from 'prettier'
-import * as O from 'fp-ts/lib/Option'
-import { Class, Function, Interface, Method, TypeAlias, Constant, Module, Export, Property } from './domain'
-import { pipe } from 'fp-ts/lib/pipeable'
-import * as NEA from 'fp-ts/lib/NonEmptyArray'
-import * as R from 'fp-ts/lib/Record'
 const toc = require('markdown-toc')
 
-const CRLF = '\n\n'
-const h1 = (title: string) => `# ${title}`
-const h2 = (title: string) => `## ${title}`
-const h3 = (title: string) => `### ${title}`
-const fence = (language: string) => (code: string): string => '```' + language + '\n' + code + '\n' + '```'
-const ts = fence('ts')
-const bold = (code: string) => '**' + code + '**'
-const strike = (text: string) => '~~' + text + '~~'
+import { Class, Constant, Export, Function, Interface, Method, Module, Property, TypeAlias } from './Module'
+
+// -------------------------------------------------------------------------------------
+// model
+// -------------------------------------------------------------------------------------
+
+/**
+ * @category model
+ * @since 0.6.0
+ */
+export type Printable = Class | Constant | Export | Function | Interface | TypeAlias
+
+/**
+ * @category model
+ * @since 0.6.0
+ */
+export type Markdown = Bold | Fence | Header | Newline | Paragraph | PlainText | PlainTexts | Strikethrough
+
+/**
+ * @category model
+ * @since 0.6.0
+ */
+export interface Bold {
+  readonly _tag: 'Bold'
+  readonly content: Markdown
+}
+
+/**
+ * @category model
+ * @since 0.6.0
+ */
+export interface Fence {
+  readonly _tag: 'Fence'
+  readonly language: string
+  readonly content: Markdown
+}
+
+/**
+ * @category model
+ * @since 0.6.0
+ */
+export interface Header {
+  readonly _tag: 'Header'
+  readonly level: number
+  readonly content: Markdown
+}
+
+/**
+ * @category model
+ * @since 0.6.0
+ */
+export interface Newline {
+  readonly _tag: 'Newline'
+}
+
+/**
+ * @category model
+ * @since 0.6.0
+ */
+export interface Paragraph {
+  readonly _tag: 'Paragraph'
+  readonly content: Markdown
+}
+
+/**
+ * @category model
+ * @since 0.6.0
+ */
+export interface PlainText {
+  readonly _tag: 'PlainText'
+  readonly content: string
+}
+
+/**
+ * @category model
+ * @since 0.6.0
+ */
+export interface PlainTexts {
+  readonly _tag: 'PlainTexts'
+  readonly content: ReadonlyArray<Markdown>
+}
+/**
+ * @category model
+ * @since 0.6.0
+ */
+export interface Strikethrough {
+  readonly _tag: 'Strikethrough'
+  readonly content: Markdown
+}
+
+// -------------------------------------------------------------------------------------
+// constructors
+// -------------------------------------------------------------------------------------
+
+/**
+ * @category constructors
+ * @since 0.6.0
+ */
+export const Bold = (content: Markdown): Markdown => ({
+  _tag: 'Bold',
+  content
+})
+
+/**
+ * @category constructors
+ * @since 0.6.0
+ */
+export const Fence = (language: string, content: Markdown): Markdown => ({
+  _tag: 'Fence',
+  language,
+  content
+})
+
+/**
+ * @category constructors
+ * @since 0.6.0
+ */
+export const Header = (level: number, content: Markdown): Markdown => ({
+  _tag: 'Header',
+  level,
+  content
+})
+
+/**
+ * @category constructors
+ * @since 0.6.0
+ */
+export const Newline: Markdown = {
+  _tag: 'Newline'
+}
+
+/**
+ * @category constructors
+ * @since 0.6.0
+ */
+export const Paragraph = (content: Markdown): Markdown => ({
+  _tag: 'Paragraph',
+  content
+})
+
+/**
+ * @category constructors
+ * @since 0.6.0
+ */
+export const PlainText = (content: string): Markdown => ({
+  _tag: 'PlainText',
+  content
+})
+
+/**
+ * @category constructors
+ * @since 0.6.0
+ */
+export const PlainTexts = (content: ReadonlyArray<Markdown>): Markdown => ({
+  _tag: 'PlainTexts',
+  content
+})
+
+/**
+ * @category constructors
+ * @since 0.6.0
+ */
+export const Strikethrough = (content: Markdown): Markdown => ({
+  _tag: 'Strikethrough',
+  content
+})
+
+// -------------------------------------------------------------------------------------
+// destructors
+// -------------------------------------------------------------------------------------
+
+/**
+ * @category destructors
+ * @since 0.6.0
+ */
+export const fold = <R>(patterns: {
+  readonly Bold: (content: Markdown) => R
+  readonly Fence: (language: string, content: Markdown) => R
+  readonly Header: (level: number, content: Markdown) => R
+  readonly Newline: () => R
+  readonly Paragraph: (content: Markdown) => R
+  readonly PlainText: (content: string) => R
+  readonly PlainTexts: (content: ReadonlyArray<Markdown>) => R
+  readonly Strikethrough: (content: Markdown) => R
+}): ((markdown: Markdown) => R) => {
+  const f = (x: Markdown): R => {
+    switch (x._tag) {
+      case 'Bold':
+        return patterns.Bold(x.content)
+      case 'Fence':
+        return patterns.Fence(x.language, x.content)
+      case 'Header':
+        return patterns.Header(x.level, x.content)
+      case 'Newline':
+        return patterns.Newline()
+      case 'Paragraph':
+        return patterns.Paragraph(x.content)
+      case 'PlainText':
+        return patterns.PlainText(x.content)
+      case 'PlainTexts':
+        return patterns.PlainTexts(x.content)
+      case 'Strikethrough':
+        return patterns.Strikethrough(x.content)
+      default:
+        return absurd<R>(x as never)
+    }
+  }
+  return f
+}
+
+// -------------------------------------------------------------------------------------
+// combinators
+// -------------------------------------------------------------------------------------
+
+const foldS: (as: ReadonlyArray<string>) => string = M.fold(M.monoidString)
+
+const foldMarkdown = (as: ReadonlyArray<Markdown>): Markdown => pipe(as, M.fold(monoidMarkdown))
+
+const CRLF: Markdown = PlainTexts(RA.replicate(2, Newline))
+
+const intercalateCRLF = (xs: ReadonlyArray<Markdown>): Markdown => intercalate(monoidMarkdown, RA.Foldable)(CRLF, xs)
+
+const intercalateNewline = (xs: ReadonlyArray<string>): string => intercalate(M.monoidString, RA.Foldable)('\n', xs)
+
+const h1 = (content: Markdown) => Header(1, content)
+
+const h2 = (content: Markdown) => Header(2, content)
+
+const h3 = (content: Markdown) => Header(3, content)
+
+const ts = (code: string) => Fence('ts', PlainText(code))
+
+const since = (v: string) => foldMarkdown([CRLF, PlainText(`Added in v${v}`)])
+
+const title = (s: string, deprecated: boolean, type?: string): Markdown => {
+  const title = s.trim() === 'hasOwnProperty' ? `${s} (function)` : s
+  const markdownTitle = deprecated ? Strikethrough(PlainText(title)) : PlainText(title)
+  return pipe(
+    O.fromNullable(type),
+    O.fold(
+      () => markdownTitle,
+      t => foldMarkdown([markdownTitle, PlainText(` ${t}`)])
+    )
+  )
+}
+
+const description: (d: O.Option<string>) => Markdown = flow(
+  O.fold(() => monoidMarkdown.empty, PlainText),
+  Paragraph
+)
+
+const signature = (s: string): Markdown =>
+  pipe(RA.of(ts(s)), RA.cons(Paragraph(Bold(PlainText('Signature')))), foldMarkdown)
+
+const signatures = (ss: ReadonlyArray<string>): Markdown =>
+  pipe(RA.of(ts(intercalateNewline(ss))), RA.cons(Paragraph(Bold(PlainText('Signature')))), foldMarkdown)
+
+const examples: (es: ReadonlyArray<string>) => Markdown = flow(
+  RA.map(code => pipe(RA.of(ts(code)), RA.cons(Bold(PlainText('Example'))), intercalateCRLF)),
+  intercalateCRLF
+)
+
+const staticMethod = (m: Method): Markdown =>
+  Paragraph(
+    foldMarkdown([
+      h3(title(m.name, m.deprecated, '(static method)')),
+      description(m.description),
+      signatures(m.signatures),
+      examples(m.examples),
+      since(m.since)
+    ])
+  )
+
+const method = (m: Method): Markdown =>
+  Paragraph(
+    foldMarkdown([
+      h3(title(m.name, m.deprecated, '(method)')),
+      description(m.description),
+      signatures(m.signatures),
+      examples(m.examples),
+      since(m.since)
+    ])
+  )
+
+const propertyToMarkdown = (p: Property): Markdown =>
+  Paragraph(
+    foldMarkdown([
+      h3(title(p.name, p.deprecated, '(property)')),
+      description(p.description),
+      signature(p.signature),
+      examples(p.examples),
+      since(p.since)
+    ])
+  )
+
+const staticMethods: (ms: ReadonlyArray<Method>) => Markdown = flow(RA.map(staticMethod), intercalateCRLF)
+
+const methods: (methods: ReadonlyArray<Method>) => Markdown = flow(RA.map(method), intercalateCRLF)
+
+const properties: (properties: ReadonlyArray<Property>) => Markdown = flow(RA.map(propertyToMarkdown), intercalateCRLF)
+
+const moduleDescription = (m: Module): Markdown =>
+  Paragraph(
+    foldMarkdown([
+      Paragraph(h2(title(m.name, m.deprecated, 'overview'))),
+      description(m.description),
+      examples(m.examples),
+      since(m.since)
+    ])
+  )
+
+const meta = (title: string, order: number): Markdown =>
+  Paragraph(
+    foldMarkdown([
+      PlainText('---'),
+      Newline,
+      PlainText(`title: ${title}`),
+      Newline,
+      PlainText(`nav_order: ${order}`),
+      Newline,
+      PlainText(`parent: Modules`),
+      Newline,
+      PlainText('---')
+    ])
+  )
+
+const fromClass = (c: Class): Markdown =>
+  Paragraph(
+    foldMarkdown([
+      Paragraph(
+        foldMarkdown([
+          h2(title(c.name, c.deprecated, '(class)')),
+          description(c.description),
+          signature(c.signature),
+          examples(c.examples),
+          since(c.since)
+        ])
+      ),
+      staticMethods(c.staticMethods),
+      methods(c.methods),
+      properties(c.properties)
+    ])
+  )
+
+const fromConstant = (c: Constant): Markdown =>
+  Paragraph(
+    foldMarkdown([
+      h2(title(c.name, c.deprecated)),
+      description(c.description),
+      signature(c.signature),
+      examples(c.examples),
+      since(c.since)
+    ])
+  )
+
+const fromExport = (e: Export): Markdown =>
+  Paragraph(
+    foldMarkdown([
+      h2(title(e.name, e.deprecated)),
+      description(e.description),
+      signature(e.signature),
+      examples(e.examples),
+      since(e.since)
+    ])
+  )
+
+const fromFunction = (f: Function): Markdown =>
+  Paragraph(
+    foldMarkdown([
+      h2(title(f.name, f.deprecated)),
+      description(f.description),
+      signatures(f.signatures),
+      examples(f.examples),
+      since(f.since)
+    ])
+  )
+
+const fromInterface = (i: Interface): Markdown =>
+  Paragraph(
+    foldMarkdown([
+      h2(title(i.name, i.deprecated, '(interface)')),
+      description(i.description),
+      signature(i.signature),
+      examples(i.examples),
+      since(i.since)
+    ])
+  )
+
+const fromTypeAlias = (ta: TypeAlias): Markdown =>
+  Paragraph(
+    foldMarkdown([
+      h2(title(ta.name, ta.deprecated, '(type alias)')),
+      description(ta.description),
+      signature(ta.signature),
+      examples(ta.examples),
+      since(ta.since)
+    ])
+  )
+
+const fromPrintable = (p: Printable): Markdown => {
+  switch (p._tag) {
+    case 'Class':
+      return fromClass(p)
+    case 'Constant':
+      return fromConstant(p)
+    case 'Export':
+      return fromExport(p)
+    case 'Function':
+      return fromFunction(p)
+    case 'Interface':
+      return fromInterface(p)
+    case 'TypeAlias':
+      return fromTypeAlias(p)
+    default:
+      return absurd<Markdown>(p as never)
+  }
+}
+
+// -------------------------------------------------------------------------------------
+// printer
+// -------------------------------------------------------------------------------------
+
+const getPrintables = (module: Module): O.Option<RNEA.ReadonlyNonEmptyArray<Printable>> =>
+  pipe(
+    M.fold(RA.getMonoid<Printable>())([
+      module.classes,
+      module.constants,
+      module.exports,
+      module.functions,
+      module.interfaces,
+      module.typeAliases
+    ]),
+    RNEA.fromReadonlyArray
+  )
+
+/**
+ * @category printer
+ * @since 0.6.0
+ */
+export const printModule = (module: Module, order: number): string => {
+  const DEFAULT_CATEGORY = 'utils'
+
+  const header = pipe(meta(module.path.slice(1).join('/'), order), showMarkdown.show)
+
+  const description = pipe(Paragraph(moduleDescription(module)), showMarkdown.show)
+
+  const content = pipe(
+    getPrintables(module),
+    O.map(
+      flow(
+        RNEA.groupBy(({ category }) =>
+          pipe(
+            category,
+            O.getOrElse(() => DEFAULT_CATEGORY)
+          )
+        ),
+        RR.collect((category, printables) => {
+          const title = pipe(Paragraph(h1(PlainText(category))), showMarkdown.show)
+          const documentation = pipe(
+            printables,
+            RA.map(flow(fromPrintable, showMarkdown.show)),
+            RA.sort(Ord.ordString),
+            foldS
+          )
+          return foldS([title, documentation])
+        }),
+        RA.sort(Ord.ordString),
+        foldS
+      )
+    ),
+    O.getOrElse(() => '')
+  )
+
+  const tableOfContents = (c: string): string =>
+    pipe(
+      Paragraph(
+        foldMarkdown([Paragraph(PlainText('<h2 class="text-delta">Table of contents</h2>')), PlainText(toc(c).content)])
+      ),
+      showMarkdown.show
+    )
+
+  return foldS([header, description, '---\n\n', tableOfContents(content), '---\n\n', content])
+}
+
+// -------------------------------------------------------------------------------------
+// instances
+// -------------------------------------------------------------------------------------
+
+/**
+ * @category instances
+ * @since 0.6.0
+ */
+export const semigroupMarkdown: Semigroup<Markdown> = {
+  concat: (x, y) => PlainTexts([x, y])
+}
+
+/**
+ * @category instances
+ * @since 0.6.0
+ */
+export const monoidMarkdown: M.Monoid<Markdown> = {
+  ...semigroupMarkdown,
+  empty: PlainText('')
+}
 
 const prettierOptions: prettier.Options = {
   parser: 'markdown',
@@ -28,250 +526,39 @@ const prettierOptions: prettier.Options = {
   printWidth: 120
 }
 
-function handleTitle(s: string, deprecated: boolean): string {
-  const title = s.trim() === 'hasOwnProperty' ? s + ' (function)' : s
-  return deprecated ? strike(title) : title
-}
+const prettify: Endomorphism<string> = s => prettier.format(s, prettierOptions)
 
-/**
- * @since 0.5.0
- */
-export function printInterface(i: Interface): string {
-  let s = h2(handleTitle(i.name, i.deprecated) + ' (interface)')
-  s += printDescription(i.description)
-  s += printSignature(i.signature)
-  s += printExamples(i.examples)
-  s += printSince(i.since)
-  s += CRLF
-  return s
-}
-
-/**
- * @since 0.5.0
- */
-export function printTypeAlias(ta: TypeAlias): string {
-  let s = h2(handleTitle(ta.name, ta.deprecated) + ' (type alias)')
-  s += printDescription(ta.description)
-  s += printSignature(ta.signature)
-  s += printExamples(ta.examples)
-  s += printSince(ta.since)
-  s += CRLF
-  return s
-}
-
-/**
- * @since 0.5.0
- */
-export function printConstant(c: Constant): string {
-  let s = h2(handleTitle(c.name, c.deprecated))
-  s += printDescription(c.description)
-  s += printSignature(c.signature)
-  s += printExamples(c.examples)
-  s += printSince(c.since)
-  s += CRLF
-  return s
-}
-
-/**
- * @since 0.5.0
- */
-export function printFunction(f: Function): string {
-  let s = h2(handleTitle(f.name, f.deprecated))
-  s += printDescription(f.description)
-  s += printSignatures(f.signatures)
-  s += printExamples(f.examples)
-  s += printSince(f.since)
-  s += CRLF
-  return s
-}
-
-function printStaticMethod(f: Method): string {
-  let s = h3(handleTitle(f.name, f.deprecated) + ' (static method)')
-  s += printDescription(f.description)
-  s += printSignatures(f.signatures)
-  s += printExamples(f.examples)
-  s += printSince(f.since)
-  s += CRLF
-  return s
-}
-
-/**
- * @since 0.5.0
- */
-export function printExport(e: Export): string {
-  let s = h2(handleTitle(e.name, e.deprecated))
-  s += printDescription(e.description)
-  s += printSignature(e.signature)
-  s += printExamples(e.examples)
-  s += printSince(e.since)
-  s += CRLF
-  return s
-}
-
-function printMethod(m: Method): string {
-  let s = h3(handleTitle(m.name, m.deprecated) + ' (method)')
-  s += printDescription(m.description)
-  s += printSignatures(m.signatures)
-  s += printExamples(m.examples)
-  s += printSince(m.since)
-  s += CRLF
-  return s
-}
-
-function printProperty(p: Property): string {
-  let s = h3(handleTitle(p.name, p.deprecated) + ' (property)')
-  s += printDescription(p.description)
-  s += printSignature(p.signature)
-  s += printExamples(p.examples)
-  s += printSince(p.since)
-  s += CRLF
-  return s
-}
-
-/**
- * @since 0.4.0
- */
-export function printClass(c: Class): string {
-  let s = h2(handleTitle(c.name, c.deprecated) + ' (class)')
-  s += printDescription(c.description)
-  s += printSignature(c.signature)
-  s += printExamples(c.examples)
-  s += printSince(c.since)
-  s += CRLF
-  s += c.staticMethods.map(printStaticMethod).join(CRLF)
-  s += c.methods.map(printMethod).join(CRLF)
-  s += c.properties.map(printProperty).join(CRLF)
-  s += CRLF
-  return s
-}
-
-function printSignature(signature: string): string {
-  return CRLF + bold('Signature') + CRLF + ts(signature)
-}
-
-function printSignatures(signature: Array<string>): string {
-  return CRLF + bold('Signature') + CRLF + ts(signature.join('\n'))
-}
-
-function printDescription(description: O.Option<string>): string {
-  return pipe(
-    description,
-    O.fold(
-      () => '',
-      s => CRLF + s
-    )
+const canonicalizeMarkdown: Endomorphism<ReadonlyArray<Markdown>> = RA.filterMap(markdown =>
+  pipe(
+    markdown,
+    fold({
+      Bold: () => O.some(markdown),
+      Header: () => O.some(markdown),
+      Fence: () => O.some(markdown),
+      Newline: () => O.some(markdown),
+      Paragraph: () => O.some(markdown),
+      PlainText: content => (content.length > 0 ? O.some(markdown) : O.none),
+      PlainTexts: content => O.some(PlainTexts(canonicalizeMarkdown(content))),
+      Strikethrough: () => O.some(markdown)
+    })
   )
-}
+)
 
-function printModuleDescription(m: Module): string {
-  let s = h2(handleTitle(m.name, m.deprecated) + ' overview')
-  s += CRLF
-  s += printDescription(m.description)
-  s += printExamples(m.examples)
-  s += printSince(m.since)
-  s += CRLF
-  return s
-}
-
-/**
- * @since 0.2.0
- */
-export function printExamples(examples: Array<string>): string {
-  if (examples.length === 0) {
-    return ''
-  }
-  return (
-    CRLF +
-    examples
-      .map(code => {
-        return bold('Example') + CRLF + ts(code)
-      })
-      .join(CRLF)
-  )
-}
-
-function printSince(since: string): string {
-  return CRLF + `Added in v${since}`
-}
-
-function printHeader(title: string, order: number): string {
-  let s = '---\n'
-  s += `title: ${title}\n`
-  s += `nav_order: ${order}\n`
-  s += `parent: Modules\n`
-  s += '---\n\n'
-  return s
-}
-
-type Item = Interface | TypeAlias | Function | Class | Constant | Export
-
-function printItem(item: Item): string {
-  switch (item._tag) {
-    case 'Class':
-      return printClass(item)
-    case 'Constant':
-      return printConstant(item)
-    case 'Export':
-      return printExport(item)
-    case 'Function':
-      return printFunction(item)
-    case 'Interface':
-      return printInterface(item)
-    case 'TypeAlias':
-      return printTypeAlias(item)
-  }
-}
+const markdownToString: (markdown: Markdown) => string = fold({
+  Bold: content => foldS(['**', markdownToString(content), '**']),
+  Header: (level, content) => foldS(['\n', foldS(RA.replicate(level, '#')), ' ', markdownToString(content), '\n\n']),
+  Fence: (language, content) => foldS(['```', language, '\n', markdownToString(content), '\n', '```\n\n']),
+  Newline: () => '\n',
+  Paragraph: content => foldS([markdownToString(content), '\n\n']),
+  PlainText: content => content,
+  PlainTexts: content => pipe(content, canonicalizeMarkdown, RA.map(markdownToString), foldS),
+  Strikethrough: content => foldS(['~~', markdownToString(content), '~~'])
+})
 
 /**
- * @since 0.2.0
+ * @category instances
+ * @since 0.6.0
  */
-export function printModule(module: Module, order: number): string {
-  const header = printHeader(module.path.slice(1).join('/'), order)
-  const items = [
-    ...module.interfaces,
-    ...module.typeAliases,
-    ...module.classes,
-    ...module.constants,
-    ...module.functions,
-    ...module.exports
-  ]
-  const DEFAULT_CATEGORY = 'utils'
-  const groups = pipe(
-    items,
-    NEA.groupBy(item =>
-      pipe(
-        item.category,
-        O.getOrElse(() => DEFAULT_CATEGORY)
-      )
-    )
-  )
-  const md = pipe(
-    groups,
-    R.collect(
-      (category, items) =>
-        h1(category) +
-        CRLF +
-        items
-          .map(printItem)
-          .sort()
-          .join('')
-    )
-  )
-    .sort()
-    .join('')
-
-  const result =
-    header +
-    printModuleDescription(module) +
-    CRLF +
-    '---' +
-    CRLF +
-    '<h2 class="text-delta">Table of contents</h2>' +
-    CRLF +
-    toc(md).content +
-    CRLF +
-    '---' +
-    CRLF +
-    md
-  return prettier.format(result, prettierOptions)
+export const showMarkdown: Show<Markdown> = {
+  show: flow(markdownToString, prettify)
 }

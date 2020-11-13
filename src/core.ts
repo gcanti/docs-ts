@@ -8,7 +8,7 @@ import * as O from 'fp-ts/Option'
 import * as RA from 'fp-ts/ReadonlyArray'
 import * as RTE from 'fp-ts/ReaderTaskEither'
 import * as TE from 'fp-ts/TaskEither'
-import { constVoid, flow, pipe, Endomorphism } from 'fp-ts/function'
+import { constVoid, flow, pipe } from 'fp-ts/function'
 import * as TD from 'io-ts/TaskDecoder'
 import { spawnSync } from 'child_process'
 import * as path from 'path'
@@ -243,30 +243,36 @@ const getExampleFiles = (modules: ReadonlyArray<Module>): Program<ReadonlyArray<
     )
   )
 
-const handleImports = (projectName: string): ((files: ReadonlyArray<FS.File>) => ReadonlyArray<FS.File>) => {
-  const addAssertImport = (code: string): string =>
-    code.indexOf('assert.') !== -1 ? `import * as assert from 'assert'\n${code}` : code
+const addAssertImport = (code: string): string =>
+  code.indexOf('assert.') !== -1 ? `import * as assert from 'assert'\n${code}` : code
 
-  const replaceProjectName: Endomorphism<string> = source => {
-    // Matches imports of the form: `import { foo } from 'projectName'`
-    const root = new RegExp(`from '${projectName}'`, 'g')
-    // Matches imports of the form: `import { foo } from 'projectName/lib/...'`
-    const module = new RegExp(`from '${projectName}/lib/`, 'g')
-    // Matches immports of the form: `import { foo } from 'projectName/...'`
-    const other = new RegExp(`from '${projectName}/`, 'g')
+const replaceProjectName = (source: string): Program<string> =>
+  pipe(
+    RTE.ask<Environment>(),
+    RTE.map(({ settings }) => {
+      // Matches imports of the form: `import { foo } from 'projectName'`
+      const root = new RegExp(`from '${settings.projectName}'`, 'g')
+      // Matches imports of the form: `import { foo } from 'projectName/lib/...'`
+      const module = new RegExp(`from '${settings.projectName}/lib/`, 'g')
+      // Matches immports of the form: `import { foo } from 'projectName/...'`
+      const other = new RegExp(`from '${settings.projectName}/`, 'g')
 
-    return source
-      .replace(root, `from '../../src'`)
-      .replace(module, `from '../../src/`)
-      .replace(other, `from '../../src/`)
-  }
+      return source
+        .replace(root, `from '../../${settings.srcDir}'`)
+        .replace(module, `from '../../${settings.srcDir}/`)
+        .replace(other, `from '../../${settings.srcDir}/`)
+    })
+  )
 
-  return RA.map(f => {
-    const handleProjectImports = replaceProjectName(f.content)
-    const handleAssert = addAssertImport(handleProjectImports)
-    return FS.File(f.path, handleAssert, f.overwrite)
-  })
-}
+const handleImports: (files: ReadonlyArray<FS.File>) => Program<ReadonlyArray<FS.File>> = RA.traverse(
+  RTE.ApplicativePar
+)(file =>
+  pipe(
+    replaceProjectName(file.content),
+    RTE.map(addAssertImport),
+    RTE.map(content => FS.File(file.path, content, file.overwrite))
+  )
+)
 
 const getExampleIndex = (examples: ReadonlyArray<FS.File>): Program<FS.File> => {
   const content = pipe(
@@ -314,21 +320,16 @@ const writeExamples = (examples: ReadonlyArray<FS.File>): Program<void> =>
 
 const typeCheckExamples = (modules: ReadonlyArray<Module>): Program<void> =>
   pipe(
-    RTE.ask<Environment, string>(),
-    RTE.chain(({ settings }) =>
-      pipe(
-        getExampleFiles(modules),
-        RTE.map(handleImports(settings.projectName)),
-        RTE.chain(examples =>
-          examples.length === 0
-            ? cleanExamples
-            : pipe(
-                writeExamples(examples),
-                RTE.chain(() => spawnTsNode),
-                RTE.chain(() => cleanExamples)
-              )
-        )
-      )
+    getExampleFiles(modules),
+    RTE.chain(handleImports),
+    RTE.chain(examples =>
+      examples.length === 0
+        ? cleanExamples
+        : pipe(
+            writeExamples(examples),
+            RTE.chain(() => spawnTsNode),
+            RTE.chain(() => cleanExamples)
+          )
     )
   )
 

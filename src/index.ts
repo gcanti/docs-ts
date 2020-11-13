@@ -2,26 +2,19 @@
  * @since 0.2.0
  */
 import chalk from 'chalk'
-import { log } from 'fp-ts/lib/Console'
-import * as IO from 'fp-ts/lib/IO'
-import { pipe } from 'fp-ts/lib/pipeable'
-import * as T from 'fp-ts/lib/Task'
-import * as TE from 'fp-ts/lib/TaskEither'
-import * as fs from 'fs-extra'
-import * as glob from 'glob'
-import * as rimraf from 'rimraf'
-import * as core from './core'
+import { log } from 'fp-ts/Console'
+import * as IO from 'fp-ts/IO'
+import { pipe } from 'fp-ts/pipeable'
+import * as T from 'fp-ts/Task'
+import * as TE from 'fp-ts/TaskEither'
 
-const capabilities: core.Capabilities = {
-  ...TE.taskEither,
-  getFilenames: (pattern: string) => TE.rightIO(() => glob.sync(pattern)),
-  readFile: (path: string) => TE.rightIO(() => fs.readFileSync(path, { encoding: 'utf8' })),
-  writeFile: (path: string, content: string) => TE.rightIO(() => fs.outputFileSync(path, content)),
-  existsFile: (path: string) => TE.rightIO(() => fs.existsSync(path)),
-  clean: (pattern: string) => TE.rightIO(() => rimraf.sync(pattern)),
-  info: (message: string) => TE.rightIO(log(chalk.bold.magenta(message))),
-  log: (message: string) => TE.rightIO(log(chalk.cyan(message))),
-  debug: (message: string) => TE.rightIO(log(chalk.gray(message)))
+import * as Core from './Core'
+import { FileSystem } from './FileSystem'
+import { Logger } from './Logger'
+
+const capabilities: Core.Capabilities = {
+  ...FileSystem,
+  ...Logger
 }
 
 const exit = (code: 0 | 1): IO.IO<void> => () => process.exit(code)
@@ -29,7 +22,7 @@ const exit = (code: 0 | 1): IO.IO<void> => () => process.exit(code)
 const onLeft = (e: string): T.Task<void> =>
   T.fromIO(
     pipe(
-      log(e),
+      log(chalk.bold.red(e)),
       IO.chain(() => exit(1))
     )
   )
@@ -37,9 +30,9 @@ const onLeft = (e: string): T.Task<void> =>
 const onRight: T.Task<void> = T.fromIO(log(chalk.bold.green('Docs generation succeeded!')))
 
 /**
- * @since 0.2.0
+ * @since 0.6.0
  */
 export const main: T.Task<void> = pipe(
-  core.main(capabilities),
+  Core.main(capabilities),
   TE.fold(onLeft, () => onRight)
 )

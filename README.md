@@ -64,18 +64,22 @@ title: greetings.ts
 nav_order: 0
 parent: Modules
 ---
+
 ## greetings overview
 
 Added in v0.2.0
+
 ---
 
 <h2 class="text-delta">Table of contents</h2>
 
 - [greetings](#greetings)
   - [sayHello](#sayhello)
+
 ---
 
 # greetings
+
 ## sayHello
 
 Greets a person by name.

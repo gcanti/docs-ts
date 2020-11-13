@@ -40,7 +40,7 @@ Added in v0.6.0
 **Signature**
 
 ```ts
-export declare const updateEnforceDescriptions: (enforceDescriptions: boolean) => (wa: ConfigBuilder) => Settings
+export declare const updateEnforceDescriptions: (enforceDescriptions: boolean) => (wa: ConfigBuilder) => ConfigBuilder
 ```
 
 Added in v0.6.0
@@ -50,7 +50,7 @@ Added in v0.6.0
 **Signature**
 
 ```ts
-export declare const updateEnforceExamples: (enforceExamples: boolean) => (wa: ConfigBuilder) => Settings
+export declare const updateEnforceExamples: (enforceExamples: boolean) => (wa: ConfigBuilder) => ConfigBuilder
 ```
 
 Added in v0.6.0
@@ -60,7 +60,7 @@ Added in v0.6.0
 **Signature**
 
 ```ts
-export declare const updateExclusions: (exclude: readonly string[]) => (wa: ConfigBuilder) => Settings
+export declare const updateExclusions: (exclude: readonly string[]) => (wa: ConfigBuilder) => ConfigBuilder
 ```
 
 Added in v0.6.0
@@ -70,7 +70,7 @@ Added in v0.6.0
 **Signature**
 
 ```ts
-export declare const updateOutDir: (outDir: string) => (wa: ConfigBuilder) => Settings
+export declare const updateOutDir: (outDir: string) => (wa: ConfigBuilder) => ConfigBuilder
 ```
 
 Added in v0.6.0
@@ -80,7 +80,7 @@ Added in v0.6.0
 **Signature**
 
 ```ts
-export declare const updateSearchEnabled: (enableSearch: boolean) => (wa: ConfigBuilder) => Settings
+export declare const updateSearchEnabled: (enableSearch: boolean) => (wa: ConfigBuilder) => ConfigBuilder
 ```
 
 Added in v0.6.0
@@ -90,7 +90,7 @@ Added in v0.6.0
 **Signature**
 
 ```ts
-export declare const updateSourceDir: (srcDir: string) => (wa: ConfigBuilder) => Settings
+export declare const updateSourceDir: (srcDir: string) => (wa: ConfigBuilder) => ConfigBuilder
 ```
 
 Added in v0.6.0
@@ -100,7 +100,7 @@ Added in v0.6.0
 **Signature**
 
 ```ts
-export declare const updateTheme: (theme: string) => (wa: ConfigBuilder) => Settings
+export declare const updateTheme: (theme: string) => (wa: ConfigBuilder) => ConfigBuilder
 ```
 
 Added in v0.6.0

@@ -5,6 +5,7 @@ import * as TE from 'fp-ts/TaskEither'
 import { flow, pipe } from 'fp-ts/function'
 import * as fs from 'fs-extra'
 import * as glob from 'glob'
+import * as rimraf from 'rimraf'
 
 // -------------------------------------------------------------------------------------
 // model
@@ -47,7 +48,7 @@ export interface File {
 export const File = (path: string, content: string, overwrite: boolean = false): File => ({
   path,
   content,
-  overwrite,
+  overwrite
 })
 
 // -------------------------------------------------------------------------------------
@@ -92,12 +93,18 @@ export const writeFile: (
 export const exists: (path: string) => TE.TaskEither<Error, boolean> = TE.taskify<string, Error, boolean>(fs.pathExists)
 
 /**
- * Removes a file or directory. The directory can have contents. If the path does not exist, silently does nothing.
+ * Removes a file or directory based upon the specified pattern. The directory can have contents.
+ * If the path does not exist, silently does nothing.
  *
  * @category utils
  * @since 0.6.0
  */
-export const remove: (path: string) => TE.TaskEither<Error, void> = TE.taskify<string, Error, void>(fs.remove)
+export const remove: (path: string, options: rimraf.Options) => TE.TaskEither<Error, void> = TE.taskify<
+  string,
+  rimraf.Options,
+  Error,
+  void
+>(rimraf)
 
 /**
  * Searches for files matching the specified glob pattern.
@@ -119,9 +126,9 @@ export const search: (
  * @since 0.6.0
  */
 export const FileSystem: FileSystem = {
-  readFile: (path) => pipe(readFile(path, 'utf8'), TE.mapLeft(toErrorMsg)),
+  readFile: path => pipe(readFile(path, 'utf8'), TE.mapLeft(toErrorMsg)),
   writeFile: (path, content) => pipe(writeFile(path, content, { encoding: 'utf8' }), TE.mapLeft(toErrorMsg)),
   exists: flow(exists, TE.mapLeft(toErrorMsg)),
-  remove: flow(remove, TE.mapLeft(toErrorMsg)),
-  search: (pattern, exclude) => pipe(search(pattern, { ignore: exclude }), TE.mapLeft(toErrorMsg)),
+  remove: pattern => pipe(remove(pattern, {}), TE.mapLeft(toErrorMsg)),
+  search: (pattern, exclude) => pipe(search(pattern, { ignore: exclude }), TE.mapLeft(toErrorMsg))
 }

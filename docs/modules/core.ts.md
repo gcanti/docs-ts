@@ -1,54 +1,35 @@
 ---
-title: core.ts
+title: Core.ts
 nav_order: 2
 parent: Modules
 ---
+## Core overview
 
-## core overview
-
-Added in v0.2.0
-
+Added in v0.6.0
 ---
 
 <h2 class="text-delta">Table of contents</h2>
 
-- [utils](#utils)
+- [model](#model)
   - [Capabilities (interface)](#capabilities-interface)
-  - [Eff (interface)](#eff-interface)
   - [Effect (interface)](#effect-interface)
-  - [MonadFileSystem (interface)](#monadfilesystem-interface)
-  - [MonadLog (interface)](#monadlog-interface)
+  - [Environment (interface)](#environment-interface)
+  - [Program (interface)](#program-interface)
+- [program](#program)
   - [main](#main)
-
 ---
 
-# utils
-
+# model
 ## Capabilities (interface)
 
 **Signature**
 
 ```ts
-export interface Capabilities extends MonadFileSystem, MonadLog {}
+export interface Capabilities extends FS.FileSystem, L.Logger {}
 ```
 
-Added in v0.2.0
-
-## Eff (interface)
-
-capabilities
-
-**Signature**
-
-```ts
-export interface Eff<A> extends TE.TaskEither<string, A> {}
-```
-
-Added in v0.2.0
-
+Added in v0.6.0
 ## Effect (interface)
-
-App effect
 
 **Signature**
 
@@ -56,38 +37,29 @@ App effect
 export interface Effect<A> extends RTE.ReaderTaskEither<Capabilities, string, A> {}
 ```
 
-Added in v0.2.0
-
-## MonadFileSystem (interface)
-
-**Signature**
-
-```ts
-export interface MonadFileSystem {
-  readonly getFilenames: (pattern: string) => Eff<Array<string>>
-  readonly readFile: (path: string) => Eff<string>
-  readonly writeFile: (path: string, content: string) => Eff<void>
-  readonly existsFile: (path: string) => Eff<boolean>
-  readonly clean: (pattern: string) => Eff<void>
-}
-```
-
-Added in v0.2.0
-
-## MonadLog (interface)
+Added in v0.6.0
+## Environment (interface)
 
 **Signature**
 
 ```ts
-export interface MonadLog {
-  readonly info: (message: string) => Eff<void>
-  readonly log: (message: string) => Eff<void>
-  readonly debug: (message: string) => Eff<void>
+export interface Environment {
+  readonly capabilities: Capabilities
+  readonly settings: Config.Settings
 }
 ```
 
-Added in v0.2.0
+Added in v0.6.0
+## Program (interface)
 
+**Signature**
+
+```ts
+export interface Program<A> extends RTE.ReaderTaskEither<Environment, string, A> {}
+```
+
+Added in v0.6.0
+# program
 ## main
 
 **Signature**
@@ -96,4 +68,4 @@ Added in v0.2.0
 export declare const main: Effect<void>
 ```
 
-Added in v0.2.0
+Added in v0.6.0

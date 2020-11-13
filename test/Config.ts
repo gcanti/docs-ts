@@ -1,0 +1,166 @@
+import * as assert from 'assert'
+import * as E from 'fp-ts/Either'
+import * as RA from 'fp-ts/ReadonlyArray'
+import { pipe } from 'fp-ts/function'
+
+import * as _ from '../src/Config'
+
+const defaultSettings = pipe(_.build('docs-ts', 'https://github.com/gcanti/docs-ts'), _.resolveSettings)
+
+describe('Config', () => {
+  describe('constructors/destructors', () => {
+    it('build and resolveSettings', () => {
+      assert.deepStrictEqual(defaultSettings, {
+        projectName: 'docs-ts',
+        projectHomepage: 'https://github.com/gcanti/docs-ts',
+        srcDir: 'src',
+        outDir: 'docs',
+        theme: 'pmarsceill/just-the-docs',
+        enableSearch: true,
+        enforceDescriptions: false,
+        enforceExamples: false,
+        exclude: RA.empty
+      })
+    })
+  })
+
+  describe('combinators', () => {
+    it('updateSourceDir', () => {
+      const config = pipe(
+        _.build('docs-ts', 'https://github.com/gcanti/docs-ts'),
+        _.updateSourceDir('newSrc'),
+        _.resolveSettings
+      )
+
+      assert.deepStrictEqual(config, {
+        ...defaultSettings,
+        srcDir: 'newSrc'
+      })
+    })
+
+    it('updateOutDir', () => {
+      const config = pipe(
+        _.build('docs-ts', 'https://github.com/gcanti/docs-ts'),
+        _.updateOutDir('newOut'),
+        _.resolveSettings
+      )
+
+      assert.deepStrictEqual(config, {
+        ...defaultSettings,
+        outDir: 'newOut'
+      })
+    })
+
+    it('updateTheme', () => {
+      const config = pipe(
+        _.build('docs-ts', 'https://github.com/gcanti/docs-ts'),
+        _.updateTheme('newTheme'),
+        _.resolveSettings
+      )
+
+      assert.deepStrictEqual(config, {
+        ...defaultSettings,
+        theme: 'newTheme'
+      })
+    })
+
+    it('updateSearchEnabled', () => {
+      const config = pipe(
+        _.build('docs-ts', 'https://github.com/gcanti/docs-ts'),
+        _.updateSearchEnabled(false),
+        _.resolveSettings
+      )
+
+      assert.deepStrictEqual(config, {
+        ...defaultSettings,
+        enableSearch: false
+      })
+    })
+
+    it('updateEnforceDescriptions', () => {
+      const config = pipe(
+        _.build('docs-ts', 'https://github.com/gcanti/docs-ts'),
+        _.updateEnforceDescriptions(true),
+        _.resolveSettings
+      )
+
+      assert.deepStrictEqual(config, {
+        ...defaultSettings,
+        enforceDescriptions: true
+      })
+    })
+
+    it('updateEnforceDescriptions', () => {
+      const config = pipe(
+        _.build('docs-ts', 'https://github.com/gcanti/docs-ts'),
+        _.updateEnforceExamples(true),
+        _.resolveSettings
+      )
+
+      assert.deepStrictEqual(config, {
+        ...defaultSettings,
+        enforceExamples: true
+      })
+    })
+
+    it('updateExclusions', () => {
+      const config = pipe(
+        _.build('docs-ts', 'https://github.com/gcanti/docs-ts'),
+        _.updateExclusions(RA.of('subdirectory/**/*.ts')),
+        _.resolveSettings
+      )
+
+      assert.deepStrictEqual(config, {
+        ...defaultSettings,
+        exclude: RA.of('subdirectory/**/*.ts')
+      })
+    })
+  })
+
+  describe('utils', () => {
+    describe('decode', () => {
+      it('should decode a valid configuration object', async () => {
+        const config: unknown = {
+          srcDir: 'src',
+          outDir: 'docs',
+          theme: 'pmarsceill/just-the-docs',
+          enableSearch: true,
+          enforceDescriptions: false,
+          enforceExamples: false,
+          exclude: RA.empty
+        }
+
+        assert.deepStrictEqual(await _.decode(config)(), E.right(config))
+      })
+
+      it('should decode a valid partial configuration object', async () => {
+        const config: unknown = {
+          exclude: RA.of('subdirectory/**/*.ts')
+        }
+
+        assert.deepStrictEqual(await _.decode({})(), E.right({}))
+        assert.deepStrictEqual(await _.decode(config)(), E.right(config))
+      })
+
+      it('should not decode a configuration object with invalid keys', async () => {
+        const config: unknown = {
+          srcDir: 'src',
+          outDir: 'docs',
+          them: 'pmarsceill/just-the-docs',
+          enableSrch: true,
+          enforceDescriptions: false,
+          enforceExamples: false,
+          exclude: RA.empty
+        }
+
+        assert.deepStrictEqual(
+          await _.decode(config)(),
+          E.left(
+            'cannot decode "enableSrch", should be a valid configuration property\n' +
+              'cannot decode "them", should be a valid configuration property'
+          )
+        )
+      })
+    })
+  })
+})

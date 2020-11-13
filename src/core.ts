@@ -1,350 +1,537 @@
 /**
- * @since 0.2.0
+ * @since 0.6.0
  */
+import * as E from 'fp-ts/Either'
+import * as Eq from 'fp-ts/Eq'
+import * as M from 'fp-ts/Monoid'
+import * as O from 'fp-ts/Option'
+import * as RA from 'fp-ts/ReadonlyArray'
+import * as RTE from 'fp-ts/ReaderTaskEither'
+import * as TE from 'fp-ts/TaskEither'
+import { constVoid, flow, pipe, Endomorphism } from 'fp-ts/function'
+import * as TD from 'io-ts/TaskDecoder'
 import { spawnSync } from 'child_process'
-import * as A from 'fp-ts/lib/Array'
-import * as E from 'fp-ts/lib/Either'
-import { fold } from 'fp-ts/lib/Monoid'
-import { pipe } from 'fp-ts/lib/pipeable'
-import * as R from 'fp-ts/lib/Reader'
-import * as RTE from 'fp-ts/lib/ReaderTaskEither'
-import * as TE from 'fp-ts/lib/TaskEither'
 import * as path from 'path'
-import { Documentable, Module } from './domain'
-import * as markdown from './markdown'
-import * as P from './parser'
+
+import * as Config from './Config'
+import * as FS from './FileSystem'
+import * as L from './Logger'
+import { printModule } from './Markdown'
+import { Documentable, Module } from './Module'
+import * as P from './Parser'
+
+const CONFIG_FILE_NAME = 'docs-ts.json'
+
+// -------------------------------------------------------------------------------------
+// model
+// -------------------------------------------------------------------------------------
 
 /**
- * capabilities
- *
- * @since 0.2.0
+ * @category model
+ * @since 0.6.0
  */
-export interface Eff<A> extends TE.TaskEither<string, A> {}
+export interface Capabilities extends FS.FileSystem, L.Logger {}
 
 /**
- * @since 0.2.0
- */
-export interface MonadFileSystem {
-  readonly getFilenames: (pattern: string) => Eff<Array<string>>
-  readonly readFile: (path: string) => Eff<string>
-  readonly writeFile: (path: string, content: string) => Eff<void>
-  readonly existsFile: (path: string) => Eff<boolean>
-  readonly clean: (pattern: string) => Eff<void>
-}
-
-/**
- * @since 0.2.0
- */
-export interface MonadLog {
-  readonly info: (message: string) => Eff<void>
-  readonly log: (message: string) => Eff<void>
-  readonly debug: (message: string) => Eff<void>
-}
-
-/**
- * @since 0.2.0
- */
-export interface Capabilities extends MonadFileSystem, MonadLog {}
-
-/**
- * App effect
- *
- * @since 0.2.0
+ * @category model
+ * @since 0.6.0
  */
 export interface Effect<A> extends RTE.ReaderTaskEither<Capabilities, string, A> {}
 
-const outDir = 'docs'
-const srcDir = 'src'
+/**
+ * @category model
+ * @since 0.6.0
+ */
+export interface Environment {
+  readonly capabilities: Capabilities
+  readonly settings: Config.Settings
+}
+
+/**
+ * @category model
+ * @since 0.6.0
+ */
+export interface Program<A> extends RTE.ReaderTaskEither<Environment, string, A> {}
+
+// -------------------------------------------------------------------------------------
+// decoders
+// -------------------------------------------------------------------------------------
 
 interface PackageJSON {
   readonly name: string
-  readonly homepage?: string
+  readonly homepage: string
 }
 
-interface File {
-  readonly path: string
-  readonly content: string
-  readonly overwrite: boolean
-}
+const PackageJSONDecoder = pipe(TD.type({ name: TD.string }), TD.intersect(TD.partial({ homepage: TD.string })))
 
-function file(path: string, content: string, overwrite: boolean): File {
-  return {
-    path,
-    content,
-    overwrite
-  }
-}
+// -------------------------------------------------------------------------------------
+// files
+// -------------------------------------------------------------------------------------
 
-function readFile(path: string): Effect<File> {
-  return C =>
-    pipe(
-      C.readFile(path),
-      TE.map(content => file(path, content, false))
+const readFile = (path: string): Effect<FS.File> =>
+  pipe(
+    RTE.ask<Capabilities, string>(),
+    RTE.chainTaskEitherK(C => C.readFile(path)),
+    RTE.map(content => FS.File(path, content, false))
+  )
+
+const readFiles: (paths: ReadonlyArray<string>) => Effect<ReadonlyArray<FS.File>> = RA.traverse(RTE.ApplicativePar)(
+  readFile
+)
+
+const writeFile = (file: FS.File): Effect<void> => {
+  const overwrite: Effect<void> = pipe(
+    RTE.ask<Capabilities, string>(),
+    RTE.chainTaskEitherK(C =>
+      pipe(
+        C.debug(`Overwriting file ${file.path}`),
+        TE.chain(() => C.writeFile(file.path, file.content))
+      )
     )
-}
+  )
 
-function readFiles(paths: Array<string>): Effect<Array<File>> {
-  return A.array.traverse(RTE.readerTaskEither)(paths, readFile)
-}
+  const skip: Effect<void> = pipe(
+    RTE.ask<Capabilities, string>(),
+    RTE.chainTaskEitherK(C => pipe(C.debug(`File ${file.path} already exists, skipping creation`)))
+  )
 
-function writeFile(file: File): Effect<void> {
-  return C => {
-    const overwrite = pipe(
-      C.debug(`Overwriting file ${file.path}`),
-      TE.chain(() => C.writeFile(file.path, file.content))
-    )
+  const write: Effect<void> = pipe(
+    RTE.ask<Capabilities, string>(),
+    RTE.chainTaskEitherK(C => pipe(C.writeFile(file.path, file.content)))
+  )
 
-    const skip = C.debug(`File ${file.path} already exists, skipping creation`)
-
-    const write = pipe(
-      C.debug('Writing file ' + file.path),
-      TE.chain(() => C.writeFile(file.path, file.content))
-    )
-
-    return pipe(
-      C.existsFile(file.path),
-      TE.chain(exists => (exists ? (file.overwrite ? overwrite : skip) : write))
-    )
-  }
-}
-
-function writeFiles(files: Array<File>): Effect<void> {
   return pipe(
-    A.array.traverse(RTE.readerTaskEither)(files, writeFile),
-    RTE.map(() => undefined)
+    RTE.ask<Capabilities, string>(),
+    RTE.chainTaskEitherK(C =>
+      pipe(
+        C.exists(file.path),
+        TE.chain(exists =>
+          exists
+            ? pipe(
+                C.readFile(file.path),
+                TE.map(content => Eq.eqString.equals(content, file.content))
+              )
+            : TE.of(false)
+        )
+      )
+    ),
+    RTE.chain(exists => (exists ? (file.overwrite ? overwrite : skip) : write))
   )
 }
 
-const getPackageJSON: Effect<PackageJSON> = C =>
-  pipe(
-    C.readFile(path.join(process.cwd(), 'package.json')),
-    TE.chain(s => {
-      const json = JSON.parse(s)
-      const name = json.name
-      return pipe(
-        C.debug(`Project name detected: ${name}`),
-        TE.map(() => ({
-          name,
-          homepage: json.homepage
-        }))
-      )
-    })
-  )
+const writeFiles: (files: ReadonlyArray<FS.File>) => Effect<void> = flow(
+  RA.traverse(RTE.ApplicativePar)(writeFile),
+  RTE.map(constVoid)
+)
 
-const srcPattern = path.join(srcDir, '**', '*.ts')
-
-const getSrcPaths: Effect<Array<string>> = C =>
-  pipe(
-    C.getFilenames(srcPattern),
-    TE.map(paths => A.array.map(paths, path.normalize)),
-    TE.chainFirst(paths => C.info(`${paths.length} modules found`))
-  )
-
-const readSources: Effect<Array<File>> = pipe(getSrcPaths, RTE.chain(readFiles))
-
-function parseFiles(files: Array<File>): Effect<Array<Module>> {
-  return C =>
+const readPackageJSON: Effect<PackageJSON> = pipe(
+  RTE.ask<Capabilities, string>(),
+  RTE.chainTaskEitherK(capabilities =>
     pipe(
-      C.log('Parsing files...'),
-      TE.chain(() => TE.fromEither(pipe(P.parseFiles(files))))
-    )
-}
-
-const foldFiles = fold(A.getMonoid<File>())
-
-function getExampleFiles(modules: Array<Module>): Array<File> {
-  return A.array.chain(modules, module => {
-    const prefix = module.path.join('-')
-    function getDocumentableExamples(documentable: Documentable): Array<File> {
-      return documentable.examples.map((content, i) =>
-        file(path.join(outDir, 'examples', prefix + '-' + documentable.name + '-' + i + '.ts'), content + '\n', true)
+      capabilities.readFile(path.join(process.cwd(), 'package.json')),
+      TE.mapLeft(() => `Unable to read package.json in "${process.cwd()}"`),
+      TE.chainEitherK(json =>
+        E.parseJSON(
+          json,
+          flow(E.toError, err => String(err.message))
+        )
+      ),
+      TE.chain(json =>
+        pipe(
+          PackageJSONDecoder.decode(json),
+          TE.mapLeft(decodeError => `Unable to decode package.json:\n${TD.draw(decodeError)}`)
+        )
+      ),
+      TE.chain(({ name, homepage }) =>
+        pipe(
+          capabilities.debug(`Project name detected: ${name}`),
+          TE.chain(() =>
+            pipe(
+              O.fromNullable(homepage),
+              TE.fromOption(() => `Missing homepage in package.json`),
+              TE.map(homepage => ({ name, homepage }))
+            )
+          )
+        )
       )
-    }
-    const moduleExamples = getDocumentableExamples(module)
-    const methods = A.array.chain(module.classes, c =>
-      foldFiles([
-        A.array.chain(c.methods, getDocumentableExamples),
-        A.array.chain(c.staticMethods, getDocumentableExamples)
-      ])
     )
-    const interfaces = A.array.chain(module.interfaces, getDocumentableExamples)
-    const typeAliases = A.array.chain(module.typeAliases, getDocumentableExamples)
-    const constants = A.array.chain(module.constants, getDocumentableExamples)
-    const functions = A.array.chain(module.functions, getDocumentableExamples)
+  )
+)
 
-    return foldFiles([moduleExamples, methods, interfaces, typeAliases, constants, functions])
-  })
-}
+const readSourcePaths: Program<ReadonlyArray<string>> = pipe(
+  RTE.ask<Environment, string>(),
+  RTE.chainTaskEitherK(({ capabilities, settings }) =>
+    pipe(
+      capabilities.search(path.join(settings.srcDir, '**', '*.ts'), settings.exclude),
+      TE.map(RA.map(path.normalize)),
+      TE.chainFirst(paths => pipe(capabilities.info(`Found ${paths.length} modules`)))
+    )
+  )
+)
 
-function addAssertImport(code: string): string {
-  return code.indexOf('assert.') !== -1 ? `import * as assert from 'assert'\n` + code : code
-}
+const readSourceFiles: Program<ReadonlyArray<FS.File>> = pipe(
+  RTE.ask<Environment, string>(),
+  RTE.chain(({ capabilities }) =>
+    pipe(
+      readSourcePaths,
+      RTE.chainTaskEitherK(paths => pipe(capabilities, readFiles(paths)))
+    )
+  )
+)
 
-function handleImports(files: Array<File>, projectName: string): Array<File> {
-  function replaceProjectName(source: string): string {
-    // Matches imports of the form:
-    // import { foo } from 'projectName'
+// -------------------------------------------------------------------------------------
+// parsers
+// -------------------------------------------------------------------------------------
+
+const parseFiles = (files: ReadonlyArray<FS.File>): Program<ReadonlyArray<Module>> =>
+  pipe(
+    RTE.ask<Environment, string>(),
+    RTE.chainFirst(({ capabilities }) => RTE.fromTaskEither(capabilities.debug('Parsing files...'))),
+    RTE.chain(() =>
+      pipe(
+        P.parseFiles(files),
+        RTE.local(({ settings }) => settings)
+      )
+    )
+  )
+
+// -------------------------------------------------------------------------------------
+// examples
+// -------------------------------------------------------------------------------------
+
+const foldFiles = M.fold(RA.getMonoid<FS.File>())
+
+const getExampleFiles = (modules: ReadonlyArray<Module>): Program<ReadonlyArray<FS.File>> =>
+  pipe(
+    RTE.ask<Environment, string>(),
+    RTE.map(env =>
+      pipe(
+        modules,
+        RA.chain(module => {
+          const prefix = module.path.join('-')
+
+          const getDocumentableExamples = (documentable: Documentable): ReadonlyArray<FS.File> =>
+            pipe(
+              documentable.examples,
+              RA.mapWithIndex((i, content) =>
+                FS.File(
+                  path.join(env.settings.outDir, 'examples', `${prefix}-${documentable.name}-${i}.ts`),
+                  `${content}\n`,
+                  true
+                )
+              )
+            )
+
+          const moduleExamples = getDocumentableExamples(module)
+          const methods = pipe(
+            module.classes,
+            RA.chain(c =>
+              foldFiles([
+                pipe(c.methods, RA.chain(getDocumentableExamples)),
+                pipe(c.staticMethods, RA.chain(getDocumentableExamples))
+              ])
+            )
+          )
+          const interfaces = pipe(module.interfaces, RA.chain(getDocumentableExamples))
+          const typeAliases = pipe(module.typeAliases, RA.chain(getDocumentableExamples))
+          const constants = pipe(module.constants, RA.chain(getDocumentableExamples))
+          const functions = pipe(module.functions, RA.chain(getDocumentableExamples))
+
+          return foldFiles([moduleExamples, methods, interfaces, typeAliases, constants, functions])
+        })
+      )
+    )
+  )
+
+const handleImports = (projectName: string): ((files: ReadonlyArray<FS.File>) => ReadonlyArray<FS.File>) => {
+  const addAssertImport = (code: string): string =>
+    code.indexOf('assert.') !== -1 ? `import * as assert from 'assert'\n${code}` : code
+
+  const replaceProjectName: Endomorphism<string> = source => {
+    // Matches imports of the form: `import { foo } from 'projectName'`
     const root = new RegExp(`from '${projectName}'`, 'g')
-    // Matches imports of the form:
-    // import { foo } from 'projectName/lib/...'
+    // Matches imports of the form: `import { foo } from 'projectName/lib/...'`
     const module = new RegExp(`from '${projectName}/lib/`, 'g')
-    // Matches imports of the form:
-    // import { foo } from 'projectName/...'
+    // Matches immports of the form: `import { foo } from 'projectName/...'`
     const other = new RegExp(`from '${projectName}/`, 'g')
+
     return source
       .replace(root, `from '../../src'`)
       .replace(module, `from '../../src/`)
       .replace(other, `from '../../src/`)
   }
-  return files.map(f => {
+
+  return RA.map(f => {
     const handleProjectImports = replaceProjectName(f.content)
     const handleAssert = addAssertImport(handleProjectImports)
-    return file(f.path, handleAssert, f.overwrite)
+    return FS.File(f.path, handleAssert, f.overwrite)
   })
 }
 
-function getExampleIndex(examples: Array<File>): File {
-  const content = examples.map(example => `import './${path.basename(example.path)}'`).join('\n') + '\n'
-  return file(path.join(outDir, 'examples', 'index.ts'), content, true)
+const getExampleIndex = (examples: ReadonlyArray<FS.File>): Program<FS.File> => {
+  const content = pipe(
+    examples,
+    RA.map(example => `import './${path.basename(example.path)}'`),
+    RA.foldMap(M.monoidString)(example => `${example}\n`)
+  )
+  return pipe(
+    RTE.ask<Environment, string>(),
+    RTE.map(env => FS.File(path.join(env.settings.outDir, 'examples', 'index.ts'), `${content}\n`, true))
+  )
 }
 
-const examplePattern = path.join(outDir, 'examples')
+const cleanExamples: Program<void> = pipe(
+  RTE.ask<Environment, string>(),
+  RTE.chainTaskEitherK(({ capabilities, settings }) => capabilities.remove(path.join(settings.outDir, 'examples')))
+)
 
-const cleanExamples: Effect<void> = C =>
-  pipe(
-    C.debug(`Clean up examples: deleting ${examplePattern}...`),
-    TE.chain(() => C.clean(examplePattern))
-  )
-
-const spawnTsNode: Effect<void> = C =>
-  pipe(
-    C.log(`Type checking examples...`),
-    TE.chain(() =>
-      TE.fromIOEither(() => {
-        const executableName = process.platform === 'win32' ? 'ts-node.cmd' : 'ts-node'
-        const { status } = spawnSync(executableName, [path.join(outDir, 'examples', 'index.ts')], { stdio: 'inherit' })
-        return status === 0 ? E.right(undefined) : E.left('Type checking error')
+const spawnTsNode: Program<void> = pipe(
+  RTE.ask<Environment, string>(),
+  RTE.chainFirst(({ capabilities }) => RTE.fromTaskEither(capabilities.debug('Type checking examples...'))),
+  RTE.chain(({ settings }) =>
+    RTE.fromIOEither(() => {
+      const executableName = process.platform === 'win32' ? 'ts-node.cmd' : 'ts-node'
+      const { status } = spawnSync(executableName, [path.join(settings.outDir, 'examples', 'index.ts')], {
+        stdio: 'inherit'
       })
-    )
+      return status === 0 ? E.right(undefined) : E.left('Type checking error')
+    })
   )
+)
 
-function writeExamples(examples: Array<File>): Effect<void> {
-  return pipe(
-    RTE.ask<Capabilities>(),
-    RTE.chain(C =>
+const writeExamples = (examples: ReadonlyArray<FS.File>): Program<void> =>
+  pipe(
+    RTE.ask<Environment, string>(),
+    RTE.chainFirst(({ capabilities }) => RTE.fromTaskEither(capabilities.debug('Writing examples...'))),
+    RTE.chain(({ capabilities }) =>
       pipe(
-        R.reader.of(C.log(`Writing examples...`)),
-        RTE.chain(() => writeFiles([getExampleIndex(examples), ...examples]))
+        getExampleIndex(examples),
+        RTE.map(index => RA.cons(index, examples)),
+        RTE.chainTaskEitherK(files => pipe(capabilities, writeFiles(files)))
       )
     )
   )
-}
 
-function typecheckExamples(projectName: string): (modules: Array<Module>) => Effect<void> {
-  return modules => {
-    const examples = handleImports(getExampleFiles(modules), projectName)
-    return examples.length === 0
-      ? cleanExamples
-      : pipe(
-          writeExamples(examples),
-          RTE.chain(() => spawnTsNode),
-          RTE.chain(() => cleanExamples)
+const typeCheckExamples = (modules: ReadonlyArray<Module>): Program<void> =>
+  pipe(
+    RTE.ask<Environment, string>(),
+    RTE.chain(({ settings }) =>
+      pipe(
+        getExampleFiles(modules),
+        RTE.map(handleImports(settings.projectName)),
+        RTE.chain(examples =>
+          examples.length === 0
+            ? cleanExamples
+            : pipe(
+                writeExamples(examples),
+                RTE.chain(() => spawnTsNode),
+                RTE.chain(() => cleanExamples)
+              )
         )
-  }
-}
+      )
+    )
+  )
 
-const home: File = file(
-  path.join(outDir, 'index.md'),
-  `---
+// -------------------------------------------------------------------------------------
+// markdown
+// -------------------------------------------------------------------------------------
+
+const getHome: Program<FS.File> = pipe(
+  RTE.ask<Environment, string>(),
+  RTE.map(({ settings }) =>
+    FS.File(
+      path.join(settings.outDir, 'index.md'),
+      `---
 title: Home
 nav_order: 1
 ---
 `,
-  false
+      false
+    )
+  )
 )
 
-const modulesIndex: File = file(
-  path.join(outDir, 'modules', 'index.md'),
-  `---
+const getModulesIndex: Program<FS.File> = pipe(
+  RTE.ask<Environment, string>(),
+  RTE.map(({ settings }) =>
+    FS.File(
+      path.join(settings.outDir, 'modules', 'index.md'),
+      `---
 title: Modules
 has_children: true
 permalink: /docs/modules
 nav_order: 2
----
-`,
-  false
+---`,
+      false
+    )
+  )
 )
 
-const configYMLPath = path.join(outDir, '_config.yml')
-
-function getConfigYML(projectName: string, homepage: string): File {
-  return file(
-    configYMLPath,
-    `remote_theme: pmarsceill/just-the-docs
+const getConfigYML: Program<FS.File> = pipe(
+  RTE.ask<Environment, string>(),
+  RTE.map(({ settings }) =>
+    FS.File(
+      path.join(settings.outDir, '_config.yml'),
+      `remote_theme: ${settings.theme}
 
 # Enable or disable the site search
-search_enabled: true
+search_enabled: ${settings.enableSearch}
 
 # Aux links for the upper right navigation
 aux_links:
-  '${projectName} on GitHub':
-    - '${homepage}'
-`,
-    false
-  )
-}
-
-let counter = 1
-
-function getMarkdownOutpuPath(module: Module): string {
-  return path.join(outDir, 'modules', module.path.slice(1).join(path.sep) + '.md')
-}
-
-function getModuleMarkdownFiles(modules: Array<Module>): Array<File> {
-  return modules.map(module => file(getMarkdownOutpuPath(module), markdown.printModule(module, counter++), true))
-}
-
-function getMarkdownFiles(projectName: string, homepage: string): (modules: Array<Module>) => Array<File> {
-  return modules => [home, modulesIndex, getConfigYML(projectName, homepage), ...getModuleMarkdownFiles(modules)]
-}
-
-const outPattern = path.join(outDir, '**/*.ts.md')
-
-function writeMarkdownFiles(files: Array<File>): Effect<void> {
-  const cleanOut: Effect<void> = C =>
-    pipe(
-      C.log(`Writing markdown...`),
-      TE.chain(() => C.debug(`Clean up docs folder: deleting ${outPattern}...`)),
-      TE.chain(() => C.clean(outPattern))
+  '${settings.projectName} on Github:
+    - '${settings.projectHomepage}'`,
+      false
     )
-
-  return pipe(
-    cleanOut,
-    RTE.chain(() => writeFiles(files))
   )
-}
+)
 
-function checkHomepage(pkg: PackageJSON): E.Either<string, string> {
-  return pkg.homepage === undefined ? E.left('Missing homepage in package.json') : E.right(pkg.homepage)
-}
+const getMarkdownOutputPath = (module: Module): Program<string> =>
+  pipe(
+    RTE.ask<Environment, string>(),
+    RTE.map(({ settings }) => path.join(settings.outDir, 'modules', `${module.path.slice(1).join(path.sep)}.md`))
+  )
+
+const getModuleMarkdownFiles = (modules: ReadonlyArray<Module>): Program<ReadonlyArray<FS.File>> =>
+  pipe(
+    modules,
+    RA.traverseWithIndex(RTE.ApplicativePar)((order, module) =>
+      pipe(
+        getMarkdownOutputPath(module),
+        RTE.bindTo('outputPath'),
+        RTE.bind('content', () => RTE.right(printModule(module, order))),
+        RTE.map(({ content, outputPath }) => FS.File(outputPath, content, true))
+      )
+    )
+  )
+
+const getMarkdownFiles = (modules: ReadonlyArray<Module>): Program<ReadonlyArray<FS.File>> =>
+  pipe(
+    RA.sequence(RTE.ApplicativePar)([getHome, getModulesIndex, getConfigYML]),
+    RTE.chain(meta =>
+      pipe(
+        getModuleMarkdownFiles(modules),
+        RTE.map(files => RA.getMonoid<FS.File>().concat(meta, files))
+      )
+    )
+  )
+
+const writeMarkdownFiles = (files: ReadonlyArray<FS.File>): Program<void> =>
+  pipe(
+    RTE.ask<Environment, string>(),
+    RTE.chainFirst<Environment, string, Environment, void>(({ capabilities, settings }) => {
+      const outPattern = path.join(settings.outDir, '**/*.ts.md')
+      return pipe(
+        capabilities.debug(`Cleaning up docs folder: deleting ${outPattern}`),
+        TE.chain(() => capabilities.remove(outPattern)),
+        RTE.fromTaskEither
+      )
+    }),
+    RTE.chainTaskEitherK(({ capabilities }) =>
+      pipe(
+        capabilities.debug('Writing markdown files...'),
+        TE.chain(() => pipe(capabilities, writeFiles(files)))
+      )
+    )
+  )
+
+// -------------------------------------------------------------------------------------
+// config
+// -------------------------------------------------------------------------------------
+
+const getDefaultSettings = (projectName: string, projectHomepage: string): Config.Settings =>
+  pipe(Config.build(projectName, projectHomepage), Config.resolveSettings)
+
+const hasConfiguration: Effect<boolean> = pipe(
+  RTE.ask<Capabilities, string>(),
+  RTE.chainTaskEitherK(C =>
+    pipe(
+      C.debug('Checking for configuration file...'),
+      TE.chain(() => C.exists(path.join(process.cwd(), CONFIG_FILE_NAME)))
+    )
+  )
+)
+
+const readConfiguration: Effect<FS.File> = pipe(
+  RTE.ask<Capabilities, string>(),
+  RTE.chain(() => readFile(path.join(process.cwd(), CONFIG_FILE_NAME)))
+)
+
+const parseConfiguration = (defaultSettings: Config.Settings) => (file: FS.File): Effect<Config.Settings> =>
+  pipe(
+    RTE.ask<Capabilities, string>(),
+    RTE.chainTaskEitherK(C =>
+      pipe(
+        E.parseJSON(file.content, toErrorMsg),
+        TE.fromEither,
+        TE.chainFirst(() => C.info(`Found configuration file`)),
+        TE.chainFirst(() => C.debug(`Parsing configuration file found at: ${file.path}`)),
+        TE.chain(Config.decode),
+        TE.bimap(
+          decodeError => `Invalid configuration file detected:\n${decodeError}`,
+          settings => ({ ...defaultSettings, ...settings })
+        )
+      )
+    )
+  )
+
+const useDefaultSettings = (defaultSettings: Config.Settings): Effect<Config.Settings> =>
+  pipe(
+    RTE.ask<Capabilities, string>(),
+    RTE.chainTaskEitherK(C =>
+      pipe(
+        C.info('No configuration file detected, using default settings'),
+        TE.map(() => defaultSettings)
+      )
+    )
+  )
+
+const getDocsConfiguration = (projectName: string, projectHomepage: string): Effect<Config.Settings> =>
+  pipe(
+    hasConfiguration,
+    RTE.bindTo('hasConfig'),
+    RTE.bind('defaultSettings', () => RTE.right(getDefaultSettings(projectName, projectHomepage))),
+    RTE.chain(({ defaultSettings, hasConfig }) =>
+      hasConfig
+        ? pipe(readConfiguration, RTE.chain(parseConfiguration(defaultSettings)))
+        : useDefaultSettings(defaultSettings)
+    )
+  )
+
+// -------------------------------------------------------------------------------------
+// program
+// -------------------------------------------------------------------------------------
 
 /**
- * @since 0.2.0
+ * @category program
+ * @since 0.6.0
  */
 export const main: Effect<void> = pipe(
-  getPackageJSON,
-  RTE.chain(pkg =>
+  RTE.ask<Capabilities, string>(),
+  RTE.chain(capabilities =>
     pipe(
-      RTE.fromEither(checkHomepage(pkg)),
-      RTE.chain(homepage =>
+      readPackageJSON,
+      RTE.chain(pkg =>
         pipe(
-          readSources,
-          RTE.chain(parseFiles),
-          RTE.chainFirst(typecheckExamples(pkg.name)),
-          RTE.map(getMarkdownFiles(pkg.name, homepage)),
-          RTE.chain(writeMarkdownFiles)
+          getDocsConfiguration(pkg.name, pkg.homepage),
+          RTE.chainTaskEitherK(settings => {
+            const program = pipe(
+              readSourceFiles,
+              RTE.chain(parseFiles),
+              RTE.chainFirst(typeCheckExamples),
+              RTE.chain(getMarkdownFiles),
+              RTE.chain(writeMarkdownFiles)
+            )
+            return program({ capabilities, settings })
+          })
         )
       )
     )
   )
 )
+
+// -------------------------------------------------------------------------------------
+// utils
+// -------------------------------------------------------------------------------------
+
+const toErrorMsg: (u: unknown) => string = flow(E.toError, err => String(err.message))

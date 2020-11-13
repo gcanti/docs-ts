@@ -433,7 +433,7 @@ const fromPrintable = (p: Printable): Markdown => {
 }
 
 // -------------------------------------------------------------------------------------
-// printer
+// printers
 // -------------------------------------------------------------------------------------
 
 const getPrintables = (module: Module): O.Option<RNEA.ReadonlyNonEmptyArray<Printable>> =>
@@ -450,7 +450,43 @@ const getPrintables = (module: Module): O.Option<RNEA.ReadonlyNonEmptyArray<Prin
   )
 
 /**
- * @category printer
+ * @category printers
+ * @since 0.6.0
+ */
+export const printClass = (c: Class): string => pipe(fromClass(c), showMarkdown.show)
+
+/**
+ * @category printers
+ * @since 0.6.0
+ */
+export const printConstant = (c: Constant): string => pipe(fromConstant(c), showMarkdown.show)
+
+/**
+ * @category printers
+ * @since 0.6.0
+ */
+export const printExport = (e: Export): string => pipe(fromExport(e), showMarkdown.show)
+
+/**
+ * @category printers
+ * @since 0.6.0
+ */
+export const printFunction = (f: Function): string => pipe(fromFunction(f), showMarkdown.show)
+
+/**
+ * @category printers
+ * @since 0.6.0
+ */
+export const printInterface = (i: Interface): string => pipe(fromInterface(i), showMarkdown.show)
+
+/**
+ * @category printers
+ * @since 0.6.0
+ */
+export const printTypeAlias = (f: TypeAlias): string => pipe(fromTypeAlias(f), showMarkdown.show)
+
+/**
+ * @category printers
  * @since 0.6.0
  */
 export const printModule = (module: Module, order: number): string => {
@@ -471,17 +507,17 @@ export const printModule = (module: Module, order: number): string => {
           )
         ),
         RR.collect((category, printables) => {
-          const title = pipe(Paragraph(h1(PlainText(category))), showMarkdown.show)
+          const title = pipe(h1(PlainText(category)), showMarkdown.show)
           const documentation = pipe(
             printables,
             RA.map(flow(fromPrintable, showMarkdown.show)),
             RA.sort(Ord.ordString),
-            foldS
+            intercalateNewline
           )
-          return foldS([title, documentation])
+          return intercalateNewline([title, documentation])
         }),
         RA.sort(Ord.ordString),
-        foldS
+        intercalateNewline
       )
     ),
     O.getOrElse(() => '')
@@ -495,7 +531,7 @@ export const printModule = (module: Module, order: number): string => {
       showMarkdown.show
     )
 
-  return foldS([header, description, '---\n\n', tableOfContents(content), '---\n\n', content])
+  return pipe(intercalateNewline([header, description, '---\n', tableOfContents(content), '---\n', content]), prettify)
 }
 
 // -------------------------------------------------------------------------------------

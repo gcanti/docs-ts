@@ -13,6 +13,40 @@
 **Note**: Gaps between patch versions are faulty/broken releases.
 **Note**: A feature tagged as Experimental is in a high state of flux, you're at risk of it changing without notice.
 
+# 0.6.0
+
+- **Breaking Change**
+  - refactor `Markdown` module (@IMax153)
+    - add `Markdown` constructors (@IMax153)
+    - add tagged union of `Printable` types (@IMax153)
+    - add `fold` destructor for `Markdown` (@IMax153)
+    - add `Semigroup`, `Monoid`, and `Show` instances for `Markdown` (@IMax153)
+    - add `printModule` helper function (@IMax153)
+  - update `Parser` module (@IMax153)
+    - update the `Env` of `Parser` to inherit from `Settings` (@IMax153)
+  - update `Core` module (@IMax153)
+    - remove `Eff`, `MonadFileSystem`, and `MonadLog` types (@IMax153)
+    - remove `MonadFileSystem` and `MonadLog` instances (@IMax153)
+    - add `Program` and `Environment` types (@IMax153)
+  - rename `domain` module to `Module` (@IMax153)
+    - rename all constructors to match their respective types (@IMax153)
+
+- **New Feature**
+  - add `Config` module (@IMax153)
+    - support configuration through `docs-ts.json` file (@IMax153)
+    - add `Config`, `ConfigBuilder` and `Settings` types (@IMax153)
+    - add `build` constructor `ConfigBuilder` (@IMax153)
+    - add `resolveSettings` destructor for creating `Settings` from a `ConfigBuilder` (@IMax153)
+    - add combinators for manipulating a `ConfigBuilder` (@IMax153)
+  - add `FileSystem` module (@IMax153)
+    - add `FileSystem` instance (@IMax153)
+    - add `File` constructor (@IMax153)
+    - add `exists`, `readFile`, `remove`, `search`, and `writeFile` helper functions (@IMax153)
+  - add `Logger` module (@IMax153)
+    - add `LogEntry`, `LogLevel`, and `Logger` types (@IMax153)
+    - add `showEntry` and `Logger` instances (@IMax153)
+    - add `debug`, `error`, and `info` helper functions (@IMax153)
+
 # 0.5.3
 
 - **Polish**

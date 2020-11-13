@@ -21,7 +21,7 @@ import * as TD from 'io-ts/TaskDecoder'
  * @category model
  * @since 0.6.0
  */
-interface ConfigBuilder extends T.Traced<Config, Settings> {}
+export interface ConfigBuilder extends T.Traced<Config, Settings> {}
 
 /**
  * @category model
@@ -137,6 +137,26 @@ export const updateSearchEnabled = (enableSearch: boolean) => (wa: ConfigBuilder
   wa({
     ...monoidConfig.empty,
     enableSearch
+  })
+
+/**
+ * @category combinators
+ * @since 0.6.0
+ */
+export const updateEnforceDescriptions = (enforceDescriptions: boolean) => (wa: ConfigBuilder): Settings =>
+  wa({
+    ...monoidConfig.empty,
+    enforceDescriptions
+  })
+
+/**
+ * @category combinators
+ * @since 0.6.0
+ */
+export const updateEnforceExamples = (enforceExamples: boolean) => (wa: ConfigBuilder): Settings =>
+  wa({
+    ...monoidConfig.empty,
+    enforceExamples
   })
 
 /**

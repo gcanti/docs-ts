@@ -70,7 +70,7 @@ const PackageJSONDecoder = pipe(TD.type({ name: TD.string }), TD.intersect(TD.pa
 
 const readFile = (path: string): Effect<FS.File> =>
   pipe(
-    RTE.ask<Capabilities, string>(),
+    RTE.ask<Capabilities>(),
     RTE.chainTaskEitherK(C => C.readFile(path)),
     RTE.map(content => FS.File(path, content, false))
   )
@@ -81,7 +81,7 @@ const readFiles: (paths: ReadonlyArray<string>) => Effect<ReadonlyArray<FS.File>
 
 const writeFile = (file: FS.File): Effect<void> => {
   const overwrite: Effect<void> = pipe(
-    RTE.ask<Capabilities, string>(),
+    RTE.ask<Capabilities>(),
     RTE.chainTaskEitherK(C =>
       pipe(
         C.debug(`Overwriting file ${file.path}`),
@@ -91,17 +91,17 @@ const writeFile = (file: FS.File): Effect<void> => {
   )
 
   const skip: Effect<void> = pipe(
-    RTE.ask<Capabilities, string>(),
+    RTE.ask<Capabilities>(),
     RTE.chainTaskEitherK(C => pipe(C.debug(`File ${file.path} already exists, skipping creation`)))
   )
 
   const write: Effect<void> = pipe(
-    RTE.ask<Capabilities, string>(),
+    RTE.ask<Capabilities>(),
     RTE.chainTaskEitherK(C => pipe(C.writeFile(file.path, file.content)))
   )
 
   return pipe(
-    RTE.ask<Capabilities, string>(),
+    RTE.ask<Capabilities>(),
     RTE.chainTaskEitherK(C =>
       pipe(
         C.exists(file.path),
@@ -125,7 +125,7 @@ const writeFiles: (files: ReadonlyArray<FS.File>) => Effect<void> = flow(
 )
 
 const readPackageJSON: Effect<PackageJSON> = pipe(
-  RTE.ask<Capabilities, string>(),
+  RTE.ask<Capabilities>(),
   RTE.chainTaskEitherK(capabilities =>
     pipe(
       capabilities.readFile(path.join(process.cwd(), 'package.json')),
@@ -443,7 +443,7 @@ const getDefaultSettings = (projectName: string, projectHomepage: string): Confi
   pipe(Config.build(projectName, projectHomepage), Config.resolveSettings)
 
 const hasConfiguration: Effect<boolean> = pipe(
-  RTE.ask<Capabilities, string>(),
+  RTE.ask<Capabilities>(),
   RTE.chainTaskEitherK(C =>
     pipe(
       C.debug('Checking for configuration file...'),
@@ -453,13 +453,13 @@ const hasConfiguration: Effect<boolean> = pipe(
 )
 
 const readConfiguration: Effect<FS.File> = pipe(
-  RTE.ask<Capabilities, string>(),
+  RTE.ask<Capabilities>(),
   RTE.chain(() => readFile(path.join(process.cwd(), CONFIG_FILE_NAME)))
 )
 
 const parseConfiguration = (defaultSettings: Config.Settings) => (file: FS.File): Effect<Config.Settings> =>
   pipe(
-    RTE.ask<Capabilities, string>(),
+    RTE.ask<Capabilities>(),
     RTE.chainTaskEitherK(C =>
       pipe(
         E.parseJSON(file.content, toErrorMsg),
@@ -477,7 +477,7 @@ const parseConfiguration = (defaultSettings: Config.Settings) => (file: FS.File)
 
 const useDefaultSettings = (defaultSettings: Config.Settings): Effect<Config.Settings> =>
   pipe(
-    RTE.ask<Capabilities, string>(),
+    RTE.ask<Capabilities>(),
     RTE.chainTaskEitherK(C =>
       pipe(
         C.info('No configuration file detected, using default settings'),
@@ -507,7 +507,7 @@ const getDocsConfiguration = (projectName: string, projectHomepage: string): Eff
  * @since 0.6.0
  */
 export const main: Effect<void> = pipe(
-  RTE.ask<Capabilities, string>(),
+  RTE.ask<Capabilities>(),
   RTE.chain(capabilities =>
     pipe(
       readPackageJSON,

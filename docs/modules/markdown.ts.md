@@ -3,9 +3,11 @@ title: Markdown.ts
 nav_order: 6
 parent: Modules
 ---
+
 ## Markdown overview
 
 Added in v0.6.0
+
 ---
 
 <h2 class="text-delta">Table of contents</h2>
@@ -36,11 +38,19 @@ Added in v0.6.0
   - [PlainTexts (interface)](#plaintexts-interface)
   - [Printable (type alias)](#printable-type-alias)
   - [Strikethrough (interface)](#strikethrough-interface)
-- [printer](#printer)
+- [printers](#printers)
+  - [printClass](#printclass)
+  - [printConstant](#printconstant)
+  - [printExport](#printexport)
+  - [printFunction](#printfunction)
+  - [printInterface](#printinterface)
   - [printModule](#printmodule)
+  - [printTypeAlias](#printtypealias)
+
 ---
 
 # constructors
+
 ## Bold
 
 **Signature**
@@ -50,6 +60,7 @@ export declare const Bold: (content: Markdown) => Markdown
 ```
 
 Added in v0.6.0
+
 ## Fence
 
 **Signature**
@@ -59,6 +70,7 @@ export declare const Fence: (language: string, content: Markdown) => Markdown
 ```
 
 Added in v0.6.0
+
 ## Header
 
 **Signature**
@@ -68,6 +80,7 @@ export declare const Header: (level: number, content: Markdown) => Markdown
 ```
 
 Added in v0.6.0
+
 ## Newline
 
 **Signature**
@@ -77,6 +90,7 @@ export declare const Newline: Markdown
 ```
 
 Added in v0.6.0
+
 ## Paragraph
 
 **Signature**
@@ -86,6 +100,7 @@ export declare const Paragraph: (content: Markdown) => Markdown
 ```
 
 Added in v0.6.0
+
 ## PlainText
 
 **Signature**
@@ -95,6 +110,7 @@ export declare const PlainText: (content: string) => Markdown
 ```
 
 Added in v0.6.0
+
 ## PlainTexts
 
 **Signature**
@@ -104,6 +120,7 @@ export declare const PlainTexts: (content: readonly Markdown[]) => Markdown
 ```
 
 Added in v0.6.0
+
 ## Strikethrough
 
 **Signature**
@@ -113,7 +130,9 @@ export declare const Strikethrough: (content: Markdown) => Markdown
 ```
 
 Added in v0.6.0
+
 # destructors
+
 ## fold
 
 **Signature**
@@ -132,7 +151,9 @@ export declare const fold: <R>(patterns: {
 ```
 
 Added in v0.6.0
+
 # instances
+
 ## monoidMarkdown
 
 **Signature**
@@ -142,6 +163,7 @@ export declare const monoidMarkdown: M.Monoid<Markdown>
 ```
 
 Added in v0.6.0
+
 ## semigroupMarkdown
 
 **Signature**
@@ -151,6 +173,7 @@ export declare const semigroupMarkdown: Semigroup<Markdown>
 ```
 
 Added in v0.6.0
+
 ## showMarkdown
 
 **Signature**
@@ -160,7 +183,9 @@ export declare const showMarkdown: Show<Markdown>
 ```
 
 Added in v0.6.0
+
 # model
+
 ## Bold (interface)
 
 **Signature**
@@ -173,6 +198,7 @@ export interface Bold {
 ```
 
 Added in v0.6.0
+
 ## Fence (interface)
 
 **Signature**
@@ -186,6 +212,7 @@ export interface Fence {
 ```
 
 Added in v0.6.0
+
 ## Header (interface)
 
 **Signature**
@@ -199,6 +226,7 @@ export interface Header {
 ```
 
 Added in v0.6.0
+
 ## Markdown (type alias)
 
 **Signature**
@@ -208,6 +236,7 @@ export type Markdown = Bold | Fence | Header | Newline | Paragraph | PlainText |
 ```
 
 Added in v0.6.0
+
 ## Newline (interface)
 
 **Signature**
@@ -219,6 +248,7 @@ export interface Newline {
 ```
 
 Added in v0.6.0
+
 ## Paragraph (interface)
 
 **Signature**
@@ -231,6 +261,7 @@ export interface Paragraph {
 ```
 
 Added in v0.6.0
+
 ## PlainText (interface)
 
 **Signature**
@@ -243,6 +274,7 @@ export interface PlainText {
 ```
 
 Added in v0.6.0
+
 ## PlainTexts (interface)
 
 **Signature**
@@ -255,6 +287,7 @@ export interface PlainTexts {
 ```
 
 Added in v0.6.0
+
 ## Printable (type alias)
 
 **Signature**
@@ -264,6 +297,7 @@ export type Printable = Class | Constant | Export | Function | Interface | TypeA
 ```
 
 Added in v0.6.0
+
 ## Strikethrough (interface)
 
 **Signature**
@@ -276,13 +310,75 @@ export interface Strikethrough {
 ```
 
 Added in v0.6.0
-# printer
+
+# printers
+
+## printClass
+
+**Signature**
+
+```ts
+export declare const printClass: (c: Class) => string
+```
+
+Added in v0.6.0
+
+## printConstant
+
+**Signature**
+
+```ts
+export declare const printConstant: (c: Constant) => string
+```
+
+Added in v0.6.0
+
+## printExport
+
+**Signature**
+
+```ts
+export declare const printExport: (e: Export) => string
+```
+
+Added in v0.6.0
+
+## printFunction
+
+**Signature**
+
+```ts
+export declare const printFunction: (f: Function) => string
+```
+
+Added in v0.6.0
+
+## printInterface
+
+**Signature**
+
+```ts
+export declare const printInterface: (i: Interface) => string
+```
+
+Added in v0.6.0
+
 ## printModule
 
 **Signature**
 
 ```ts
 export declare const printModule: (module: Module, order: number) => string
+```
+
+Added in v0.6.0
+
+## printTypeAlias
+
+**Signature**
+
+```ts
+export declare const printTypeAlias: (f: TypeAlias) => string
 ```
 
 Added in v0.6.0

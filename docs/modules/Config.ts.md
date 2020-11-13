@@ -3,9 +3,11 @@ title: Config.ts
 nav_order: 1
 parent: Modules
 ---
+
 ## Config overview
 
 Added in v0.6.0
+
 ---
 
 <h2 class="text-delta">Table of contents</h2>
@@ -28,9 +30,11 @@ Added in v0.6.0
   - [Settings (interface)](#settings-interface)
 - [utils](#utils)
   - [decode](#decode)
+
 ---
 
 # combinators
+
 ## updateEnforceDescriptions
 
 **Signature**
@@ -40,6 +44,7 @@ export declare const updateEnforceDescriptions: (enforceDescriptions: boolean) =
 ```
 
 Added in v0.6.0
+
 ## updateEnforceExamples
 
 **Signature**
@@ -49,6 +54,7 @@ export declare const updateEnforceExamples: (enforceExamples: boolean) => (wa: C
 ```
 
 Added in v0.6.0
+
 ## updateExclusions
 
 **Signature**
@@ -58,6 +64,7 @@ export declare const updateExclusions: (exclude: readonly string[]) => (wa: Conf
 ```
 
 Added in v0.6.0
+
 ## updateOutDir
 
 **Signature**
@@ -67,6 +74,7 @@ export declare const updateOutDir: (outDir: string) => (wa: ConfigBuilder) => Se
 ```
 
 Added in v0.6.0
+
 ## updateSearchEnabled
 
 **Signature**
@@ -76,6 +84,7 @@ export declare const updateSearchEnabled: (enableSearch: boolean) => (wa: Config
 ```
 
 Added in v0.6.0
+
 ## updateSourceDir
 
 **Signature**
@@ -85,6 +94,7 @@ export declare const updateSourceDir: (srcDir: string) => (wa: ConfigBuilder) =>
 ```
 
 Added in v0.6.0
+
 ## updateTheme
 
 **Signature**
@@ -94,7 +104,9 @@ export declare const updateTheme: (theme: string) => (wa: ConfigBuilder) => Sett
 ```
 
 Added in v0.6.0
+
 # constructors
+
 ## build
 
 **Signature**
@@ -104,7 +116,9 @@ export declare const build: (projectName: string, projectHomepage: string) => Co
 ```
 
 Added in v0.6.0
+
 # destructors
+
 ## resolveSettings
 
 **Signature**
@@ -114,7 +128,9 @@ export declare const resolveSettings: (builder: ConfigBuilder) => Settings
 ```
 
 Added in v0.6.0
+
 # model
+
 ## Config (interface)
 
 **Signature**
@@ -132,6 +148,7 @@ export interface Config {
 ```
 
 Added in v0.6.0
+
 ## ConfigBuilder (interface)
 
 **Signature**
@@ -141,6 +158,7 @@ export interface ConfigBuilder extends T.Traced<Config, Settings> {}
 ```
 
 Added in v0.6.0
+
 ## Settings (interface)
 
 **Signature**
@@ -160,7 +178,9 @@ export interface Settings {
 ```
 
 Added in v0.6.0
+
 # utils
+
 ## decode
 
 **Signature**

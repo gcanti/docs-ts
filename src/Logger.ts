@@ -42,45 +42,6 @@ export interface LogEntry {
 }
 
 // -------------------------------------------------------------------------------------
-// constructors
-// -------------------------------------------------------------------------------------
-
-const getLoggerEntry = (withColor: (...message: ReadonlyArray<string>) => string): L.LoggerTask<LogEntry> => entry =>
-  T.fromIO(C.log(withColor(showEntry.show(entry))))
-
-const debugLogger = L.filter(getLoggerEntry(chalk.cyan), e => e.level === 'DEBUG')
-
-const errorLogger = L.filter(getLoggerEntry(chalk.bold.red), e => e.level === 'ERROR')
-
-const infoLogger = L.filter(getLoggerEntry(chalk.bold.magenta), e => e.level === 'INFO')
-
-const mainLogger = pipe([debugLogger, errorLogger, infoLogger], M.fold(L.getMonoid<LogEntry>()))
-
-const logWithLevel = (level: LogLevel) => (message: string): T.Task<void> =>
-  pipe(
-    T.fromIO(D.create),
-    T.chain(date => mainLogger({ message, date, level }))
-  )
-
-/**
- * @category constructors
- * @since 0.6.0
- */
-export const debug: (message: string) => T.Task<void> = logWithLevel('DEBUG')
-
-/**
- * @category constructors
- * @since 0.6.0
- */
-export const error: (message: string) => T.Task<void> = logWithLevel('ERROR')
-
-/**
- * @category constructors
- * @since 0.6.0
- */
-export const info: (message: string) => T.Task<void> = logWithLevel('INFO')
-
-// -------------------------------------------------------------------------------------
 // instances
 // -------------------------------------------------------------------------------------
 
@@ -107,3 +68,42 @@ export const Logger: Logger = {
   error: message => pipe(TE.fromTask<Error, void>(error(message)), TE.mapLeft(toErrorMsg)),
   info: message => pipe(TE.fromTask<Error, void>(info(message)), TE.mapLeft(toErrorMsg))
 }
+
+// -------------------------------------------------------------------------------------
+// utils
+// -------------------------------------------------------------------------------------
+
+const getLoggerEntry = (withColor: (...message: ReadonlyArray<string>) => string): L.LoggerTask<LogEntry> => entry =>
+  T.fromIO(C.log(withColor(showEntry.show(entry))))
+
+const debugLogger = L.filter(getLoggerEntry(chalk.cyan), e => e.level === 'DEBUG')
+
+const errorLogger = L.filter(getLoggerEntry(chalk.bold.red), e => e.level === 'ERROR')
+
+const infoLogger = L.filter(getLoggerEntry(chalk.bold.magenta), e => e.level === 'INFO')
+
+const mainLogger = pipe([debugLogger, errorLogger, infoLogger], M.fold(L.getMonoid<LogEntry>()))
+
+const logWithLevel = (level: LogLevel) => (message: string): T.Task<void> =>
+  pipe(
+    T.fromIO(D.create),
+    T.chain(date => mainLogger({ message, date, level }))
+  )
+
+/**
+ * @category utils
+ * @since 0.6.0
+ */
+export const debug: (message: string) => T.Task<void> = logWithLevel('DEBUG')
+
+/**
+ * @category utils
+ * @since 0.6.0
+ */
+export const error: (message: string) => T.Task<void> = logWithLevel('ERROR')
+
+/**
+ * @category utils
+ * @since 0.6.0
+ */
+export const info: (message: string) => T.Task<void> = logWithLevel('INFO')

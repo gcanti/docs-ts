@@ -44,7 +44,11 @@ import {
  */
 export interface Parser<A> extends RE.ReaderEither<Env, string, A> {}
 
-interface Env extends Settings {
+/**
+ * @category model
+ * @since 0.6.0
+ */
+export interface Env extends Settings {
   readonly path: RNEA.ReadonlyNonEmptyArray<string>
   readonly sourceFile: ast.SourceFile
 }
@@ -289,7 +293,7 @@ const getFunctionDeclarationJSDocs = (fd: ast.FunctionDeclaration): ReadonlyArra
 
 const parseFunctionDeclaration = (fd: ast.FunctionDeclaration): Parser<Function> =>
   pipe(
-    RE.ask<Env, string>(),
+    RE.ask<Env>(),
     RE.chain<Env, string, Env, string>(env =>
       pipe(
         O.fromNullable(fd.getName()),
@@ -485,13 +489,13 @@ export const parseConstants: Parser<ReadonlyArray<Constant>> = pipe(
 
 const parseExportSpecifier = (es: ast.ExportSpecifier): Parser<Export> =>
   pipe(
-    RE.ask<Env, string>(),
+    RE.ask<Env>(),
     RE.chain(env =>
       pipe(
         RE.of<Env, string, string>(es.compilerNode.name.text),
         RE.bindTo('name'),
-        RE.bind('type', () => RE.of<Env, string, string>(stripImportTypes(es.getType().getText(es)))),
-        RE.bind('signature', ({ name, type }) => RE.of<Env, string, string>(`export declare const ${name}: ${type}`)),
+        RE.bind('type', () => RE.of(stripImportTypes(es.getType().getText(es)))),
+        RE.bind('signature', ({ name, type }) => RE.of(`export declare const ${name}: ${type}`)),
         RE.chain(({ name, signature }) =>
           pipe(
             es.getLeadingCommentRanges(),
@@ -705,7 +709,7 @@ const getModuleName = (path: RNEA.ReadonlyNonEmptyArray<string>): string => Path
  * @internal
  */
 export const parseModuleDocumentation: Parser<Documentable> = pipe(
-  RE.ask<Env, string>(),
+  RE.ask<Env>(),
   RE.chainEitherK(env => {
     const name = getModuleName(env.path)
     const onMissingDocumentation = () => E.left(`Missing documentation in ${env.path.join('/')} module`)
@@ -733,7 +737,7 @@ export const parseModuleDocumentation: Parser<Documentable> = pipe(
  * @since 0.6.0
  */
 export const parseModule: Parser<Module> = pipe(
-  RE.ask<Env, string>(),
+  RE.ask<Env>(),
   RE.chain(env =>
     pipe(
       parseModuleDocumentation,
@@ -753,7 +757,7 @@ export const parseModule: Parser<Module> = pipe(
 
 const parseFile = (project: ast.Project) => (file: File): RTE.ReaderTaskEither<Settings, string, Module> =>
   pipe(
-    RTE.ask<Settings, string>(),
+    RTE.ask<Settings>(),
     RTE.chain<Settings, string, Settings, Module>(settings =>
       pipe(
         file.path.split(Path.sep),

@@ -54,7 +54,6 @@
     "@types/rimraf": "^2.0.2",
     "doctoc": "^1.4.0",
     "jest": "^24.8.0",
-    "mocha": "^5.2.0",
     "prettier": "^1.19.1",
     "ts-jest": "^24.0.2",
     "tslint": "^5.12.1",

@@ -42,32 +42,18 @@ export interface LogEntry {
 }
 
 // -------------------------------------------------------------------------------------
-// instances
+// constructors
 // -------------------------------------------------------------------------------------
 
-const showDate: S.Show<Date> = {
-  show: date => `${date.toLocaleDateString()} | ${date.toLocaleTimeString()}`
-}
-
 /**
- * @category instances
+ * @category constructors
  * @since 0.6.0
  */
-export const showEntry: S.Show<LogEntry> = {
-  show: ({ message, date, level }) => `${showDate.show(date)} | ${level} | ${message}`
-}
-
-const toErrorMsg = (err: Error): string => String(err.message)
-
-/**
- * @category instances
- * @since 0.6.0
- */
-export const Logger: Logger = {
-  debug: message => pipe(TE.fromTask<Error, void>(debug(message)), TE.mapLeft(toErrorMsg)),
-  error: message => pipe(TE.fromTask<Error, void>(error(message)), TE.mapLeft(toErrorMsg)),
-  info: message => pipe(TE.fromTask<Error, void>(info(message)), TE.mapLeft(toErrorMsg))
-}
+export const LogEntry = (message: string, date: Date, level: LogLevel): LogEntry => ({
+  message,
+  date,
+  level
+})
 
 // -------------------------------------------------------------------------------------
 // utils
@@ -107,3 +93,34 @@ export const error: (message: string) => T.Task<void> = logWithLevel('ERROR')
  * @since 0.6.0
  */
 export const info: (message: string) => T.Task<void> = logWithLevel('INFO')
+
+// -------------------------------------------------------------------------------------
+// instances
+// -------------------------------------------------------------------------------------
+
+const showDate: S.Show<Date> = {
+  show: date => `${date.toLocaleDateString()} | ${date.toLocaleTimeString()}`
+}
+
+/**
+ * @category instances
+ * @since 0.6.0
+ */
+export const showEntry: S.Show<LogEntry> = {
+  show: ({ message, date, level }) => `${showDate.show(date)} | ${level} | ${message}`
+}
+
+/**
+ * @internal
+ */
+export const toErrorMsg = (err: Error): string => String(err.message)
+
+/**
+ * @category instances
+ * @since 0.6.0
+ */
+export const Logger: Logger = {
+  debug: message => pipe(TE.fromTask<Error, void>(debug(message)), TE.mapLeft(toErrorMsg)),
+  error: message => pipe(TE.fromTask<Error, void>(error(message)), TE.mapLeft(toErrorMsg)),
+  info: message => pipe(TE.fromTask<Error, void>(info(message)), TE.mapLeft(toErrorMsg))
+}

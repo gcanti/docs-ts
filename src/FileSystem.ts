@@ -55,7 +55,10 @@ export const File = (path: string, content: string, overwrite: boolean = false):
 // utils
 // -------------------------------------------------------------------------------------
 
-const toErrorMsg = (err: Error): string => String(err.message)
+/**
+ * @internal
+ */
+export const toErrorMsg = (err: Error): string => String(err.message)
 
 /**
  * Reads a file.

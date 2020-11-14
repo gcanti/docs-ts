@@ -103,6 +103,12 @@ describe('FileSystem', () => {
 
       assert.deepStrictEqual(found, E.right(true))
     })
+
+    it('toErrorMsg', () => {
+      const msg = _.toErrorMsg(new Error('test'))
+
+      assert.strictEqual(msg, 'test')
+    })
   })
 
   describe('instances', () => {

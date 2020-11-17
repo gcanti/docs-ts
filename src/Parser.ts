@@ -3,6 +3,7 @@
  */
 import * as Apply from 'fp-ts/Apply'
 import * as E from 'fp-ts/Either'
+import * as IOE from 'fp-ts/IOEither'
 import * as M from 'fp-ts/Monoid'
 import * as O from 'fp-ts/Option'
 import * as Ord from 'fp-ts/Ord'
@@ -12,7 +13,7 @@ import * as RTE from 'fp-ts/ReaderTaskEither'
 import * as RNEA from 'fp-ts/ReadonlyNonEmptyArray'
 import * as RR from 'fp-ts/ReadonlyRecord'
 import * as S from 'fp-ts/Semigroup'
-import { constFalse, constTrue, flow, not, pipe, Endomorphism, Predicate } from 'fp-ts/function'
+import { flow, not, pipe, Endomorphism, Predicate } from 'fp-ts/function'
 import * as ast from 'ts-morph'
 import * as doctrine from 'doctrine'
 import * as Path from 'path'
@@ -115,7 +116,10 @@ const sortModules = RA.sort(ordModule)
 
 const isNonEmptyString = (s: string) => s.length > 0
 
-const stripImportTypes: Endomorphism<string> = s => s.replace(/import\("((?!").)*"\)./g, '')
+/**
+ * @internal
+ */
+export const stripImportTypes: Endomorphism<string> = s => s.replace(/import\("((?!").)*"\)./g, '')
 
 const getJSDocText: (jsdocs: ReadonlyArray<ast.JSDoc>) => string = RA.foldRight(
   () => '',
@@ -174,11 +178,12 @@ const getDescription = (name: string, comment: Comment): Parser<O.Option<string>
     RE.chainEitherK(env =>
       pipe(
         comment.description,
-        O.traverse(E.Applicative)(description => E.right(description)),
-        E.alt(() =>
-          env.enforceDescriptions
-            ? E.left(`Missing description in ${env.path.join('/')}#${name} documentation`)
-            : E.right(O.none)
+        O.fold(
+          () =>
+            env.enforceDescriptions
+              ? E.left(`Missing description in ${env.path.join('/')}#${name} documentation`)
+              : E.right(O.none),
+          description => E.right(O.some(description))
         )
       )
     )
@@ -591,12 +596,15 @@ const parseProperty = (classname: string) => (pd: ast.PropertyDeclaration): Pars
   const name = pd.getName()
   return pipe(
     getJSDocText(pd.getJsDocs()),
-    getCommentInfo(`${classname}#$${name}`),
+    getCommentInfo(`${classname}#${name}`),
     RE.map(info => {
       const type = stripImportTypes(pd.getType().getText(pd))
       const readonly = pipe(
         O.fromNullable(pd.getFirstModifierByKind(ast.ts.SyntaxKind.ReadonlyKeyword)),
-        O.fold(constFalse, constTrue)
+        O.fold(
+          () => '',
+          () => 'readonly '
+        )
       )
       const signature = `${readonly}${name}: ${type}`
       return Property(
@@ -755,37 +763,46 @@ export const parseModule: Parser<Module> = pipe(
   )
 )
 
-const parseFile = (project: ast.Project) => (file: File): RTE.ReaderTaskEither<Settings, string, Module> =>
+// -------------------------------------------------------------------------------------
+// files
+// -------------------------------------------------------------------------------------
+
+/**
+ * @internal
+ */
+export const parseFile = (project: ast.Project) => (file: File): RTE.ReaderTaskEither<Settings, string, Module> =>
   pipe(
     RTE.ask<Settings>(),
-    RTE.chain<Settings, string, Settings, Module>(settings =>
+    RTE.chain(settings =>
       pipe(
-        file.path.split(Path.sep),
-        RNEA.fromReadonlyArray,
-        RTE.fromOption(() => `Invalid path detected: ${file.path}`),
+        RTE.right<Settings, string, RNEA.ReadonlyNonEmptyArray<string>>(file.path.split(Path.sep) as any),
         RTE.bindTo('path'),
-        RTE.bind('sourceFile', () =>
-          pipe(
-            O.fromNullable(project.getSourceFile(file.path)),
-            RTE.fromOption(() => `Unable to locate file ${file.path}`)
-          )
+        RTE.bind(
+          'sourceFile',
+          (): RTE.ReaderTaskEither<Settings, string, ast.SourceFile> =>
+            pipe(
+              O.fromNullable(project.getSourceFile(file.path)),
+              RTE.fromOption(() => `Unable to locate file: ${file.path}`)
+            )
         ),
         RTE.chainEitherK(env => parseModule({ ...settings, ...env }))
       )
     )
   )
 
-const createProject = (files: ReadonlyArray<File>): ast.Project => {
-  const project = new ast.Project()
-  files.forEach(file => {
-    project.addSourceFileAtPath(file.path)
-  })
-  return project
-}
+const addFileToProject = (file: File, project: ast.Project): ast.SourceFile => project.addSourceFileAtPath(file.path)
 
-// -------------------------------------------------------------------------------------
-// files
-// -------------------------------------------------------------------------------------
+const createProject = (files: ReadonlyArray<File>): RTE.ReaderTaskEither<Settings, string, ast.Project> =>
+  pipe(
+    RTE.fromIO<Settings, string, ast.Project>(() => new ast.Project()),
+    RTE.chainIOEitherK(project =>
+      pipe(
+        files,
+        RA.traverse(IOE.ApplicativePar)(file => IOE.tryCatch(() => addFileToProject(file, project), String)),
+        IOE.map(() => project)
+      )
+    )
+  )
 
 /**
  * @category parsers
@@ -793,8 +810,8 @@ const createProject = (files: ReadonlyArray<File>): ast.Project => {
  */
 export const parseFiles = (files: ReadonlyArray<File>): RTE.ReaderTaskEither<Settings, string, ReadonlyArray<Module>> =>
   pipe(
-    files,
-    RA.traverse(RTE.getReaderTaskValidation(semigroupError))(parseFile(createProject(files))),
+    createProject(files),
+    RTE.chain(project => pipe(files, RA.traverse(RTE.getReaderTaskValidation(semigroupError))(parseFile(project)))),
     RTE.map(
       flow(
         RA.filter(module => !module.deprecated),

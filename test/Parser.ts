@@ -446,7 +446,7 @@ describe('Parser', () => {
         )
       })
 
-      it('should not include variables declared in a for loops', () => {
+      it('should not include variables declared in for loops', () => {
         const env = getTestEnv(
           ` const object = { a: 1, b: 2, c: 3 };
 

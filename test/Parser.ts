@@ -963,12 +963,21 @@ export function f(a: number, b: number): { [key: string]: number } {
       })
 
       it('should not parse a non-existent file', async () => {
-        const files = [FS.File('test/fixtures/non-existent.ts', '')]
+        const FILE_NAME = 'test/fixtures/non-existent.ts'
+        const files = [FS.File(FILE_NAME, '')]
 
-        assert.deepStrictEqual(
-          await pipe(settings, _.parseFiles(files))(),
-          E.left(
-            'Error: File not found: /Users/maxbrown/Documents/projects/packages/docs-ts/test/fixtures/non-existent.ts'
+        const result = await pipe(settings, _.parseFiles(files))()
+
+        pipe(
+          result,
+          E.fold(
+            error => {
+              assert.equal(error.includes('Error: File not found'), true)
+              assert.equal(error.includes(FILE_NAME), true)
+            },
+            _ => {
+              throw new Error('Got a Right, wanted a Left')
+            }
           )
         )
       })

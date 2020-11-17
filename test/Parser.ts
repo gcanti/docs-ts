@@ -445,6 +445,18 @@ describe('Parser', () => {
           ])
         )
       })
+
+      it('should not include variables declared in a for loops', () => {
+        const env = getTestEnv(
+          ` const object = { a: 1, b: 2, c: 3 };
+
+            for (const property in object) {
+              console.log(property);
+            }`
+        )
+
+        assert.deepStrictEqual(pipe(env, _.parseConstants), E.right([]))
+      })
     })
 
     describe('parseClasses', () => {

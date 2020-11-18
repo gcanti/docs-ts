@@ -2,9 +2,7 @@ module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
   collectCoverage: true,
-  collectCoverageFrom: [
-    'src/**/*.ts',
-  ],
+  collectCoverageFrom: ['src/**/*.ts'],
   transform: {
     '^.+\\.tsx?$': 'ts-jest'
   },
@@ -18,5 +16,6 @@ module.exports = {
       statements: 100
     }
   },
-  modulePathIgnorePatterns: ['fixtures']
+  modulePathIgnorePatterns: ['fixtures'],
+  testPathIgnorePatterns: ['/node_modules/', 'test/utils.ts']
 }

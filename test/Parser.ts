@@ -9,6 +9,8 @@ import * as C from '../src/Config'
 import * as FS from '../src/FileSystem'
 import * as _ from '../src/Parser'
 
+import { assertLeft } from './utils'
+
 let testCounter = 0
 
 const project = new ast.Project()
@@ -980,18 +982,10 @@ export function f(a: number, b: number): { [key: string]: number } {
 
         const result = await pipe(settings, _.parseFiles(files))()
 
-        pipe(
-          result,
-          E.fold(
-            error => {
-              assert.equal(error.includes('Error: File not found'), true)
-              assert.equal(error.includes(FILE_NAME), true)
-            },
-            _ => {
-              throw new Error('Got a Right, wanted a Left')
-            }
-          )
-        )
+        assertLeft(result, error => {
+          assert.equal(error.includes('Error: File not found'), true)
+          assert.equal(error.includes(FILE_NAME), true)
+        })
       })
     })
   })

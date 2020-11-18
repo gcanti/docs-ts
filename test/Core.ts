@@ -11,6 +11,18 @@ import * as L from '../src/Logger'
 import * as FS from '../src/FileSystem'
 import { assertLeft, assertRight } from './utils'
 
+type FileSystemState = Record<string, string>
+
+const prefixWithCwd = (fs: FileSystemState) =>
+  pipe(
+    { ...fs },
+    R.reduceWithIndex({} as FileSystemState, (key, acc, content) => {
+      acc[path.join(process.cwd(), key)] = content
+
+      return acc
+    })
+  )
+
 // TODO: use WritterT ?
 const testLogger: L.Logger = {
   debug: (_msg: string) => TE.of(undefined),
@@ -19,30 +31,11 @@ const testLogger: L.Logger = {
 }
 
 // TODO: use WritterT ?
-const mkTestFileSystem = (
-  fs: Record<string, string>
-): { getState: () => Record<string, string>; fileSystem: FS.FileSystem } => {
-  const fileSystem = pipe(
-    { ...fs },
-    R.reduceWithIndex({} as Record<string, string>, (key, acc, content) => {
-      acc[path.join(process.cwd(), key)] = content
-
-      return acc
-    })
-  )
-
-  const getState = () =>
-    pipe(
-      fileSystem,
-      R.reduceWithIndex({} as Record<string, string>, (key, acc, content) => {
-        acc[key.replace(`${process.cwd()}/`, '')] = content
-
-        return acc
-      })
-    )
+const mkTestFileSystem = (fs: FileSystemState): { getState: () => FileSystemState; fileSystem: FS.FileSystem } => {
+  const fileSystem = { ...fs }
 
   return {
-    getState,
+    getState: () => fileSystem,
     fileSystem: {
       readFile: (path: string) =>
         pipe(
@@ -63,6 +56,7 @@ const mkTestFileSystem = (
             delete fileSystem[path]
           }
         })
+
         return TE.of(undefined)
       },
       search: (pattern: string, exclude: ReadonlyArray<string>) =>
@@ -77,8 +71,8 @@ const mkTestFileSystem = (
 }
 
 const mkTestCapabilites = (
-  fs: Record<string, string>
-): { getFileSystemState: () => Record<string, string>; capabilities: Core.Capabilities } => {
+  fs: FileSystemState
+): { getFileSystemState: () => FileSystemState; capabilities: Core.Capabilities } => {
   const { fileSystem, getState } = mkTestFileSystem(fs)
 
   return { capabilities: { ...testLogger, ...fileSystem }, getFileSystemState: getState }
@@ -96,7 +90,7 @@ describe('Core', () => {
       })
 
       it('fails on invalid JSON', async () => {
-        const { capabilities } = mkTestCapabilites({ 'package.json': '{"name": "docs-ts"' })
+        const { capabilities } = mkTestCapabilites(prefixWithCwd({ 'package.json': '{"name": "docs-ts"' }))
 
         assertLeft(await Core.main(capabilities)(), error =>
           assert.equal(error.startsWith('Unexpected end of JSON input'), true)
@@ -104,7 +98,7 @@ describe('Core', () => {
       })
 
       it('fails to decode', async () => {
-        const { capabilities } = mkTestCapabilites({ 'package.json': '{}' })
+        const { capabilities } = mkTestCapabilites(prefixWithCwd({ 'package.json': '{}' }))
 
         assertLeft(await Core.main(capabilities)(), error =>
           assert.equal(error.startsWith('Unable to decode package.json'), true)
@@ -112,7 +106,7 @@ describe('Core', () => {
       })
 
       it('fails on missing homepage', async () => {
-        const { capabilities } = mkTestCapabilites({ 'package.json': '{ "name": "docs-ts" }' })
+        const { capabilities } = mkTestCapabilites(prefixWithCwd({ 'package.json': '{ "name": "docs-ts" }' }))
 
         assertLeft(await Core.main(capabilities)(), error => assert.equal(error, 'Missing homepage in package.json'))
       })
@@ -120,10 +114,12 @@ describe('Core', () => {
 
     describe('docs-ts.json', () => {
       it('fails on invalid JSON', async () => {
-        const { capabilities } = mkTestCapabilites({
-          'package.json': '{ "name": "docs-ts", "homepage": "https://docs-ts.com" }',
-          'docs-ts.json': ''
-        })
+        const { capabilities } = mkTestCapabilites(
+          prefixWithCwd({
+            'package.json': '{ "name": "docs-ts", "homepage": "https://docs-ts.com" }',
+            'docs-ts.json': ''
+          })
+        )
 
         assertLeft(await Core.main(capabilities)(), error =>
           assert.equal(error.startsWith('Invalid configuration file detected'), true)
@@ -132,16 +128,33 @@ describe('Core', () => {
     })
 
     it('writes only base files when no source files are present', async () => {
-      const fs = { 'package.json': '{ "name": "docs-ts", "homepage": "https://docs-ts.com" }' }
-      const { capabilities, getFileSystemState } = mkTestCapabilites(fs)
+      const { capabilities, getFileSystemState } = mkTestCapabilites(
+        prefixWithCwd({ 'package.json': '{ "name": "docs-ts", "homepage": "https://docs-ts.com" }' })
+      )
 
       assertRight(await Core.main(capabilities)(), value => {
         assert.equal(value, undefined)
 
         const actual = Object.keys(getFileSystemState())
-        const expected = ['package.json', 'docs/_config.yml', 'docs/index.md', 'docs/modules/index.md']
+        const expected = [`${process.cwd()}/package.json`, 'docs/index.md', 'docs/modules/index.md', 'docs/_config.yml']
 
         assert.deepStrictEqual(actual, expected)
+      })
+    })
+
+    it('does not overwrite the base files', async () => {
+      const fs = {
+        ...prefixWithCwd({ 'package.json': '{ "name": "docs-ts", "homepage": "https://docs-ts.com" }' }),
+        'docs/_config.yml': '',
+        'docs/index.md': '',
+        'docs/modules/index.md': ''
+      }
+      const { capabilities, getFileSystemState } = mkTestCapabilites(fs)
+
+      assertRight(await Core.main(capabilities)(), value => {
+        assert.equal(value, undefined)
+
+        assert.deepStrictEqual(fs, getFileSystemState())
       })
     })
   })

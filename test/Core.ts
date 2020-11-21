@@ -141,21 +141,5 @@ describe('Core', () => {
         assert.deepStrictEqual(actual, expected)
       })
     })
-
-    it('does not overwrite the base files', async () => {
-      const fs = {
-        ...prefixWithCwd({ 'package.json': '{ "name": "docs-ts", "homepage": "https://docs-ts.com" }' }),
-        'docs/_config.yml': '',
-        'docs/index.md': '',
-        'docs/modules/index.md': ''
-      }
-      const { capabilities, getFileSystemState } = mkTestCapabilites(fs)
-
-      assertRight(await Core.main(capabilities)(), value => {
-        assert.equal(value, undefined)
-
-        assert.deepStrictEqual(fs, getFileSystemState())
-      })
-    })
   })
 })

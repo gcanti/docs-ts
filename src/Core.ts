@@ -107,12 +107,10 @@ const writeFile = (file: FS.File): Effect<void> => {
         C.exists(file.path),
         TE.chain(exists =>
           exists
-            ? file.overwrite
-              ? pipe(
-                  C.readFile(file.path),
-                  TE.map(content => Eq.eqString.equals(content, file.content))
-                )
-              : TE.of(true)
+            ? pipe(
+                C.readFile(file.path),
+                TE.map(content => Eq.eqString.equals(content, file.content))
+              )
             : TE.of(false)
         )
       )

@@ -966,8 +966,8 @@ export function f(a: number, b: number): { [key: string]: number } {
         const result = await pipe(settings, _.parseFiles(files))()
 
         assertLeft(result, error => {
-          assert.equal(error.includes('Error: File not found'), true)
-          assert.equal(error.includes(FILE_NAME), true)
+          assert.strictEqual(error.includes('Error: File not found'), true)
+          assert.strictEqual(error.includes(FILE_NAME), true)
         })
       })
     })

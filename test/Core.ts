@@ -82,7 +82,7 @@ describe('Core', () => {
         const { capabilities } = mkTestCapabilites({})
 
         assertLeft(await Core.main(capabilities)(), error =>
-          assert.equal(error.startsWith('Unable to read package.json'), true)
+          assert.strictEqual(error.startsWith('Unable to read package.json'), true)
         )
       })
 
@@ -90,7 +90,7 @@ describe('Core', () => {
         const { capabilities } = mkTestCapabilites(prefixWithCwd({ 'package.json': '{"name": "docs-ts"' }))
 
         assertLeft(await Core.main(capabilities)(), error =>
-          assert.equal(error.startsWith('Unexpected end of JSON input'), true)
+          assert.strictEqual(error.startsWith('Unexpected end of JSON input'), true)
         )
       })
 
@@ -98,14 +98,16 @@ describe('Core', () => {
         const { capabilities } = mkTestCapabilites(prefixWithCwd({ 'package.json': '{}' }))
 
         assertLeft(await Core.main(capabilities)(), error =>
-          assert.equal(error.startsWith('Unable to decode package.json'), true)
+          assert.strictEqual(error.startsWith('Unable to decode package.json'), true)
         )
       })
 
       it('fails on missing homepage', async () => {
         const { capabilities } = mkTestCapabilites(prefixWithCwd({ 'package.json': '{ "name": "docs-ts" }' }))
 
-        assertLeft(await Core.main(capabilities)(), error => assert.equal(error, 'Missing homepage in package.json'))
+        assertLeft(await Core.main(capabilities)(), error =>
+          assert.strictEqual(error, 'Missing homepage in package.json')
+        )
       })
     })
 
@@ -119,7 +121,7 @@ describe('Core', () => {
         )
 
         assertLeft(await Core.main(capabilities)(), error =>
-          assert.equal(error.startsWith('Invalid configuration file detected'), true)
+          assert.strictEqual(error.startsWith('Invalid configuration file detected'), true)
         )
       })
     })
@@ -130,7 +132,7 @@ describe('Core', () => {
       )
 
       assertRight(await Core.main(capabilities)(), value => {
-        assert.equal(value, undefined)
+        assert.strictEqual(value, undefined)
 
         const actual = Object.keys(getFileSystemState())
         const expected = [`${process.cwd()}/package.json`, 'docs/index.md', 'docs/modules/index.md', 'docs/_config.yml']

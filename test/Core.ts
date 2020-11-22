@@ -14,14 +14,11 @@ import { assertLeft, assertRight } from './utils'
 type FileSystemState = Record<string, string>
 
 const prefixWithCwd = (fs: FileSystemState) =>
-  pipe(
-    { ...fs },
-    R.reduceWithIndex({} as FileSystemState, (key, acc, content) => {
-      acc[path.join(process.cwd(), key)] = content
+  R.reduceWithIndex<string, string, FileSystemState>({}, (key, acc, content) => {
+    acc[path.join(process.cwd(), key)] = content
 
-      return acc
-    })
-  )
+    return acc
+  })(fs)
 
 // TODO: use WritterT ?
 const testLogger: L.Logger = {

@@ -218,7 +218,7 @@ export const fold = <R>(patterns: {
       case 'Strikethrough':
         return patterns.Strikethrough(x.content)
       default:
-        return absurd<R>(x as never)
+        return absurd<R>(x)
     }
   }
   return f
@@ -428,7 +428,7 @@ const fromPrintable = (p: Printable): Markdown => {
     case 'TypeAlias':
       return fromTypeAlias(p)
     default:
-      return absurd<Markdown>(p as never)
+      return absurd<Markdown>(p)
   }
 }
 

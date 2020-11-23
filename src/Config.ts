@@ -34,7 +34,7 @@ export interface Config {
   readonly enableSearch: boolean
   readonly enforceDescriptions: boolean
   readonly enforceExamples: boolean
-  readonly enforceSince: boolean
+  readonly enforceVersion: boolean
   readonly exclude: ReadonlyArray<string>
 }
 
@@ -51,7 +51,7 @@ export interface Settings {
   readonly enableSearch: boolean
   readonly enforceDescriptions: boolean
   readonly enforceExamples: boolean
-  readonly enforceSince: boolean
+  readonly enforceVersion: boolean
   readonly exclude: ReadonlyArray<string>
 }
 
@@ -71,7 +71,7 @@ const monoidConfig: M.Monoid<Config> = M.getStructMonoid({
   enableSearch: getMonoidSetting<boolean>(true),
   enforceDescriptions: getMonoidSetting<boolean>(false),
   enforceExamples: getMonoidSetting<boolean>(false),
-  enforceSince: getMonoidSetting<boolean>(true),
+  enforceVersion: getMonoidSetting<boolean>(true),
   exclude: getMonoidSetting<ReadonlyArray<string>>(RA.empty)
 })
 
@@ -177,11 +177,11 @@ export const updateEnforceExamples = (enforceExamples: boolean) => (wa: ConfigBu
  * @category combinators
  * @since 0.6.0
  */
-export const updateEnforceSince = (enforceSince: boolean) => (wa: ConfigBuilder): ConfigBuilder =>
+export const updateEnforceVersion = (enforceVersion: boolean) => (wa: ConfigBuilder): ConfigBuilder =>
   C.extend(wa, builder =>
     builder({
       ...monoidConfig.empty,
-      enforceSince
+      enforceVersion
     })
   )
 
@@ -232,7 +232,7 @@ export const decode = (input: unknown): TE.TaskEither<string, Partial<Config>> =
         enableSearch: TD.boolean,
         enforceDescriptions: TD.boolean,
         enforceExamples: TD.boolean,
-        enforceSince: TD.boolean,
+        enforceVersion: TD.boolean,
         exclude: TD.array(TD.string)
       })
     )

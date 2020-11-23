@@ -153,7 +153,7 @@ const getSinceTag = (name: string, comment: Comment): Parser<O.Option<string>> =
         O.chain(RNEA.head),
         O.fold(
           () =>
-            env.enforceSince
+            env.enforceVersion
               ? E.left(`Missing @since tag in ${env.path.join('/')}#${name} documentation`)
               : E.right(O.none),
           since => E.right(O.some(since))

@@ -23,7 +23,7 @@ const settings: C.Settings = {
   enableSearch: true,
   enforceDescriptions: false,
   enforceExamples: false,
-  enforceSince: true,
+  enforceVersion: true,
   exclude: RA.empty
 }
 
@@ -1066,7 +1066,7 @@ export function f(a: number, b: number): { [key: string]: number } {
         )
       })
 
-      it('should allow no since tag if `enforceSince` is set to false', () => {
+      it('should allow no since tag if `enforceVersion` is set to false', () => {
         const env = getTestEnv('')
 
         const text = `/**
@@ -1075,7 +1075,7 @@ export function f(a: number, b: number): { [key: string]: number } {
 */`
 
         assert.deepStrictEqual(
-          pipe({ ...env, enforceSince: false }, _.getCommentInfo('name')(text)),
+          pipe({ ...env, enforceVersion: false }, _.getCommentInfo('name')(text)),
           E.right({
             description: O.some('description'),
             since: O.none,

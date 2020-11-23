@@ -359,23 +359,25 @@ const getFunctionDeclarations: RE.ReaderEither<
   ),
   arrows: pipe(
     env.sourceFile.getVariableDeclarations(),
-    RA.filter(vd => {
-      const parent = vd.getParent()
-      if (isVariableDeclarationList(parent)) {
-        const vs = parent.getParent()
-        if (isVariableStatement(vs)) {
-          return pipe(
+    RA.filter(
+      every([
+        vd => isVariableDeclarationList(vd.getParent()),
+        vd => isVariableStatement(vd.getParent().getParent() as any),
+        vd =>
+          pipe(
             vd.getInitializer(),
             every([
-              () => not(flow(getJSDocText, parseComment, shouldIgnore))(vs.getJsDocs()),
-              () => vs.isExported(),
+              () =>
+                pipe(
+                  (vd.getParent().getParent() as ast.VariableStatement).getJsDocs(),
+                  not(flow(getJSDocText, parseComment, shouldIgnore))
+                ),
+              () => (vd.getParent().getParent() as ast.VariableStatement).isExported(),
               flow(O.fromNullable, O.chain(O.fromPredicate(ast.TypeGuards.isFunctionLikeDeclaration)), O.isSome)
             ])
           )
-        }
-      }
-      return false
-    })
+      ])
+    )
   )
 }))
 
@@ -466,23 +468,25 @@ export const parseConstants: Parser<ReadonlyArray<Constant>> = pipe(
   RE.asks((env: Env) =>
     pipe(
       env.sourceFile.getVariableDeclarations(),
-      RA.filter(vd => {
-        const parent = vd.getParent()
-        if (isVariableDeclarationList(parent)) {
-          const vs = parent.getParent()
-          if (isVariableStatement(vs)) {
-            return pipe(
+      RA.filter(
+        every([
+          vd => isVariableDeclarationList(vd.getParent()),
+          vd => isVariableStatement(vd.getParent().getParent() as any),
+          vd =>
+            pipe(
               vd.getInitializer(),
               every([
-                () => not(flow(getJSDocText, parseComment, shouldIgnore))(vs.getJsDocs()),
-                () => vs.isExported(),
+                () =>
+                  pipe(
+                    (vd.getParent().getParent() as ast.VariableStatement).getJsDocs(),
+                    not(flow(getJSDocText, parseComment, shouldIgnore))
+                  ),
+                () => (vd.getParent().getParent() as ast.VariableStatement).isExported(),
                 flow(O.fromNullable, O.chain(O.fromPredicate(not(ast.TypeGuards.isFunctionLikeDeclaration))), O.isSome)
               ])
             )
-          }
-        }
-        return false
-      })
+        ])
+      )
     )
   ),
   RE.chain(traverse(parseConstantVariableDeclaration))
@@ -629,7 +633,10 @@ const parseProperties = (name: string, c: ast.ClassDeclaration): Parser<Readonly
     traverse(parseProperty(name))
   )
 
-const getConstructorDeclarationSignature = (c: ast.ConstructorDeclaration): string =>
+/**
+ * @internal
+ */
+export const getConstructorDeclarationSignature = (c: ast.ConstructorDeclaration): string =>
   pipe(
     O.fromNullable(c.compilerNode.body),
     O.fold(

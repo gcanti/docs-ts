@@ -19,6 +19,7 @@ describe('Config', () => {
         enableSearch: true,
         enforceDescriptions: false,
         enforceExamples: false,
+        enforceSince: true,
         exclude: RA.empty
       })
     })
@@ -90,7 +91,7 @@ describe('Config', () => {
       })
     })
 
-    it('updateEnforceDescriptions', () => {
+    it('updateEnforceExamples', () => {
       const config = pipe(
         _.build('docs-ts', 'https://github.com/gcanti/docs-ts'),
         _.updateEnforceExamples(true),
@@ -100,6 +101,19 @@ describe('Config', () => {
       assert.deepStrictEqual(config, {
         ...defaultSettings,
         enforceExamples: true
+      })
+    })
+
+    it('updateEnforceSince', () => {
+      const config = pipe(
+        _.build('docs-ts', 'https://github.com/gcanti/docs-ts'),
+        _.updateEnforceSince(false),
+        _.resolveSettings
+      )
+
+      assert.deepStrictEqual(config, {
+        ...defaultSettings,
+        enforceSince: false
       })
     })
 

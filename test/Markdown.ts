@@ -20,28 +20,36 @@ const content = _.PlainText('a')
 
 const testCases = {
   class: Class(
-    Documentable('A', O.some('a class'), '1.0.0', false, ['example 1'], O.some('category')),
+    Documentable('A', O.some('a class'), O.some('1.0.0'), false, ['example 1'], O.some('category')),
     'declare class A { constructor() }',
-    [Method(Documentable('hasOwnProperty', O.none, '1.0.0', false, RA.empty, O.none), ['hasOwnProperty(): boolean'])],
-    [Method(Documentable('staticTest', O.none, '1.0.0', false, RA.empty, O.none), ['static testStatic(): string;'])],
-    [Property(Documentable('foo', O.none, '1.0.0', false, RA.empty, O.none), 'foo: string')]
+    [
+      Method(Documentable('hasOwnProperty', O.none, O.some('1.0.0'), false, RA.empty, O.none), [
+        'hasOwnProperty(): boolean'
+      ])
+    ],
+    [
+      Method(Documentable('staticTest', O.none, O.some('1.0.0'), false, RA.empty, O.none), [
+        'static testStatic(): string;'
+      ])
+    ],
+    [Property(Documentable('foo', O.none, O.some('1.0.0'), false, RA.empty, O.none), 'foo: string')]
   ),
   constant: Constant(
-    Documentable('test', O.some('the test'), '1.0.0', false, RA.empty, O.some('constants')),
+    Documentable('test', O.some('the test'), O.some('1.0.0'), false, RA.empty, O.some('constants')),
     'declare const test: string'
   ),
   export: Export(
-    Documentable('test', O.none, '1.0.0', false, RA.empty, O.none),
+    Documentable('test', O.none, O.some('1.0.0'), false, RA.empty, O.none),
     'export declare const test: typeof test'
   ),
-  function: Function(Documentable('func', O.some('a function'), '1.0.0', true, ['example 1'], O.none), [
+  function: Function(Documentable('func', O.some('a function'), O.some('1.0.0'), true, ['example 1'], O.none), [
     'declare const func: (test: string) => string'
   ]),
   interface: Interface(
-    Documentable('A', O.none, '1.0.0', false, RA.empty, O.none),
+    Documentable('A', O.none, O.some('1.0.0'), false, RA.empty, O.none),
     'export interface A extends Record<string, unknown> {}'
   ),
-  typeAlias: TypeAlias(Documentable('A', O.none, '1.0.0', false, RA.empty, O.none), 'export type A = number')
+  typeAlias: TypeAlias(Documentable('A', O.none, O.some('1.0.0'), false, RA.empty, O.none), 'export type A = number')
 }
 
 describe('Markdown', () => {
@@ -346,10 +354,22 @@ export type A = number
 Added in v1.0.0
 `
       )
+
+      assert.strictEqual(
+        _.printTypeAlias({ ...testCases.typeAlias, since: O.none }),
+        `## A (type alias)
+
+**Signature**
+
+\`\`\`ts
+export type A = number
+\`\`\`
+`
+      )
     })
 
     it('printModule', () => {
-      const documentation = Documentable('tests', O.none, '1.0.0', false, RA.empty, O.none)
+      const documentation = Documentable('tests', O.none, O.some('1.0.0'), false, RA.empty, O.none)
       const m = Module(
         documentation,
         ['src', 'tests.ts'],
@@ -559,51 +579,3 @@ Added in v1.0.0
     })
   })
 })
-
-// describe('makdown', () => {
-//   describe('printExamples', () => {
-//     it('should handle multiple examples', () => {
-//       assert.strictEqual(printExamples([]), '')
-//       assert.strictEqual(printExamples(['example1']), '\n\n**Example**\n\n```ts\nexample1\n```')
-//       assert.strictEqual(
-//         printExamples(['example1', 'example2']),
-//         '\n\n**Example**\n\n```ts\nexample1\n```\n\n**Example**\n\n```ts\nexample2\n```'
-//       )
-//     })
-//   })
-
-//   it('printClass', () => {
-//     assert.deepStrictEqual(
-//       printClass(
-//         makeClass(
-//           makeDocumentable('A', none, '1.0.0', false, [], none),
-//           'declare class A { constructor() }',
-//           [],
-//           [],
-//           [makeProperty(makeDocumentable('read', none, '1.0.0', false, [], none), 'readonly read: IO<A>')]
-//         )
-//       ),
-//       `## A (class)
-
-// **Signature**
-
-// \`\`\`ts
-// declare class A { constructor() }
-// \`\`\`
-
-// Added in v1.0.0
-
-// ### read (property)
-
-// **Signature**
-
-// \`\`\`ts
-// readonly read: IO<A>
-// \`\`\`
-
-// Added in v1.0.0
-
-// `
-//     )
-//   })
-// })

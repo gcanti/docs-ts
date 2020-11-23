@@ -61,7 +61,7 @@ interface Comment {
 
 interface CommentInfo {
   readonly description: O.Option<string>
-  readonly since: string
+  readonly since: O.Option<string>
   readonly deprecated: boolean
   readonly examples: ReadonlyArray<Example>
   readonly category: O.Option<string>
@@ -73,7 +73,7 @@ interface CommentInfo {
 
 const CommentInfo = (
   description: O.Option<string>,
-  since: string,
+  since: O.Option<string>,
   deprecated: boolean,
   examples: ReadonlyArray<Example>,
   category: O.Option<string>
@@ -143,7 +143,7 @@ const isVariableStatement = (
 // comments
 // -------------------------------------------------------------------------------------
 
-const getSinceTag = (name: string, comment: Comment): Parser<string> =>
+const getSinceTag = (name: string, comment: Comment): Parser<O.Option<string>> =>
   pipe(
     RE.ask<Env>(),
     RE.chainEitherK(env =>
@@ -151,7 +151,13 @@ const getSinceTag = (name: string, comment: Comment): Parser<string> =>
         comment.tags,
         RR.lookup('since'),
         O.chain(RNEA.head),
-        E.fromOption(() => `Missing @since tag in ${env.path.join('/')}#${name} documentation`)
+        O.fold(
+          () =>
+            env.enforceSince
+              ? E.left(`Missing @since tag in ${env.path.join('/')}#${name} documentation`)
+              : E.right(O.none),
+          since => E.right(O.some(since))
+        )
       )
     )
   )

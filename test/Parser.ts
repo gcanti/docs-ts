@@ -22,6 +22,7 @@ const settings: C.Settings = {
   enableSearch: true,
   enforceDescriptions: false,
   enforceExamples: false,
+  enforceSince: true,
   exclude: RA.empty
 }
 
@@ -64,7 +65,7 @@ describe('Parser', () => {
               description: O.some('a description...'),
               name: 'A',
               signature: 'export interface A {}',
-              since: '1.0.0',
+              since: O.some('1.0.0'),
               examples: RA.empty,
               category: O.none
             })
@@ -92,7 +93,7 @@ describe('Parser', () => {
               _tag: 'Interface',
               name: 'A',
               description: O.none,
-              since: '1.0.0',
+              since: O.some('1.0.0'),
               deprecated: false,
               category: O.none,
               examples: RA.empty,
@@ -102,7 +103,7 @@ describe('Parser', () => {
               _tag: 'Interface',
               name: 'B',
               description: O.none,
-              since: '1.0.0',
+              since: O.some('1.0.0'),
               deprecated: false,
               category: O.none,
               examples: RA.empty,
@@ -212,7 +213,7 @@ describe('Parser', () => {
               description: O.some('a description...'),
               name: 'f',
               signatures: ['export declare const f: (a: number, b: number) => { [key: string]: number; }'],
-              since: '1.0.0',
+              since: O.some('1.0.0'),
               examples: [
                 'assert.deepStrictEqual(f(1, 2), { a: 1, b: 2 })',
                 'assert.deepStrictEqual(f(3, 4), { a: 3, b: 4 })'
@@ -240,7 +241,7 @@ describe('Parser', () => {
               description: O.none,
               name: 'f',
               signatures: ['export declare function f(a: number, b: number): { [key: string]: number }'],
-              since: '1.0.0',
+              since: O.some('1.0.0'),
               examples: RA.empty,
               category: O.none
             }
@@ -267,7 +268,7 @@ describe('Parser', () => {
               description: O.some('a description...'),
               name: 'f',
               signatures: ['export declare function f(a: number, b: number): { [key: string]: number }'],
-              since: '1.0.0',
+              since: O.some('1.0.0'),
               examples: RA.empty,
               category: O.none
             }
@@ -294,7 +295,7 @@ describe('Parser', () => {
               _tag: 'Function',
               name: 'f',
               description: O.some('a description...'),
-              since: '1.0.0',
+              since: O.some('1.0.0'),
               deprecated: true,
               category: O.none,
               examples: RA.empty,
@@ -326,7 +327,7 @@ describe('Parser', () => {
               _tag: 'TypeAlias',
               name: 'Option',
               description: O.some('a description...'),
-              since: '1.0.0',
+              since: O.some('1.0.0'),
               deprecated: true,
               category: O.none,
               signature: 'export type Option<A> = None<A> | Some<A>',
@@ -355,7 +356,7 @@ describe('Parser', () => {
               _tag: 'Constant',
               name: 's',
               description: O.some('a description...'),
-              since: '1.0.0',
+              since: O.some('1.0.0'),
               deprecated: true,
               category: O.none,
               signature: 'export declare const s: string',
@@ -380,7 +381,7 @@ describe('Parser', () => {
               _tag: 'Constant',
               name: 'left',
               description: O.none,
-              since: '1.0.0',
+              since: O.some('1.0.0'),
               deprecated: false,
               category: O.none,
               signature: 'export declare const left: <E = never, A = never>(l: E) => string',
@@ -405,7 +406,7 @@ describe('Parser', () => {
               _tag: 'Constant',
               name: 'empty',
               description: O.none,
-              since: '1.0.0',
+              since: O.some('1.0.0'),
               deprecated: false,
               category: O.none,
               signature: 'export declare const empty: Map<never, never>',
@@ -438,7 +439,7 @@ describe('Parser', () => {
               description: O.none,
               name: 'taskSeq',
               signature: 'export declare const taskSeq: { a: number; }',
-              since: '1.0.0',
+              since: O.some('1.0.0'),
               examples: RA.empty,
               category: O.none
             }
@@ -493,7 +494,7 @@ describe('Parser', () => {
               _tag: 'Class',
               name: 'MyClass',
               description: O.none,
-              since: '1.0.0',
+              since: O.some('1.0.0'),
               deprecated: false,
               category: O.none,
               examples: RA.empty,
@@ -522,7 +523,7 @@ describe('Parser', () => {
               _tag: 'Class',
               name: 'C',
               description: O.some('description'),
-              since: '1.0.0',
+              since: O.some('1.0.0'),
               deprecated: false,
               category: O.none,
               examples: RA.empty,
@@ -571,7 +572,7 @@ describe('Parser', () => {
               _tag: 'Class',
               name: 'C',
               description: O.some('description'),
-              since: '1.0.0',
+              since: O.some('1.0.0'),
               deprecated: false,
               category: O.none,
               examples: RA.empty,
@@ -582,7 +583,7 @@ describe('Parser', () => {
                 {
                   name: 'a',
                   description: O.none,
-                  since: '1.0.0',
+                  since: O.some('1.0.0'),
                   deprecated: false,
                   category: O.none,
                   examples: RA.empty,
@@ -634,7 +635,7 @@ describe('Parser', () => {
               _tag: 'Class',
               name: 'Test',
               description: O.some('a class description...'),
-              since: '1.0.0',
+              since: O.some('1.0.0'),
               deprecated: true,
               category: O.none,
               examples: RA.empty,
@@ -643,7 +644,7 @@ describe('Parser', () => {
                 {
                   name: 'g',
                   description: O.some('a method description...'),
-                  since: '1.1.0',
+                  since: O.some('1.1.0'),
                   deprecated: true,
                   category: O.none,
                   examples: RA.empty,
@@ -654,7 +655,7 @@ describe('Parser', () => {
                 {
                   name: 'f',
                   description: O.some('a static method description...'),
-                  since: '1.1.0',
+                  since: O.some('1.1.0'),
                   deprecated: true,
                   category: O.none,
                   examples: RA.empty,
@@ -665,7 +666,7 @@ describe('Parser', () => {
                 {
                   name: 'a',
                   description: O.some('a property...'),
-                  since: '1.1.0',
+                  since: O.some('1.1.0'),
                   deprecated: true,
                   category: O.none,
                   signature: 'readonly a: string',
@@ -714,7 +715,7 @@ describe('Parser', () => {
               _tag: 'Class',
               name: 'Test',
               description: O.some('a class description...'),
-              since: '1.0.0',
+              since: O.some('1.0.0'),
               deprecated: true,
               category: O.none,
               examples: RA.empty,
@@ -723,7 +724,7 @@ describe('Parser', () => {
                 {
                   name: 'map',
                   description: O.some('a method description...'),
-                  since: '1.1.0',
+                  since: O.some('1.1.0'),
                   deprecated: true,
                   category: O.none,
                   examples: RA.empty,
@@ -734,7 +735,7 @@ describe('Parser', () => {
                 {
                   name: 'f',
                   description: O.some('a static method description...'),
-                  since: '1.1.0',
+                  since: O.some('1.1.0'),
                   deprecated: true,
                   category: O.none,
                   examples: RA.empty,
@@ -767,7 +768,7 @@ describe('Parser', () => {
           E.right({
             name: 'test',
             description: O.some('Manages the configuration settings for the widget'),
-            since: '1.0.0',
+            since: O.some('1.0.0'),
             deprecated: true,
             category: O.none,
             examples: RA.empty
@@ -802,7 +803,7 @@ describe('Parser', () => {
               name: 'b',
               description: O.none,
               deprecated: false,
-              since: '1.0.0',
+              since: O.some('1.0.0'),
               category: O.none,
               examples: RA.empty,
               signature: 'export declare const b: 1'
@@ -834,7 +835,7 @@ describe('Parser', () => {
               _tag: 'Export',
               name: 'a',
               description: O.some('description_of_a'),
-              since: '1.0.0',
+              since: O.some('1.0.0'),
               deprecated: false,
               category: O.none,
               signature: 'export declare const a: any',
@@ -844,7 +845,7 @@ describe('Parser', () => {
               _tag: 'Export',
               name: 'b',
               description: O.some('description_of_b'),
-              since: '2.0.0',
+              since: O.some('2.0.0'),
               deprecated: false,
               category: O.none,
               signature: 'export declare const b: any',
@@ -881,7 +882,7 @@ describe('Parser', () => {
               _tag: 'Export',
               name: 'b',
               description: O.none,
-              since: '1.0.0',
+              since: O.some('1.0.0'),
               deprecated: false,
               signature: 'export declare const b: 1',
               category: O.none,
@@ -951,7 +952,7 @@ export function f(a: number, b: number): { [key: string]: number } {
               name: 'test1',
               path: ['test', 'fixtures', 'test1.ts'],
               description: O.some('a description...'),
-              since: '1.0.0',
+              since: O.some('1.0.0'),
               deprecated: false,
               category: O.none,
               examples: RA.empty,
@@ -965,7 +966,7 @@ export function f(a: number, b: number): { [key: string]: number } {
                   _tag: 'Function',
                   name: 'f',
                   description: O.some('a description...'),
-                  since: '1.0.0',
+                  since: O.some('1.0.0'),
                   deprecated: false,
                   category: O.none,
                   examples: RA.empty,
@@ -1005,7 +1006,7 @@ export function f(a: number, b: number): { [key: string]: number } {
           pipe(env, _.getCommentInfo('name')(text)),
           E.right({
             description: O.some('description'),
-            since: '1.0.0',
+            since: O.some('1.0.0'),
             category: O.some('instances'),
             deprecated: false,
             examples: RA.empty
@@ -1069,6 +1070,26 @@ export function f(a: number, b: number): { [key: string]: number } {
         assert.deepStrictEqual(
           pipe({ ...env, enforceExamples: true }, _.getCommentInfo('name')(text)),
           E.left('Missing examples in test#name documentation')
+        )
+      })
+
+      it('should allow no since tag if `enforceSince` is set to false', () => {
+        const env = getTestEnv('')
+
+        const text = `/**
+* description
+* @category instances
+*/`
+
+        assert.deepStrictEqual(
+          pipe({ ...env, enforceSince: false }, _.getCommentInfo('name')(text)),
+          E.right({
+            description: O.some('description'),
+            since: O.none,
+            category: O.some('instances'),
+            deprecated: false,
+            examples: RA.empty
+          })
         )
       })
     })

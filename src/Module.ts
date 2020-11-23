@@ -30,7 +30,7 @@ export interface Module extends Documentable {
 export interface Documentable {
   readonly name: string
   readonly description: O.Option<string>
-  readonly since: string
+  readonly since: O.Option<string>
   readonly deprecated: boolean
   readonly examples: ReadonlyArray<Example>
   readonly category: O.Option<string>
@@ -126,7 +126,7 @@ export type Example = string
 export const Documentable = (
   name: string,
   description: O.Option<string>,
-  since: string,
+  since: O.Option<string>,
   deprecated: boolean,
   examples: ReadonlyArray<Example>,
   category: O.Option<string>

@@ -246,7 +246,10 @@ const h3 = (content: Markdown) => Header(3, content)
 
 const ts = (code: string) => Fence('ts', PlainText(code))
 
-const since = (v: string) => foldMarkdown([CRLF, PlainText(`Added in v${v}`)])
+const since: (v: O.Option<string>) => Markdown = O.fold(
+  () => monoidMarkdown.empty,
+  v => foldMarkdown([CRLF, PlainText(`Added in v${v}`)])
+)
 
 const title = (s: string, deprecated: boolean, type?: string): Markdown => {
   const title = s.trim() === 'hasOwnProperty' ? `${s} (function)` : s

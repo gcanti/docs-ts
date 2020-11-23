@@ -541,6 +541,21 @@ describe('Parser', () => {
         )
       })
 
+      it('should get a constructor declaration signature', () => {
+        const env = getTestEnv(`
+          /**
+           * @since 1.0.0
+           */
+          declare class A {
+            constructor()
+          }
+        `)
+
+        const constructorDeclaration = env.sourceFile.getClass('A')!.getConstructors()[0]
+
+        assert.deepStrictEqual(_.getConstructorDeclarationSignature(constructorDeclaration), 'constructor()')
+      })
+
       it('should handle non-readonly properties', () => {
         const env = getTestEnv(
           `/**

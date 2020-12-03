@@ -3,7 +3,7 @@ import * as path from 'path'
 import * as O from 'fp-ts/Option'
 import * as TE from 'fp-ts/TaskEither'
 import * as R from 'fp-ts/Record'
-import { pipe } from 'fp-ts/lib/function'
+import { pipe, Endomorphism } from 'fp-ts/lib/function'
 import * as minimatch from 'minimatch'
 
 import * as Core from '../src/Core'
@@ -13,12 +13,13 @@ import { assertLeft, assertRight } from './utils'
 
 type FileSystemState = Record<string, string>
 
-const prefixWithCwd = (fs: FileSystemState) =>
-  R.reduceWithIndex<string, string, FileSystemState>({}, (key, acc, content) => {
-    acc[path.join(process.cwd(), key)] = content
-
-    return acc
-  })(fs)
+const prefixWithCwd: Endomorphism<FileSystemState> = R.reduceWithIndex<string, string, FileSystemState>(
+  R.empty,
+  (key, acc, content) => ({
+    ...acc,
+    [path.join(process.cwd(), key)]: content
+  })
+)
 
 // TODO: use WritterT ?
 const testLogger: L.Logger = {

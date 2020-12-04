@@ -1,5 +1,4 @@
 import * as assert from 'assert'
-import * as E from 'fp-ts/lib/Either'
 import * as O from 'fp-ts/lib/Option'
 import * as RA from 'fp-ts/ReadonlyArray'
 import { pipe } from 'fp-ts/function'
@@ -8,6 +7,8 @@ import * as ast from 'ts-morph'
 import * as C from '../src/Config'
 import * as FS from '../src/FileSystem'
 import * as _ from '../src/Parser'
+
+import { assertLeft, assertRight } from './utils'
 
 let testCounter = 0
 
@@ -38,13 +39,13 @@ describe('Parser', () => {
       it('should return no `Interface`s if the file is empty', () => {
         const env = getTestEnv('')
 
-        assert.deepStrictEqual(pipe(env, _.parseInterfaces), E.right(RA.empty))
+        assertRight(pipe(env, _.parseInterfaces), actual => assert.deepStrictEqual(actual, RA.empty))
       })
 
       it('should return no `Interface`s if there are no exported interfaces', () => {
         const env = getTestEnv('interface A {}')
 
-        assert.deepStrictEqual(pipe(env, _.parseInterfaces), E.right(RA.empty))
+        assertRight(pipe(env, _.parseInterfaces), actual => assert.deepStrictEqual(actual, RA.empty))
       })
 
       it('should return an `Interface`', () => {
@@ -56,9 +57,9 @@ describe('Parser', () => {
             */
             export interface A {}`
         )
-        assert.deepStrictEqual(
-          pipe(env, _.parseInterfaces),
-          E.right(
+        assertRight(pipe(env, _.parseInterfaces), actual =>
+          assert.deepStrictEqual(
+            actual,
             RA.of({
               _tag: 'Interface',
               deprecated: true,
@@ -86,9 +87,8 @@ describe('Parser', () => {
           export interface A {}
           `
         )
-        assert.deepStrictEqual(
-          pipe(env, _.parseInterfaces),
-          E.right([
+        assertRight(pipe(env, _.parseInterfaces), actual =>
+          assert.deepStrictEqual(actual, [
             {
               _tag: 'Interface',
               name: 'A',
@@ -117,14 +117,15 @@ describe('Parser', () => {
     describe('parseFunctions', () => {
       it('should raise an error if the function is anonymous', () => {
         const env = getTestEnv(`export function(a: number, b: number): number { return a + b }`)
+        const expected = 'Missing function name in module test'
 
-        assert.deepStrictEqual(pipe(env, _.parseFunctions), E.left('Missing function name in module test'))
+        assertLeft(pipe(env, _.parseFunctions), error => assert.strictEqual(error, expected))
       })
 
       it('should not return private function declarations', () => {
         const env = getTestEnv(`function sum(a: number, b: number): number { return a + b }`)
 
-        assert.deepStrictEqual(pipe(env, _.parseFunctions), E.right(RA.empty))
+        assertRight(pipe(env, _.parseFunctions), actual => assert.deepStrictEqual(actual, RA.empty))
       })
 
       it('should not return ignored function declarations', () => {
@@ -135,7 +136,7 @@ describe('Parser', () => {
             export function sum(a: number, b: number): number { return a + b }`
         )
 
-        assert.deepStrictEqual(pipe(env, _.parseFunctions), E.right(RA.empty))
+        assertRight(pipe(env, _.parseFunctions), actual => assert.deepStrictEqual(actual, RA.empty))
       })
 
       it('should not return ignored function declarations with overloads', () => {
@@ -147,7 +148,7 @@ describe('Parser', () => {
             export function sum(a: number, b: number): number { return a + b }`
         )
 
-        assert.deepStrictEqual(pipe(env, _.parseFunctions), E.right(RA.empty))
+        assertRight(pipe(env, _.parseFunctions), actual => assert.deepStrictEqual(actual, RA.empty))
       })
 
       it('should not return internal function declarations', () => {
@@ -158,7 +159,7 @@ describe('Parser', () => {
             export function sum(a: number, b: number): number { return a + b }`
         )
 
-        assert.deepStrictEqual(pipe(env, _.parseFunctions), E.right(RA.empty))
+        assertRight(pipe(env, _.parseFunctions), actual => assert.deepStrictEqual(actual, RA.empty))
       })
 
       it('should not return internal function declarations even with overloads', () => {
@@ -170,13 +171,13 @@ describe('Parser', () => {
             export function sum(a: number, b: number): number { return a + b }`
         )
 
-        assert.deepStrictEqual(pipe(env, _.parseFunctions), E.right(RA.empty))
+        assertRight(pipe(env, _.parseFunctions), actual => assert.deepStrictEqual(actual, RA.empty))
       })
 
       it('should not return private const function declarations', () => {
         const env = getTestEnv(`const sum = (a: number, b: number): number => a + b `)
 
-        assert.deepStrictEqual(pipe(env, _.parseFunctions), E.right(RA.empty))
+        assertRight(pipe(env, _.parseFunctions), actual => assert.deepStrictEqual(actual, RA.empty))
       })
 
       it('should not return internal const function declarations', () => {
@@ -187,7 +188,7 @@ describe('Parser', () => {
             export const sum = (a: number, b: number): number => a + b `
         )
 
-        assert.deepStrictEqual(pipe(env, _.parseFunctions), E.right(RA.empty))
+        assertRight(pipe(env, _.parseFunctions), actual => assert.deepStrictEqual(actual, RA.empty))
       })
 
       it('should return a const function declaration', () => {
@@ -204,9 +205,8 @@ describe('Parser', () => {
             export const f = (a: number, b: number): { [key: string]: number } => ({ a, b })`
         )
 
-        assert.deepStrictEqual(
-          pipe(env, _.parseFunctions),
-          E.right([
+        assertRight(pipe(env, _.parseFunctions), actual =>
+          assert.deepStrictEqual(actual, [
             {
               _tag: 'Function',
               deprecated: true,
@@ -232,9 +232,8 @@ describe('Parser', () => {
             export function f(a: number, b: number): { [key: string]: number } { return { a, b } }`
         )
 
-        assert.deepStrictEqual(
-          pipe(env, _.parseFunctions),
-          E.right([
+        assertRight(pipe(env, _.parseFunctions), actual =>
+          assert.deepStrictEqual(actual, [
             {
               _tag: 'Function',
               deprecated: false,
@@ -259,9 +258,8 @@ describe('Parser', () => {
             export function f(a: number, b: number): { [key: string]: number } { return { a, b } }`
         )
 
-        assert.deepStrictEqual(
-          pipe(env, _.parseFunctions),
-          E.right([
+        assertRight(pipe(env, _.parseFunctions), actual =>
+          assert.deepStrictEqual(actual, [
             {
               _tag: 'Function',
               deprecated: true,
@@ -288,9 +286,8 @@ describe('Parser', () => {
             export function f(a: any, b: any): { [key: string]: number } { return { a, b } }`
         )
 
-        assert.deepStrictEqual(
-          pipe(env, _.parseFunctions),
-          E.right([
+        assertRight(pipe(env, _.parseFunctions), actual =>
+          assert.deepStrictEqual(actual, [
             {
               _tag: 'Function',
               name: 'f',
@@ -320,9 +317,8 @@ describe('Parser', () => {
             export type Option<A> = None<A> | Some<A>`
         )
 
-        assert.deepStrictEqual(
-          pipe(env, _.parseTypeAliases),
-          E.right([
+        assertRight(pipe(env, _.parseTypeAliases), actual =>
+          assert.deepStrictEqual(actual, [
             {
               _tag: 'TypeAlias',
               name: 'Option',
@@ -349,9 +345,8 @@ describe('Parser', () => {
             export const s: string = ''`
         )
 
-        assert.deepStrictEqual(
-          pipe(env, _.parseConstants),
-          E.right([
+        assertRight(pipe(env, _.parseConstants), actual =>
+          assert.deepStrictEqual(actual, [
             {
               _tag: 'Constant',
               name: 's',
@@ -374,9 +369,8 @@ describe('Parser', () => {
             export const left: <E = never, A = never>(l: E) => string = T.left`
         )
 
-        assert.deepStrictEqual(
-          pipe(env, _.parseConstants),
-          E.right([
+        assertRight(pipe(env, _.parseConstants), actual =>
+          assert.deepStrictEqual(actual, [
             {
               _tag: 'Constant',
               name: 'left',
@@ -399,9 +393,8 @@ describe('Parser', () => {
             export const empty = new Map<never, never>()`
         )
 
-        assert.deepStrictEqual(
-          pipe(env, _.parseConstants),
-          E.right([
+        assertRight(pipe(env, _.parseConstants), actual =>
+          assert.deepStrictEqual(actual, [
             {
               _tag: 'Constant',
               name: 'empty',
@@ -430,9 +423,8 @@ describe('Parser', () => {
             }`
         )
 
-        assert.deepStrictEqual(
-          pipe(env, _.parseConstants),
-          E.right([
+        assertRight(pipe(env, _.parseConstants), actual =>
+          assert.deepStrictEqual(actual, [
             {
               _tag: 'Constant',
               deprecated: false,
@@ -446,19 +438,33 @@ describe('Parser', () => {
           ])
         )
       })
+
+      it('should not include variables declared in for loops', () => {
+        const env = getTestEnv(
+          ` const object = { a: 1, b: 2, c: 3 };
+
+            for (const property in object) {
+              console.log(property);
+            }`
+        )
+
+        assertRight(pipe(env, _.parseConstants), actual => assert.deepStrictEqual(actual, []))
+      })
     })
 
     describe('parseClasses', () => {
       it('should raise an error if the class is anonymous', () => {
         const env = getTestEnv(`export class {}`)
 
-        assert.deepStrictEqual(pipe(env, _.parseClasses), E.left('Missing class name in module test'))
+        assertLeft(pipe(env, _.parseClasses), error => assert.strictEqual(error, 'Missing class name in module test'))
       })
 
       it('should raise an error if an `@since` tag is missing in a module', () => {
         const env = getTestEnv(`export class MyClass {}`)
 
-        assert.deepStrictEqual(pipe(env, _.parseClasses), E.left('Missing @since tag in test#MyClass documentation'))
+        assertLeft(pipe(env, _.parseClasses), error =>
+          assert.strictEqual(error, 'Missing @since tag in test#MyClass documentation')
+        )
       })
 
       it('should raise an error if `@since` is missing in a property', () => {
@@ -471,7 +477,9 @@ describe('Parser', () => {
             }`
         )
 
-        assert.deepStrictEqual(pipe(env, _.parseClasses), E.left('Missing @since tag in test#MyClass#_A documentation'))
+        assertLeft(pipe(env, _.parseClasses), error =>
+          assert.strictEqual(error, 'Missing @since tag in test#MyClass#_A documentation')
+        )
       })
 
       it('should skip ignored properties', () => {
@@ -487,9 +495,8 @@ describe('Parser', () => {
             }`
         )
 
-        assert.deepStrictEqual(
-          pipe(env, _.parseClasses),
-          E.right([
+        assertRight(pipe(env, _.parseClasses), actual =>
+          assert.deepStrictEqual(actual, [
             {
               _tag: 'Class',
               name: 'MyClass',
@@ -516,9 +523,8 @@ describe('Parser', () => {
             export class C { constructor() {} }`
         )
 
-        assert.deepStrictEqual(
-          pipe(env, _.parseClasses),
-          E.right([
+        assertRight(pipe(env, _.parseClasses), actual =>
+          assert.deepStrictEqual(actual, [
             {
               _tag: 'Class',
               name: 'C',
@@ -565,9 +571,8 @@ describe('Parser', () => {
             }`
         )
 
-        assert.deepStrictEqual(
-          pipe(env, _.parseClasses),
-          E.right([
+        assertRight(pipe(env, _.parseClasses), actual =>
+          assert.deepStrictEqual(actual, [
             {
               _tag: 'Class',
               name: 'C',
@@ -628,9 +633,8 @@ describe('Parser', () => {
             }`
         )
 
-        assert.deepStrictEqual(
-          pipe(env, _.parseClasses),
-          E.right([
+        assertRight(pipe(env, _.parseClasses), actual =>
+          assert.deepStrictEqual(actual, [
             {
               _tag: 'Class',
               name: 'Test',
@@ -708,9 +712,8 @@ describe('Parser', () => {
             }`
         )
 
-        assert.deepStrictEqual(
-          pipe(env, _.parseClasses),
-          E.right([
+        assertRight(pipe(env, _.parseClasses), actual =>
+          assert.deepStrictEqual(actual, [
             {
               _tag: 'Class',
               name: 'Test',
@@ -763,9 +766,8 @@ describe('Parser', () => {
             export const a: number = 1`
         )
 
-        assert.deepStrictEqual(
-          pipe(env, _.parseModuleDocumentation),
-          E.right({
+        assertRight(pipe(env, _.parseModuleDocumentation), actual =>
+          assert.deepStrictEqual(actual, {
             name: 'test',
             description: O.some('Manages the configuration settings for the widget'),
             since: O.some('1.0.0'),
@@ -781,7 +783,7 @@ describe('Parser', () => {
       it('should return no `Export`s if the file is empty', () => {
         const env = getTestEnv('')
 
-        assert.deepStrictEqual(pipe(env, _.parseExports), E.right(RA.empty))
+        assertRight(pipe(env, _.parseExports), actual => assert.deepStrictEqual(actual, RA.empty))
       })
 
       it('should handle renamimg', () => {
@@ -795,9 +797,8 @@ describe('Parser', () => {
           }`
         )
 
-        assert.deepStrictEqual(
-          pipe(env, _.parseExports),
-          E.right([
+        assertRight(pipe(env, _.parseExports), actual =>
+          assert.deepStrictEqual(actual, [
             {
               _tag: 'Export',
               name: 'b',
@@ -828,9 +829,8 @@ describe('Parser', () => {
           }`
         )
 
-        assert.deepStrictEqual(
-          pipe(env, _.parseExports),
-          E.right([
+        assertRight(pipe(env, _.parseExports), actual =>
+          assert.deepStrictEqual(actual, [
             {
               _tag: 'Export',
               name: 'a',
@@ -858,7 +858,7 @@ describe('Parser', () => {
       it('should raise an error if `@since` tag is missing in export', () => {
         const env = getTestEnv('export { a }')
 
-        assert.deepStrictEqual(pipe(env, _.parseExports), E.left('Missing a documentation in test'))
+        assertLeft(pipe(env, _.parseExports), error => assert.strictEqual(error, 'Missing a documentation in test'))
       })
 
       it('should retrieve an export signature', () => {
@@ -875,9 +875,8 @@ describe('Parser', () => {
           }`
         )
 
-        assert.deepStrictEqual(
-          pipe({ path: ['test'], sourceFile, ...settings }, _.parseExports),
-          E.right([
+        assertRight(pipe({ path: ['test'], sourceFile, ...settings }, _.parseExports), actual =>
+          assert.deepStrictEqual(actual, [
             {
               _tag: 'Export',
               name: 'b',
@@ -897,7 +896,7 @@ describe('Parser', () => {
       it('should raise an error if `@since` tag is missing', async () => {
         const env = getTestEnv(`import * as assert from 'assert'`)
 
-        assert.deepStrictEqual(pipe(env, _.parseModule), E.left('Missing documentation in test module'))
+        assertLeft(pipe(env, _.parseModule), error => assert.strictEqual(error, 'Missing documentation in test module'))
       })
     })
 
@@ -906,9 +905,8 @@ describe('Parser', () => {
         const file = FS.File('non-existent.ts', '')
         const project = new ast.Project()
 
-        assert.deepStrictEqual(
-          await pipe(settings, _.parseFile(project)(file))(),
-          E.left('Unable to locate file: non-existent.ts')
+        assertLeft(await pipe(settings, _.parseFile(project)(file))(), error =>
+          assert.strictEqual(error, 'Unable to locate file: non-existent.ts')
         )
       })
     })
@@ -945,9 +943,8 @@ export function f(a: number, b: number): { [key: string]: number } {
           )
         ]
 
-        assert.deepStrictEqual(
-          await pipe(settings, _.parseFiles(files))(),
-          E.right([
+        assertRight(await pipe(settings, _.parseFiles(files))(), actual =>
+          assert.deepStrictEqual(actual, [
             {
               name: 'test1',
               path: ['test', 'fixtures', 'test1.ts'],
@@ -979,14 +976,15 @@ export function f(a: number, b: number): { [key: string]: number } {
       })
 
       it('should not parse a non-existent file', async () => {
-        const files = [FS.File('test/fixtures/non-existent.ts', '')]
+        const FILE_NAME = 'test/fixtures/non-existent.ts'
+        const files = [FS.File(FILE_NAME, '')]
 
-        assert.deepStrictEqual(
-          await pipe(settings, _.parseFiles(files))(),
-          E.left(
-            'Error: File not found: /Users/maxbrown/Documents/projects/packages/docs-ts/test/fixtures/non-existent.ts'
-          )
-        )
+        const result = await pipe(settings, _.parseFiles(files))()
+
+        assertLeft(result, error => {
+          assert.strictEqual(error.includes('Error: File not found'), true)
+          assert.strictEqual(error.includes(FILE_NAME), true)
+        })
       })
     })
   })
@@ -1002,9 +1000,8 @@ export function f(a: number, b: number): { [key: string]: number } {
 * @since 1.0.0
 */`
 
-        assert.deepStrictEqual(
-          pipe(env, _.getCommentInfo('name')(text)),
-          E.right({
+        assertRight(pipe(env, _.getCommentInfo('name')(text)), actual =>
+          assert.deepStrictEqual(actual, {
             description: O.some('description'),
             since: O.some('1.0.0'),
             category: O.some('instances'),
@@ -1022,9 +1019,8 @@ export function f(a: number, b: number): { [key: string]: number } {
 * @since 1.0.0
 */`
 
-        assert.deepStrictEqual(
-          pipe(env, _.getCommentInfo('name')(text)),
-          E.left('Missing @category value in test#name documentation')
+        assertLeft(pipe(env, _.getCommentInfo('name')(text)), error =>
+          assert.strictEqual(error, 'Missing @category value in test#name documentation')
         )
       })
 
@@ -1036,9 +1032,8 @@ export function f(a: number, b: number): { [key: string]: number } {
 * @since 1.0.0
 */`
 
-        assert.deepStrictEqual(
-          pipe({ ...env, enforceDescriptions: true }, _.getCommentInfo('name')(text)),
-          E.left('Missing description in test#name documentation')
+        assertLeft(pipe({ ...env, enforceDescriptions: true }, _.getCommentInfo('name')(text)), error =>
+          assert.strictEqual(error, 'Missing description in test#name documentation')
         )
       })
 
@@ -1051,9 +1046,8 @@ export function f(a: number, b: number): { [key: string]: number } {
 * @since 1.0.0
 */`
 
-        assert.deepStrictEqual(
-          pipe({ ...env, enforceExamples: true }, _.getCommentInfo('name')(text)),
-          E.left('Missing examples in test#name documentation')
+        assertLeft(pipe({ ...env, enforceExamples: true }, _.getCommentInfo('name')(text)), error =>
+          assert.strictEqual(error, 'Missing examples in test#name documentation')
         )
       })
 
@@ -1067,9 +1061,8 @@ export function f(a: number, b: number): { [key: string]: number } {
 * @since 1.0.0
 */`
 
-        assert.deepStrictEqual(
-          pipe({ ...env, enforceExamples: true }, _.getCommentInfo('name')(text)),
-          E.left('Missing examples in test#name documentation')
+        assertLeft(pipe({ ...env, enforceExamples: true }, _.getCommentInfo('name')(text)), error =>
+          assert.strictEqual(error, 'Missing examples in test#name documentation')
         )
       })
 

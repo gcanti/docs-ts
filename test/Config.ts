@@ -1,9 +1,9 @@
 import * as assert from 'assert'
-import * as E from 'fp-ts/Either'
 import * as RA from 'fp-ts/ReadonlyArray'
 import { pipe } from 'fp-ts/function'
 
 import * as _ from '../src/Config'
+import { assertRight, assertLeft } from './utils'
 
 const defaultSettings = pipe(_.build('docs-ts', 'https://github.com/gcanti/docs-ts'), _.resolveSettings)
 
@@ -144,7 +144,7 @@ describe('Config', () => {
           exclude: RA.empty
         }
 
-        assert.deepStrictEqual(await _.decode(config)(), E.right(config))
+        assertRight(await _.decode(config)(), decoded => assert.deepStrictEqual(decoded, config))
       })
 
       it('should decode a valid partial configuration object', async () => {
@@ -152,8 +152,8 @@ describe('Config', () => {
           exclude: RA.of('subdirectory/**/*.ts')
         }
 
-        assert.deepStrictEqual(await _.decode({})(), E.right({}))
-        assert.deepStrictEqual(await _.decode(config)(), E.right(config))
+        assertRight(await _.decode({})(), decoded => assert.deepStrictEqual(decoded, {}))
+        assertRight(await _.decode(config)(), decoded => assert.deepStrictEqual(decoded, config))
       })
 
       it('should not decode a configuration object with invalid keys', async () => {
@@ -167,13 +167,11 @@ describe('Config', () => {
           exclude: RA.empty
         }
 
-        assert.deepStrictEqual(
-          await _.decode(config)(),
-          E.left(
-            'cannot decode "enableSrch", should be a valid configuration property\n' +
-              'cannot decode "them", should be a valid configuration property'
-          )
-        )
+        const expected =
+          'cannot decode "enableSrch", should be a valid configuration property\n' +
+          'cannot decode "them", should be a valid configuration property'
+
+        assertLeft(await _.decode(config)(), error => assert.strict(error, expected))
       })
     })
   })

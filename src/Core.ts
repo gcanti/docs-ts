@@ -2,13 +2,12 @@
  * @since 0.6.0
  */
 import * as E from 'fp-ts/Either'
-import * as Eq from 'fp-ts/Eq'
 import * as M from 'fp-ts/Monoid'
 import * as O from 'fp-ts/Option'
 import * as RA from 'fp-ts/ReadonlyArray'
 import * as RTE from 'fp-ts/ReaderTaskEither'
 import * as TE from 'fp-ts/TaskEither'
-import { constVoid, flow, pipe } from 'fp-ts/function'
+import { constVoid, Endomorphism, flow, pipe } from 'fp-ts/function'
 import * as TD from 'io-ts/TaskDecoder'
 import { spawnSync } from 'child_process'
 import * as path from 'path'
@@ -102,19 +101,7 @@ const writeFile = (file: FS.File): Effect<void> => {
 
   return pipe(
     RTE.ask<Capabilities>(),
-    RTE.chainTaskEitherK(C =>
-      pipe(
-        C.exists(file.path),
-        TE.chain(exists =>
-          exists
-            ? pipe(
-                C.readFile(file.path),
-                TE.map(content => Eq.eqString.equals(content, file.content))
-              )
-            : TE.of(false)
-        )
-      )
-    ),
+    RTE.chain(C => RTE.fromTaskEither(C.exists(file.path))),
     RTE.chain(exists => (exists ? (file.overwrite ? overwrite : skip) : write))
   )
 }
@@ -368,12 +355,36 @@ nav_order: 2
   )
 )
 
+const replace = (searchValue: string | RegExp, replaceValue: string): Endomorphism<string> => s =>
+  s.replace(searchValue, replaceValue)
+
+const resolveConfigYML = (previousContent: string, settings: Config.Settings): string =>
+  pipe(
+    previousContent,
+    replace(/^remote_theme:.*$/m, `remote_theme: ${settings.theme}`),
+    replace(/^search_enabled:.*$/m, `search_enabled: ${settings.enableSearch}`),
+    replace(
+      /^  '\S* on GitHub':\n    - '.*'/m,
+      `  '${settings.projectName} on GitHub':\n    - '${settings.projectHomepage}'`
+    )
+  )
+
 const getConfigYML: Program<FS.File> = pipe(
   RTE.ask<Environment, string>(),
-  RTE.map(({ settings }) =>
-    FS.File(
-      path.join(settings.outDir, '_config.yml'),
-      `remote_theme: ${settings.theme}
+  RTE.chainTaskEitherK(({ capabilities, settings }) => {
+    const filePath = path.join(settings.outDir, '_config.yml')
+    return pipe(
+      capabilities.exists(filePath),
+      TE.chain(exists =>
+        exists
+          ? pipe(
+              capabilities.readFile(filePath),
+              TE.map(content => FS.File(filePath, resolveConfigYML(content, settings), false))
+            )
+          : TE.of(
+              FS.File(
+                filePath,
+                `remote_theme: ${settings.theme}
 
 # Enable or disable the site search
 search_enabled: ${settings.enableSearch}
@@ -382,9 +393,12 @@ search_enabled: ${settings.enableSearch}
 aux_links:
   '${settings.projectName} on Github:
     - '${settings.projectHomepage}'`,
-      false
+                false
+              )
+            )
+      )
     )
-  )
+  })
 )
 
 const getMarkdownOutputPath = (module: Module): Program<string> =>

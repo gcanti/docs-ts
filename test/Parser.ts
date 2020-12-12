@@ -1074,9 +1074,9 @@ export function f(a: number, b: number): { [key: string]: number } {
 * @category instances
 */`
 
-        assert.deepStrictEqual(
+        assertRight(
           pipe({ ...env, enforceVersion: false }, _.getCommentInfo('name')(text)),
-          E.right({
+          actual => assert.deepStrictEqual(actual, {
             description: O.some('description'),
             since: O.none,
             category: O.some('instances'),

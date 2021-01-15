@@ -328,7 +328,7 @@ const getHome: Program<FS.File> = pipe(
   RTE.ask<Environment, string>(),
   RTE.map(({ settings }) =>
     FS.File(
-      path.join(settings.outDir, 'index.md'),
+      path.join(process.cwd(), settings.outDir, 'index.md'),
       `---
 title: Home
 nav_order: 1
@@ -343,7 +343,7 @@ const getModulesIndex: Program<FS.File> = pipe(
   RTE.ask<Environment, string>(),
   RTE.map(({ settings }) =>
     FS.File(
-      path.join(settings.outDir, 'modules', 'index.md'),
+      path.join(process.cwd(), settings.outDir, 'modules', 'index.md'),
       `---
 title: Modules
 has_children: true
@@ -372,7 +372,7 @@ const resolveConfigYML = (previousContent: string, settings: Config.Settings): s
 const getConfigYML: Program<FS.File> = pipe(
   RTE.ask<Environment, string>(),
   RTE.chainTaskEitherK(({ capabilities, settings }) => {
-    const filePath = path.join(settings.outDir, '_config.yml')
+    const filePath = path.join(process.cwd(), settings.outDir, '_config.yml')
     return pipe(
       capabilities.exists(filePath),
       TE.chain(exists =>

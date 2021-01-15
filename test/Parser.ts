@@ -903,7 +903,7 @@ describe('Parser', () => {
     describe('parseFile', () => {
       it('should not parse a non-existent file', async () => {
         const file = FS.File('non-existent.ts', '')
-        const project = new ast.Project()
+        const project = new ast.Project({ useVirtualFileSystem: true })
 
         assertLeft(await pipe(settings, _.parseFile(project)(file))(), error =>
           assert.strictEqual(error, 'Unable to locate file: non-existent.ts')
@@ -973,18 +973,6 @@ export function f(a: number, b: number): { [key: string]: number } {
             }
           ])
         )
-      })
-
-      it('should not parse a non-existent file', async () => {
-        const FILE_NAME = 'test/fixtures/non-existent.ts'
-        const files = [FS.File(FILE_NAME, '')]
-
-        const result = await pipe(settings, _.parseFiles(files))()
-
-        assertLeft(result, error => {
-          assert.strictEqual(error.includes('Error: File not found'), true)
-          assert.strictEqual(error.includes(FILE_NAME), true)
-        })
       })
     })
   })
@@ -1074,9 +1062,8 @@ export function f(a: number, b: number): { [key: string]: number } {
 * @category instances
 */`
 
-        assertRight(
-          pipe({ ...env, enforceVersion: false }, _.getCommentInfo('name')(text)),
-          actual => assert.deepStrictEqual(actual, {
+        assertRight(pipe({ ...env, enforceVersion: false }, _.getCommentInfo('name')(text)), actual =>
+          assert.deepStrictEqual(actual, {
             description: O.some('description'),
             since: O.none,
             category: O.some('instances'),

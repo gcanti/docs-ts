@@ -91,12 +91,12 @@ const writeFile = (file: FS.File): Effect<void> => {
 
   const skip: Effect<void> = pipe(
     RTE.ask<Capabilities>(),
-    RTE.chainTaskEitherK(C => pipe(C.debug(`File ${file.path} already exists, skipping creation`)))
+    RTE.chainTaskEitherK(C => C.debug(`File ${file.path} already exists, skipping creation`))
   )
 
   const write: Effect<void> = pipe(
     RTE.ask<Capabilities>(),
-    RTE.chainTaskEitherK(C => pipe(C.writeFile(file.path, file.content)))
+    RTE.chainTaskEitherK(C => C.writeFile(file.path, file.content))
   )
 
   return pipe(

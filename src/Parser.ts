@@ -803,11 +803,11 @@ export const parseFile = (project: ast.Project) => (file: File): RTE.ReaderTaskE
     )
   )
 
-const addFileToProject = (file: File, project: ast.Project): ast.SourceFile => project.addSourceFileAtPath(file.path)
+const addFileToProject = (file: File, project: ast.Project): ast.SourceFile => project.createSourceFile(file.path, file.content)
 
 const createProject = (files: ReadonlyArray<File>): RTE.ReaderTaskEither<Settings, string, ast.Project> =>
   pipe(
-    RTE.fromIO<Settings, string, ast.Project>(() => new ast.Project()),
+    RTE.fromIO<Settings, string, ast.Project>(() => new ast.Project({ useVirtualFileSystem: true })),
     RTE.chainIOEitherK(project =>
       pipe(
         files,

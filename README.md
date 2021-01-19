@@ -42,13 +42,13 @@ Creating and maintaing documentation for a TypeScript project of any size can qu
 
 ## Usage
 
-Using `docs-ts` is as simple as annotating your code with a JSDoc comment. The one opinionated requirement of `docs-ts` is that all modules and their exported functions and classes must be annotated with an `@since` JSDoc tag indicating when that piece of code last received a modification.
+Using `docs-ts` is as simple as annotating your code with a JSDoc comment. `docs-ts` supports specifying an `@category` JSDoc tag to group associated module exports in the generated documentation. You can also provide examples for your code using an `@example` JSDoc tag. `docs-ts` will also type-check all code annotated with `@example` tags to ensure that you have not made any errors in your sample code. All sample code is also run using `ts-node`, and the NodeJS [assert](https://nodejs.org/api/assert.html) module can be used for on-the-fly testing.
 
-`docs-ts` also supports specifying an `@category` JSDoc tag to group associated module exports in the generated documentation. You can also provide examples for your code using an `@example` JSDoc tag. `docs-ts` will also type-check all code annotated with `@example` tags to ensure that you have not made any errors in your sample code. All sample code is also run using `ts-node`, and the NodeJS [assert](https://nodejs.org/api/assert.html) module can be used for on-the-fly testing.
+By default, `docs-ts` will search for files in the `src` directory and will output generated files into a `docs` directory. For information on how to configure `docs-ts`, see the [Configuration](#configuration) section below.
 
-By default, `docs-ts` will search for files in the `src` directory and will output generated files into a `docs` directory. For information on how to configure `docs-ts`, see the (Configuration)[#configuration] section below.
+### Example
 
-For example, running `npm run docs-ts` (or `yarn docs-ts`) in the root directory of a project containing the following file in the `src` directory
+To illustrate the power of `doc-ts`, here is a small example. Running `npm run docs-ts` (or `yarn docs-ts`) in the root directory of a project containing the following file in the `src` directory...
 
 ```ts
 /**
@@ -72,7 +72,7 @@ import { IO } from 'fp-ts/IO'
 export const sayHello = (name: string): IO<void> => log(`Hello, ${name}!`)
 ```
 
-will, by default, produce a `docs` directory containing the following markdown document in the `modules` subfolder
+...will, by default, produce a `docs` directory containing the following markdown document in the `modules` subfolder.
 
 ````md
 ---

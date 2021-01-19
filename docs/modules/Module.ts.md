@@ -50,9 +50,9 @@ Added in v0.6.0
 export declare const Class: (
   documentable: Documentable,
   signature: string,
-  methods: any,
-  staticMethods: any,
-  properties: any
+  methods: ReadonlyArray<Method>,
+  staticMethods: ReadonlyArray<Method>,
+  properties: ReadonlyArray<Property>
 ) => Class
 ```
 
@@ -78,7 +78,7 @@ export declare const Documentable: (
   description: any,
   since: any,
   deprecated: boolean,
-  examples: any,
+  examples: ReadonlyArray<Example>,
   category: any
 ) => Documentable
 ```
@@ -100,7 +100,7 @@ Added in v0.6.0
 **Signature**
 
 ```ts
-export declare const Function: (documentable: Documentable, signatures: any) => Function
+export declare const Function: (documentable: Documentable, signatures: ReadonlyArray<string>) => Function
 ```
 
 Added in v0.6.0
@@ -120,7 +120,7 @@ Added in v0.6.0
 **Signature**
 
 ```ts
-export declare const Method: (documentable: Documentable, signatures: any) => Method
+export declare const Method: (documentable: Documentable, signatures: ReadonlyArray<string>) => Method
 ```
 
 Added in v0.6.0
@@ -132,13 +132,13 @@ Added in v0.6.0
 ```ts
 export declare const Module: (
   documentable: Documentable,
-  path: any,
-  classes: any,
-  interfaces: any,
-  functions: any,
-  typeAliases: any,
-  constants: any,
-  exports: any
+  path: ReadonlyArray<string>,
+  classes: ReadonlyArray<Class>,
+  interfaces: ReadonlyArray<Interface>,
+  functions: ReadonlyArray<Function>,
+  typeAliases: ReadonlyArray<TypeAlias>,
+  constants: ReadonlyArray<Constant>,
+  exports: ReadonlyArray<Export>
 ) => Module
 ```
 

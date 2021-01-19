@@ -116,7 +116,7 @@ Added in v0.6.0
 **Signature**
 
 ```ts
-export declare const PlainTexts: (content: any) => Markdown
+export declare const PlainTexts: (content: ReadonlyArray<Markdown>) => Markdown
 ```
 
 Added in v0.6.0
@@ -145,7 +145,7 @@ export declare const fold: <R>(patterns: {
   readonly Newline: () => R
   readonly Paragraph: (content: Markdown) => R
   readonly PlainText: (content: string) => R
-  readonly PlainTexts: (content: any) => R
+  readonly PlainTexts: (content: ReadonlyArray<Markdown>) => R
   readonly Strikethrough: (content: Markdown) => R
 }) => (markdown: Markdown) => R
 ```

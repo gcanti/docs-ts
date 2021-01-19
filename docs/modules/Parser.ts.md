@@ -59,7 +59,7 @@ Added in v0.6.0
 **Signature**
 
 ```ts
-export declare const parseClasses: Parser<any>
+export declare const parseClasses: Parser<readonly Class[]>
 ```
 
 Added in v0.6.0
@@ -69,7 +69,7 @@ Added in v0.6.0
 **Signature**
 
 ```ts
-export declare const parseConstants: Parser<any>
+export declare const parseConstants: Parser<readonly Constant[]>
 ```
 
 Added in v0.6.0
@@ -79,7 +79,7 @@ Added in v0.6.0
 **Signature**
 
 ```ts
-export declare const parseExports: Parser<any>
+export declare const parseExports: Parser<readonly Export[]>
 ```
 
 Added in v0.6.0
@@ -89,7 +89,7 @@ Added in v0.6.0
 **Signature**
 
 ```ts
-export declare const parseFiles: (files: any) => any
+export declare const parseFiles: (files: ReadonlyArray<File>) => any
 ```
 
 Added in v0.6.0
@@ -99,7 +99,7 @@ Added in v0.6.0
 **Signature**
 
 ```ts
-export declare const parseFunctions: Parser<any>
+export declare const parseFunctions: Parser<readonly Function[]>
 ```
 
 Added in v0.6.0
@@ -109,7 +109,7 @@ Added in v0.6.0
 **Signature**
 
 ```ts
-export declare const parseInterfaces: Parser<any>
+export declare const parseInterfaces: Parser<readonly Interface[]>
 ```
 
 Added in v0.6.0
@@ -129,7 +129,7 @@ Added in v0.6.0
 **Signature**
 
 ```ts
-export declare const parseTypeAliases: Parser<any>
+export declare const parseTypeAliases: Parser<readonly TypeAlias[]>
 ```
 
 Added in v0.6.0

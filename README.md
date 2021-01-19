@@ -8,6 +8,7 @@
     - [Via `npx` (on-demand)](#via-npx-on-demand)
 - [Why](#why)
 - [Usage](#usage)
+  - [Example](#example)
 - [Configuration](#configuration)
 - [Documentation](#documentation)
 - [License](#license)

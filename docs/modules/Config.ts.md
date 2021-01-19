@@ -15,6 +15,7 @@ Added in v0.6.0
 - [combinators](#combinators)
   - [updateEnforceDescriptions](#updateenforcedescriptions)
   - [updateEnforceExamples](#updateenforceexamples)
+  - [updateEnforceVersion](#updateenforceversion)
   - [updateExclusions](#updateexclusions)
   - [updateOutDir](#updateoutdir)
   - [updateSearchEnabled](#updatesearchenabled)
@@ -55,12 +56,22 @@ export declare const updateEnforceExamples: (enforceExamples: boolean) => (wa: C
 
 Added in v0.6.0
 
+## updateEnforceVersion
+
+**Signature**
+
+```ts
+export declare const updateEnforceVersion: (enforceVersion: boolean) => (wa: ConfigBuilder) => ConfigBuilder
+```
+
+Added in v0.6.0
+
 ## updateExclusions
 
 **Signature**
 
 ```ts
-export declare const updateExclusions: (exclude: readonly string[]) => (wa: ConfigBuilder) => ConfigBuilder
+export declare const updateExclusions: (exclude: any) => (wa: ConfigBuilder) => ConfigBuilder
 ```
 
 Added in v0.6.0
@@ -143,6 +154,7 @@ export interface Config {
   readonly enableSearch: boolean
   readonly enforceDescriptions: boolean
   readonly enforceExamples: boolean
+  readonly enforceVersion: boolean
   readonly exclude: ReadonlyArray<string>
 }
 ```
@@ -173,6 +185,7 @@ export interface Settings {
   readonly enableSearch: boolean
   readonly enforceDescriptions: boolean
   readonly enforceExamples: boolean
+  readonly enforceVersion: boolean
   readonly exclude: ReadonlyArray<string>
 }
 ```
@@ -186,7 +199,7 @@ Added in v0.6.0
 **Signature**
 
 ```ts
-export declare const decode: (input: unknown) => TE.TaskEither<string, Partial<Config>>
+export declare const decode: (input: unknown) => any
 ```
 
 Added in v0.6.0

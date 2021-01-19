@@ -1,6 +1,6 @@
 ---
 title: Module.ts
-nav_order: 7
+nav_order: 8
 parent: Modules
 ---
 
@@ -50,9 +50,9 @@ Added in v0.6.0
 export declare const Class: (
   documentable: Documentable,
   signature: string,
-  methods: readonly Method[],
-  staticMethods: readonly Method[],
-  properties: readonly Property[]
+  methods: any,
+  staticMethods: any,
+  properties: any
 ) => Class
 ```
 
@@ -75,11 +75,11 @@ Added in v0.6.0
 ```ts
 export declare const Documentable: (
   name: string,
-  description: O.Option<string>,
-  since: string,
+  description: any,
+  since: any,
   deprecated: boolean,
-  examples: readonly string[],
-  category: O.Option<string>
+  examples: any,
+  category: any
 ) => Documentable
 ```
 
@@ -100,7 +100,7 @@ Added in v0.6.0
 **Signature**
 
 ```ts
-export declare const Function: (documentable: Documentable, signatures: readonly string[]) => Function
+export declare const Function: (documentable: Documentable, signatures: any) => Function
 ```
 
 Added in v0.6.0
@@ -120,7 +120,7 @@ Added in v0.6.0
 **Signature**
 
 ```ts
-export declare const Method: (documentable: Documentable, signatures: readonly string[]) => Method
+export declare const Method: (documentable: Documentable, signatures: any) => Method
 ```
 
 Added in v0.6.0
@@ -132,13 +132,13 @@ Added in v0.6.0
 ```ts
 export declare const Module: (
   documentable: Documentable,
-  path: readonly string[],
-  classes: readonly Class[],
-  interfaces: readonly Interface[],
-  functions: readonly Function[],
-  typeAliases: readonly TypeAlias[],
-  constants: readonly Constant[],
-  exports: readonly Export[]
+  path: any,
+  classes: any,
+  interfaces: any,
+  functions: any,
+  typeAliases: any,
+  constants: any,
+  exports: any
 ) => Module
 ```
 
@@ -171,7 +171,7 @@ Added in v0.6.0
 **Signature**
 
 ```ts
-export declare const ordModule: Ord.Ord<Module>
+export declare const ordModule: any
 ```
 
 Added in v0.6.0
@@ -215,7 +215,7 @@ Added in v0.6.0
 export interface Documentable {
   readonly name: string
   readonly description: O.Option<string>
-  readonly since: string
+  readonly since: O.Option<string>
   readonly deprecated: boolean
   readonly examples: ReadonlyArray<Example>
   readonly category: O.Option<string>

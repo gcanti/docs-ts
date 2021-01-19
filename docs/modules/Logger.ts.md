@@ -35,7 +35,7 @@ Added in v0.6.0
 **Signature**
 
 ```ts
-export declare const LogEntry: (message: string, date: any, level: LogLevel) => LogEntry
+export declare const LogEntry: (message: string, date: Date, level: LogLevel) => LogEntry
 ```
 
 Added in v0.6.0

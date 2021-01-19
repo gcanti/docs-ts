@@ -71,7 +71,7 @@ Added in v0.6.0
 **Signature**
 
 ```ts
-export declare const updateExclusions: (exclude: any) => (wa: ConfigBuilder) => ConfigBuilder
+export declare const updateExclusions: (exclude: ReadonlyArray<string>) => (wa: ConfigBuilder) => ConfigBuilder
 ```
 
 Added in v0.6.0

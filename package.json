@@ -18,7 +18,7 @@
     "build": "npm run clean && tsc",
     "prepublish": "npm run build",
     "mocha": "mocha -r ts-node/register test/*.ts",
-    "doctoc": "doctoc docs",
+    "doctoc": "doctoc README.md --title \"**Table of contents**\"",
     "docs": "ts-node docs.ts"
   },
   "repository": {

@@ -28,7 +28,7 @@ Creating and maintaing documentation for a TypeScript project of any size can qu
 
 Using `docs-ts` is as simple as annotating your code with a JSDoc comment. The one opinionated requirement of `docs-ts` is that all modules and their exported functions and classes must be annotated with an `@since` JSDoc tag indicating when that piece of code last received a modification.
 
-`docs-ts` also supports specifying an `@category` JSDoc tag to group associated module exports in the generated documentation. You can also provide examples for your code using an `@example` JSDoc tag. `docs-ts` will also type-check all code annotated with `@example` tags to ensure that you have not made any errors in your sample code.
+`docs-ts` also supports specifying an `@category` JSDoc tag to group associated module exports in the generated documentation. You can also provide examples for your code using an `@example` JSDoc tag. `docs-ts` will also type-check all code annotated with `@example` tags to ensure that you have not made any errors in your sample code. All sample code is also run using `ts-node`, and the NodeJS [assert](https://nodejs.org/api/assert.html) module can be used for on-the-fly testing.
 
 By default, `docs-ts` will search for files in the `src` directory and will output generated files into a `docs` directory. For information on how to configure `docs-ts`, see the (Configuration)[#configuration] section below.
 
@@ -47,8 +47,8 @@ import { IO } from 'fp-ts/IO'
  * @example
  * import { sayHello } from 'docs-ts/lib/greetings'
  *
- * sayHello('Test')()
- * // => Hello, Test!
+ * assert.strictEqual(sayHello('Test')(), 'Hello, Test!')
+ * // => This assert statement will be run by docs-ts so you can test your code on-the-fly.
  *
  * @category greetings
  * @since 0.6.0
@@ -116,21 +116,23 @@ interface Config {
   readonly enableSearch?: boolean
   readonly enforceDescriptions?: boolean
   readonly enforceExamples?: boolean
+  readonly enforceVersion?: boolean
   readonly exclude?: ReadonlyArray<string>
 }
 ```
 
 The following table describes each configuration parameter, its purpose, and its default value.
 
-| Parameter           | Description                                                                                               | Default Value              |
-|:--------------------|:----------------------------------------------------------------------------------------------------------|:---------------------------|
-| srcDir              | The directory in which `docs-ts` will search for TypeScript files to parse.                               | 'src'                      |
-| outDir              | The directory to which `docs-ts` will generate its output markdown documents.                             | 'docs'                     |
-| theme               | The theme that `docs-ts` will specify should be used for GitHub Docs in the generated `_config.yml` file. | 'pmarsceill/just-the-docs' |
-| enableSearch        | Whether or search should be enabled for GitHub Docs in the generated `_config.yml` file.                  | true                       |
-| enforceDescriptions | Whether or not descriptions for each export should be required.                                           | false                      |
-| enforceExamples     | Whether or not `@example`s for each export should be required.                                            | false                      |
-| exclude             | An array of glob strings specifying files that should be excluded from the documentation.                 | []                         |
+| Parameter           | Description                                                                                               | Default Value                |
+|:--------------------|:----------------------------------------------------------------------------------------------------------|:-----------------------------|
+| srcDir              | The directory in which `docs-ts` will search for TypeScript files to parse.                               | `'src'`                      |
+| outDir              | The directory to which `docs-ts` will generate its output markdown documents.                             | `'docs'`                     |
+| theme               | The theme that `docs-ts` will specify should be used for GitHub Docs in the generated `_config.yml` file. | `'pmarsceill/just-the-docs'` |
+| enableSearch        | Whether or search should be enabled for GitHub Docs in the generated `_config.yml` file.                  | `true`                       |
+| enforceDescriptions | Whether or not descriptions for each module export should be required.                                    | `false`                      |
+| enforceExamples     | Whether or not `@example` tags for each module export should be required.                                 | `false`                      |
+| enforceVersion      | Whether or not `@since` tags for each module export should be required.                                   | `true`                       |
+| exclude             | An array of glob strings specifying files that should be excluded from the documentation.                 | `[]`                         |
 
 ## Documentation
 

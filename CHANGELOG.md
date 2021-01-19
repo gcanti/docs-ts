@@ -46,6 +46,8 @@
     - add `LogEntry`, `LogLevel`, and `Logger` types (@IMax153)
     - add `showEntry` and `Logger` instances (@IMax153)
     - add `debug`, `error`, and `info` helper functions (@IMax153)
+  - Add `Example` module (@IMax153)
+    - add `run` helper function (@IMax153)
 
 # 0.5.3
 

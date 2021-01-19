@@ -1,13 +1,12 @@
 import * as assert from 'assert'
-import * as path from 'path'
+import * as minimatch from 'minimatch'
+import { join } from 'path'
 import * as O from 'fp-ts/Option'
 import * as TE from 'fp-ts/TaskEither'
 import * as R from 'fp-ts/Record'
 import * as A from 'fp-ts/Array'
 import { eqString } from 'fp-ts/Eq'
 import { pipe, Endomorphism } from 'fp-ts/function'
-import * as minimatch from 'minimatch'
-import { join } from 'path'
 
 import * as Core from '../src/Core'
 import * as E from '../src/Example'
@@ -48,7 +47,7 @@ const prefixWithCwd: Endomorphism<FileSystemState> = R.reduceWithIndex<string, s
   R.empty,
   (key, acc, content) => ({
     ...acc,
-    [path.join(process.cwd(), key)]: content
+    [join(process.cwd(), key)]: content
   })
 )
 

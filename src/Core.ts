@@ -355,6 +355,7 @@ nav_order: 2
 const replace = (searchValue: string | RegExp, replaceValue: string): Endomorphism<string> => s =>
   s.replace(searchValue, replaceValue)
 
+/* tslint:disable:no-regex-spaces */
 const resolveConfigYML = (previousContent: string, settings: Config.Settings): string =>
   pipe(
     previousContent,
@@ -365,6 +366,7 @@ const resolveConfigYML = (previousContent: string, settings: Config.Settings): s
       `  '${settings.projectName} on GitHub':\n    - '${settings.projectHomepage}'`
     )
   )
+/* tslint:enable:no-regex-spaces */
 
 const getConfigYML: Program<File> = pipe(
   RTE.ask<Environment, string>(),

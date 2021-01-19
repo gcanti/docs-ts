@@ -373,7 +373,7 @@ const getFunctionDeclarations: RE.ReaderEither<
           pipe(
             vd.getInitializer(),
             every([
-              flow(O.fromNullable, O.chain(O.fromPredicate(ast.TypeGuards.isFunctionLikeDeclaration)), O.isSome),
+              flow(O.fromNullable, O.chain(O.fromPredicate(ast.Node.isFunctionLikeDeclaration)), O.isSome),
               () =>
                 pipe(
                   (vd.getParent().getParent() as ast.VariableStatement).getJsDocs(),
@@ -488,7 +488,7 @@ export const parseConstants: Parser<ReadonlyArray<Constant>> = pipe(
                     not(flow(getJSDocText, parseComment, shouldIgnore))
                   ),
                 () => (vd.getParent().getParent() as ast.VariableStatement).isExported(),
-                flow(O.fromNullable, O.chain(O.fromPredicate(not(ast.TypeGuards.isFunctionLikeDeclaration))), O.isSome)
+                flow(O.fromNullable, O.chain(O.fromPredicate(not(ast.Node.isFunctionLikeDeclaration))), O.isSome)
               ])
             )
         ])

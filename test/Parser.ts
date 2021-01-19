@@ -903,7 +903,7 @@ describe('Parser', () => {
     describe('parseFile', () => {
       it('should not parse a non-existent file', async () => {
         const file = FS.File('non-existent.ts', '')
-        const project = new ast.Project({ useVirtualFileSystem: true })
+        const project = new ast.Project({ useInMemoryFileSystem: true })
 
         assertLeft(await pipe(settings, _.parseFile(project)(file))(), error =>
           assert.strictEqual(error, 'Unable to locate file: non-existent.ts')

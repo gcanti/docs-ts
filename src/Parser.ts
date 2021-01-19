@@ -379,7 +379,7 @@ const getFunctionDeclarations: RE.ReaderEither<
                   (vd.getParent().getParent() as ast.VariableStatement).getJsDocs(),
                   not(flow(getJSDocText, parseComment, shouldIgnore))
                 ),
-              () => (vd.getParent().getParent() as ast.VariableStatement).isExported(),
+              () => (vd.getParent().getParent() as ast.VariableStatement).isExported()
             ])
           )
       ])

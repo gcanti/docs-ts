@@ -1,6 +1,6 @@
 ---
 title: Markdown.ts
-nav_order: 6
+nav_order: 7
 parent: Modules
 ---
 
@@ -116,7 +116,7 @@ Added in v0.6.0
 **Signature**
 
 ```ts
-export declare const PlainTexts: (content: readonly Markdown[]) => Markdown
+export declare const PlainTexts: (content: any) => Markdown
 ```
 
 Added in v0.6.0
@@ -145,7 +145,7 @@ export declare const fold: <R>(patterns: {
   readonly Newline: () => R
   readonly Paragraph: (content: Markdown) => R
   readonly PlainText: (content: string) => R
-  readonly PlainTexts: (content: readonly Markdown[]) => R
+  readonly PlainTexts: (content: any) => R
   readonly Strikethrough: (content: Markdown) => R
 }) => (markdown: Markdown) => R
 ```
@@ -159,7 +159,7 @@ Added in v0.6.0
 **Signature**
 
 ```ts
-export declare const monoidMarkdown: M.Monoid<Markdown>
+export declare const monoidMarkdown: any
 ```
 
 Added in v0.6.0
@@ -169,7 +169,7 @@ Added in v0.6.0
 **Signature**
 
 ```ts
-export declare const semigroupMarkdown: Semigroup<Markdown>
+export declare const semigroupMarkdown: any
 ```
 
 Added in v0.6.0
@@ -179,7 +179,7 @@ Added in v0.6.0
 **Signature**
 
 ```ts
-export declare const showMarkdown: Show<Markdown>
+export declare const showMarkdown: any
 ```
 
 Added in v0.6.0

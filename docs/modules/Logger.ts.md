@@ -1,6 +1,6 @@
 ---
 title: Logger.ts
-nav_order: 5
+nav_order: 6
 parent: Modules
 ---
 
@@ -12,6 +12,8 @@ Added in v0.6.0
 
 <h2 class="text-delta">Table of contents</h2>
 
+- [constructors](#constructors)
+  - [LogEntry](#logentry)
 - [instances](#instances)
   - [Logger](#logger)
   - [showEntry](#showentry)
@@ -25,6 +27,18 @@ Added in v0.6.0
   - [info](#info)
 
 ---
+
+# constructors
+
+## LogEntry
+
+**Signature**
+
+```ts
+export declare const LogEntry: (message: string, date: any, level: LogLevel) => LogEntry
+```
+
+Added in v0.6.0
 
 # instances
 
@@ -43,7 +57,7 @@ Added in v0.6.0
 **Signature**
 
 ```ts
-export declare const showEntry: S.Show<LogEntry>
+export declare const showEntry: any
 ```
 
 Added in v0.6.0
@@ -95,7 +109,7 @@ Added in v0.6.0
 **Signature**
 
 ```ts
-export declare const debug: (message: string) => T.Task<void>
+export declare const debug: (message: string) => any
 ```
 
 Added in v0.6.0
@@ -105,7 +119,7 @@ Added in v0.6.0
 **Signature**
 
 ```ts
-export declare const error: (message: string) => T.Task<void>
+export declare const error: (message: string) => any
 ```
 
 Added in v0.6.0
@@ -115,7 +129,7 @@ Added in v0.6.0
 **Signature**
 
 ```ts
-export declare const info: (message: string) => T.Task<void>
+export declare const info: (message: string) => any
 ```
 
 Added in v0.6.0

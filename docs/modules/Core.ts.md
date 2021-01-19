@@ -29,7 +29,11 @@ Added in v0.6.0
 **Signature**
 
 ```ts
-export interface Capabilities extends FS.FileSystem, L.Logger {}
+export interface Capabilities {
+  readonly example: Example
+  readonly fileSystem: FileSystem
+  readonly logger: Logger
+}
 ```
 
 Added in v0.6.0
@@ -49,8 +53,7 @@ Added in v0.6.0
 **Signature**
 
 ```ts
-export interface Environment {
-  readonly capabilities: Capabilities
+export interface Environment extends Capabilities {
   readonly settings: Config.Settings
 }
 ```

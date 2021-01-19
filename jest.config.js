@@ -16,6 +16,6 @@ module.exports = {
       statements: 100
     }
   },
-  modulePathIgnorePatterns: ['fixtures'],
+  coveragePathIgnorePatterns: ['/node_modules/', '/src/bin.ts'],
   testPathIgnorePatterns: ['/node_modules/', 'test/utils.ts']
 }

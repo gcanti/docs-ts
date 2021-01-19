@@ -1,6 +1,6 @@
 ---
 title: Parser.ts
-nav_order: 8
+nav_order: 9
 parent: Modules
 ---
 
@@ -59,7 +59,7 @@ Added in v0.6.0
 **Signature**
 
 ```ts
-export declare const parseClasses: Parser<readonly Class[]>
+export declare const parseClasses: Parser<any>
 ```
 
 Added in v0.6.0
@@ -69,7 +69,7 @@ Added in v0.6.0
 **Signature**
 
 ```ts
-export declare const parseConstants: Parser<readonly Constant[]>
+export declare const parseConstants: Parser<any>
 ```
 
 Added in v0.6.0
@@ -79,7 +79,7 @@ Added in v0.6.0
 **Signature**
 
 ```ts
-export declare const parseExports: Parser<readonly Export[]>
+export declare const parseExports: Parser<any>
 ```
 
 Added in v0.6.0
@@ -89,7 +89,7 @@ Added in v0.6.0
 **Signature**
 
 ```ts
-export declare const parseFiles: (files: readonly File[]) => RTE.ReaderTaskEither<Settings, string, readonly Module[]>
+export declare const parseFiles: (files: any) => any
 ```
 
 Added in v0.6.0
@@ -99,7 +99,7 @@ Added in v0.6.0
 **Signature**
 
 ```ts
-export declare const parseFunctions: Parser<readonly Function[]>
+export declare const parseFunctions: Parser<any>
 ```
 
 Added in v0.6.0
@@ -109,7 +109,7 @@ Added in v0.6.0
 **Signature**
 
 ```ts
-export declare const parseInterfaces: Parser<readonly Interface[]>
+export declare const parseInterfaces: Parser<any>
 ```
 
 Added in v0.6.0
@@ -129,7 +129,7 @@ Added in v0.6.0
 **Signature**
 
 ```ts
-export declare const parseTypeAliases: Parser<readonly TypeAlias[]>
+export declare const parseTypeAliases: Parser<any>
 ```
 
 Added in v0.6.0

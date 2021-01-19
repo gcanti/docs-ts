@@ -1,6 +1,6 @@
 ---
 title: FileSystem.ts
-nav_order: 3
+nav_order: 4
 parent: Modules
 ---
 
@@ -95,7 +95,7 @@ Added in v0.6.0
 **Signature**
 
 ```ts
-export declare const exists: (path: string) => TE.TaskEither<Error, boolean>
+export declare const exists: (path: string) => any
 ```
 
 Added in v0.6.0
@@ -107,7 +107,7 @@ Reads a file.
 **Signature**
 
 ```ts
-export declare const readFile: (path: string, encoding: string) => TE.TaskEither<Error, string>
+export declare const readFile: (path: string, encoding: string) => any
 ```
 
 Added in v0.6.0
@@ -120,7 +120,7 @@ If the path does not exist, silently does nothing.
 **Signature**
 
 ```ts
-export declare const remove: (path: string, options: rimraf.Options) => TE.TaskEither<Error, void>
+export declare const remove: (path: string, options: any) => any
 ```
 
 Added in v0.6.0
@@ -132,7 +132,7 @@ Searches for files matching the specified glob pattern.
 **Signature**
 
 ```ts
-export declare const search: (pattern: string, options: glob.IOptions) => TE.TaskEither<Error, readonly string[]>
+export declare const search: (pattern: string, options: any) => any
 ```
 
 Added in v0.6.0
@@ -148,7 +148,7 @@ export declare const writeFile: (
   path: string,
   data: string,
   options: { readonly encoding?: string; readonly flag?: string; readonly mode?: number }
-) => TE.TaskEither<Error, void>
+) => any
 ```
 
 Added in v0.6.0

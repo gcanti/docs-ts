@@ -3,7 +3,6 @@
  */
 import * as Apply from 'fp-ts/Apply'
 import * as E from 'fp-ts/Either'
-import * as IOE from 'fp-ts/IOEither'
 import * as M from 'fp-ts/Monoid'
 import * as O from 'fp-ts/Option'
 import * as Ord from 'fp-ts/Ord'
@@ -13,6 +12,7 @@ import * as RTE from 'fp-ts/ReaderTaskEither'
 import * as RNEA from 'fp-ts/ReadonlyNonEmptyArray'
 import * as RR from 'fp-ts/ReadonlyRecord'
 import * as S from 'fp-ts/Semigroup'
+import * as IOE from 'fp-ts/IOEither'
 import { flow, not, pipe, Endomorphism, Predicate } from 'fp-ts/function'
 import * as ast from 'ts-morph'
 import * as doctrine from 'doctrine'
@@ -373,13 +373,13 @@ const getFunctionDeclarations: RE.ReaderEither<
           pipe(
             vd.getInitializer(),
             every([
+              flow(O.fromNullable, O.chain(O.fromPredicate(ast.TypeGuards.isFunctionLikeDeclaration)), O.isSome),
               () =>
                 pipe(
                   (vd.getParent().getParent() as ast.VariableStatement).getJsDocs(),
                   not(flow(getJSDocText, parseComment, shouldIgnore))
                 ),
               () => (vd.getParent().getParent() as ast.VariableStatement).isExported(),
-              flow(O.fromNullable, O.chain(O.fromPredicate(ast.TypeGuards.isFunctionLikeDeclaration)), O.isSome)
             ])
           )
       ])
@@ -808,7 +808,7 @@ const addFileToProject = (file: File, project: ast.Project): ast.SourceFile =>
 
 const createProject = (files: ReadonlyArray<File>): RTE.ReaderTaskEither<Settings, string, ast.Project> =>
   pipe(
-    RTE.fromIO<Settings, string, ast.Project>(() => new ast.Project({ useVirtualFileSystem: true })),
+    RTE.fromIO<Settings, string, ast.Project>(() => new ast.Project({ useInMemoryFileSystem: true })),
     RTE.chainIOEitherK(project =>
       pipe(
         files,

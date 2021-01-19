@@ -10,6 +10,7 @@ import * as minimatch from 'minimatch'
 import { join } from 'path'
 
 import * as Core from '../src/Core'
+import * as E from '../src/Example'
 import * as L from '../src/Logger'
 import * as FS from '../src/FileSystem'
 import { assertLeft, assertRight } from './utils'
@@ -17,25 +18,30 @@ import { assertLeft, assertRight } from './utils'
 type FileSystemState = Record<string, string>
 type Log = Array<string>
 
+let command = ''
+let executablePath = ''
 let fileSystemState: FileSystemState = {}
 let log: Log = []
 
 beforeEach(() => {
+  command = ''
+  executablePath = ''
   fileSystemState = {}
   log = []
 })
 
+afterAll(() => {
+  jest.restoreAllMocks()
+})
+
 const defaultPackageJson: string = JSON.stringify({ name: 'docs-ts', homepage: 'https://docs-ts.com' })
 
-const addMsgToLog: (msg: string) => TE.TaskEither<string, void> = msg => {
-  log.push(msg)
-  return TE.of(undefined)
-}
-
-const logger: L.Logger = {
-  debug: addMsgToLog,
-  error: addMsgToLog,
-  info: addMsgToLog
+const example: E.Example = {
+  run: (c, p) => {
+    command = c
+    executablePath = p
+    return TE.of(undefined)
+  }
 }
 
 const prefixWithCwd: Endomorphism<FileSystemState> = R.reduceWithIndex<string, string, FileSystemState>(
@@ -71,16 +77,28 @@ const fileSystem: FS.FileSystem = {
         fileSystemState,
         R.filterWithIndex(path => minimatch(path, join(process.cwd(), pattern))),
         R.keys,
-        A.filter(path => !exclude.some(pattern => minimatch(path,  join(process.cwd(), pattern))))
+        A.filter(path => !exclude.some(pattern => minimatch(path, join(process.cwd(), pattern))))
       )
     )
+}
+
+const addMsgToLog: (msg: string) => TE.TaskEither<string, void> = msg => {
+  log.push(msg)
+  return TE.of(undefined)
+}
+
+const logger: L.Logger = {
+  debug: addMsgToLog,
+  error: addMsgToLog,
+  info: addMsgToLog
 }
 
 const makeCapabilities: (state: FileSystemState) => Core.Capabilities = state => {
   fileSystemState = state
   return {
-    ...logger,
-    ...fileSystem
+    logger,
+    fileSystem,
+    example
   }
 }
 
@@ -139,7 +157,7 @@ describe('Core', () => {
 
       it('writes only base files when no source files are present', async () => {
         const state = prefixWithCwd({
-          'package.json': defaultPackageJson,
+          'package.json': defaultPackageJson
         })
         const capabilities = makeCapabilities(state)
 
@@ -165,7 +183,31 @@ describe('Core', () => {
         assertRight(await Core.main(capabilities)(), result => {
           assert.strictEqual(result, undefined)
           assert.strictEqual(A.elem(eqString)('Found configuration file')(log), true)
-          assert.strictEqual(A.elem(eqString)(`Parsing configuration file found at: ${process.cwd()}/docs-ts.json`)(log), true)
+          assert.strictEqual(
+            A.elem(eqString)(`Parsing configuration file found at: ${process.cwd()}/docs-ts.json`)(log),
+            true
+          )
+        })
+      })
+
+      it('should skip creation of index.md if the file already exists', async () => {
+        const indexMd = `---
+title: Home
+nav_order: 1
+---`
+        const state = prefixWithCwd({
+          'package.json': defaultPackageJson,
+          'docs/index.md': indexMd,
+          'docs-ts.json': JSON.stringify({ enableSearch: false })
+        })
+        const capabilities = makeCapabilities(state)
+
+        assertRight(await Core.main(capabilities)(), result => {
+          assert.strictEqual(result, undefined)
+          assert.strictEqual(
+            log.includes(`File ${process.cwd()}/docs/index.md already exists, skipping creation`),
+            true
+          )
         })
       })
 
@@ -191,13 +233,18 @@ additional_config_param: true`
 
         assertRight(await Core.main(capabilities)(), result => {
           assert.strictEqual(result, undefined)
-          assert.strictEqual(fileSystemState['/home/maxbrown/projects/docs-ts/docs/_config.yml'].includes('additional_config_param: true'), true)
+          assert.strictEqual(
+            fileSystemState['/home/maxbrown/projects/docs-ts/docs/_config.yml'].includes(
+              'additional_config_param: true'
+            ),
+            true
+          )
         })
       })
     })
 
     describe('modules', () => {
-      it('should print modules found in the file system', async () => {
+      it('should log modules found in the file system to the console', async () => {
         const state = prefixWithCwd({
           'package.json': defaultPackageJson,
           'src/utils/foo.ts': `
@@ -217,8 +264,128 @@ export const foo = (): string => 'foo'
         assertRight(await Core.main(capabilities)(), result => {
           assert.strictEqual(result, undefined)
           assert.strictEqual(log.includes('Found 1 modules'), true)
-          assert.strictEqual(Object.keys(fileSystemState).includes(join(process.cwd(), 'docs/modules/src/utils/foo.ts.md')), true)
+          assert.strictEqual(
+            Object.keys(fileSystemState).includes(join(process.cwd(), 'docs/modules/src/utils/foo.ts.md')),
+            true
+          )
         })
+      })
+    })
+
+    describe('examples', () => {
+      it('should attempt to typecheck examples', async () => {
+        const state = prefixWithCwd({
+          'package.json': defaultPackageJson,
+          'src/utils/foo.ts': `
+/**
+ * @since 0.0.1
+ */
+
+/**
+ * @category utils
+ * @since 0.0.1
+ */
+export class Foo {
+  /**
+   * @example
+   * const foo = new Foo()
+   *
+   * @since 0.0.1
+   */
+  public bar(): string {
+    return 'bar'
+  }
+}
+          `
+        })
+        const capabilities = makeCapabilities(state)
+
+        assertRight(await Core.main(capabilities)(), result => {
+          assert.strictEqual(result, undefined)
+          assert.strictEqual(command, 'ts-node')
+          assert.strictEqual(executablePath.includes('docs/examples/index.ts'), true)
+        })
+      })
+
+      it('should attempt to typecheck examples that include assert statements', async () => {
+        const state = prefixWithCwd({
+          'package.json': defaultPackageJson,
+          'src/utils/foo.ts': `
+/**
+ * @since 0.0.1
+ */
+
+/**
+ * @category utils
+ * @since 0.0.1
+ */
+export class Foo {
+  /**
+   * @example
+   * const foo = new Foo()
+   * assert.strictEqual(typeof foo.bar() === 'string', true)
+   *
+   * @since 0.0.1
+   */
+  public bar(): string {
+    return 'bar'
+  }
+}
+          `
+        })
+        const capabilities = makeCapabilities(state)
+
+        assertRight(await Core.main(capabilities)(), result => {
+          assert.strictEqual(result, undefined)
+          assert.strictEqual(command, 'ts-node')
+          assert.strictEqual(executablePath.includes('docs/examples/index.ts'), true)
+        })
+      })
+    })
+  })
+
+  describe('Windows', () => {
+    let originalPlatform = process.platform
+
+    beforeAll(() => {
+      Object.defineProperty(process, 'platform', { value: 'win32' })
+    })
+
+    afterAll(() => {
+      Object.defineProperty(process, 'platform', { value: originalPlatform })
+    })
+
+    it('should modify the executed command on Windows', async () => {
+      const state = prefixWithCwd({
+        'package.json': defaultPackageJson,
+        'src/utils/foo.ts': `
+/**
+* @since 0.0.1
+*/
+
+/**
+* @category utils
+* @since 0.0.1
+*/
+export class Foo {
+/**
+ * @example
+ * const foo = new Foo()
+ *
+ * @since 0.0.1
+ */
+public bar(): string {
+  return 'bar'
+}
+}
+        `
+      })
+      const capabilities = makeCapabilities(state)
+
+      assertRight(await Core.main(capabilities)(), result => {
+        assert.strictEqual(result, undefined)
+        assert.strictEqual(command, 'ts-node.cmd')
+        assert.strictEqual(executablePath.includes('docs/examples/index.ts'), true)
       })
     })
   })

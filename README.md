@@ -1,3 +1,19 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of contents**
+
+- [Installation:](#installation)
+    - [Via `npm`](#via-npm)
+    - [Via `yarn`](#via-yarn)
+    - [Via `npx` (on-demand)](#via-npx-on-demand)
+- [Why](#why)
+- [Usage](#usage)
+- [Configuration](#configuration)
+- [Documentation](#documentation)
+- [License](#license)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 > A simple, opinionated, zero-configuration tool for creating beautiful documentation for TypeScript projects.
 
 ## Installation:

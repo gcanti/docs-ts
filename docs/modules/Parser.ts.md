@@ -13,8 +13,9 @@ Added in v0.6.0
 <h2 class="text-delta">Table of contents</h2>
 
 - [model](#model)
-  - [Env (interface)](#env-interface)
+  - [Ast (interface)](#ast-interface)
   - [Parser (interface)](#parser-interface)
+  - [ParserEnv (interface)](#parserenv-interface)
 - [parsers](#parsers)
   - [parseClasses](#parseclasses)
   - [parseConstants](#parseconstants)
@@ -29,14 +30,14 @@ Added in v0.6.0
 
 # model
 
-## Env (interface)
+## Ast (interface)
 
 **Signature**
 
 ```ts
-export interface Env extends Settings {
-  readonly path: RNEA.ReadonlyNonEmptyArray<string>
-  readonly sourceFile: ast.SourceFile
+export interface Ast {
+  readonly project: ast.Project
+  readonly addFile: (file: File) => R.Reader<ast.Project, void>
 }
 ```
 
@@ -47,7 +48,20 @@ Added in v0.6.0
 **Signature**
 
 ```ts
-export interface Parser<A> extends RE.ReaderEither<Env, string, A> {}
+export interface Parser<A> extends RE.ReaderEither<ParserEnv, string, A> {}
+```
+
+Added in v0.6.0
+
+## ParserEnv (interface)
+
+**Signature**
+
+```ts
+export interface ParserEnv extends Environment {
+  readonly path: RNEA.ReadonlyNonEmptyArray<string>
+  readonly sourceFile: ast.SourceFile
+}
 ```
 
 Added in v0.6.0
@@ -89,7 +103,9 @@ Added in v0.6.0
 **Signature**
 
 ```ts
-export declare const parseFiles: (files: ReadonlyArray<File>) => any
+export declare const parseFiles: (
+  files: ReadonlyArray<File>
+) => RTE.ReaderTaskEither<Environment, string, ReadonlyArray<Module>>
 ```
 
 Added in v0.6.0

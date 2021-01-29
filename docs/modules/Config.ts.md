@@ -199,7 +199,7 @@ Added in v0.6.0
 **Signature**
 
 ```ts
-export declare const decode: (input: unknown) => any
+export declare const decode: (input: unknown) => TE.TaskEither<string, Partial<Config>>
 ```
 
 Added in v0.6.0

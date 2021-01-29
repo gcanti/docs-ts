@@ -159,7 +159,7 @@ Added in v0.6.0
 **Signature**
 
 ```ts
-export declare const monoidMarkdown: any
+export declare const monoidMarkdown: M.Monoid<Markdown>
 ```
 
 Added in v0.6.0
@@ -169,7 +169,7 @@ Added in v0.6.0
 **Signature**
 
 ```ts
-export declare const semigroupMarkdown: any
+export declare const semigroupMarkdown: Semigroup<Markdown>
 ```
 
 Added in v0.6.0
@@ -179,7 +179,7 @@ Added in v0.6.0
 **Signature**
 
 ```ts
-export declare const showMarkdown: any
+export declare const showMarkdown: Show<Markdown>
 ```
 
 Added in v0.6.0

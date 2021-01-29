@@ -58,7 +58,7 @@ Added in v0.6.0
 **Signature**
 
 ```ts
-export declare const run: (command: string, executablePath: string) => any
+export declare const run: (command: string, executablePath: string) => TE.TaskEither<string, void>
 ```
 
 Added in v0.6.0

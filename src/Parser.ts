@@ -7,18 +7,18 @@ import * as M from 'fp-ts/Monoid'
 import * as O from 'fp-ts/Option'
 import * as Ord from 'fp-ts/Ord'
 import * as RA from 'fp-ts/ReadonlyArray'
+import * as R from 'fp-ts/Reader'
 import * as RE from 'fp-ts/ReaderEither'
 import * as RTE from 'fp-ts/ReaderTaskEither'
 import * as RNEA from 'fp-ts/ReadonlyNonEmptyArray'
 import * as RR from 'fp-ts/ReadonlyRecord'
 import * as S from 'fp-ts/Semigroup'
-import * as IOE from 'fp-ts/IOEither'
 import { flow, not, pipe, Endomorphism, Predicate } from 'fp-ts/function'
 import * as ast from 'ts-morph'
 import * as doctrine from 'doctrine'
 import * as Path from 'path'
 
-import { Settings } from './Config'
+import { Environment } from './Core'
 import { File } from './FileSystem'
 import {
   ordModule,
@@ -43,15 +43,24 @@ import {
  * @category model
  * @since 0.6.0
  */
-export interface Parser<A> extends RE.ReaderEither<Env, string, A> {}
+export interface Parser<A> extends RE.ReaderEither<ParserEnv, string, A> {}
 
 /**
  * @category model
  * @since 0.6.0
  */
-export interface Env extends Settings {
+export interface ParserEnv extends Environment {
   readonly path: RNEA.ReadonlyNonEmptyArray<string>
   readonly sourceFile: ast.SourceFile
+}
+
+/**
+ * @category model
+ * @since 0.6.0
+ */
+export interface Ast {
+  readonly project: ast.Project
+  readonly addFile: (file: File) => R.Reader<ast.Project, void>
 }
 
 interface Comment {
@@ -139,13 +148,18 @@ const isVariableStatement = (
   u: ast.VariableStatement | ast.ForStatement | ast.ForOfStatement | ast.ForInStatement
 ): u is ast.VariableStatement => u.getKind() === ast.ts.SyntaxKind.VariableStatement
 
+/**
+ * @internal
+ */
+export const addFileToProject = (file: File) => (project: ast.Project) => project.addSourceFileAtPath(file.path)
+
 // -------------------------------------------------------------------------------------
 // comments
 // -------------------------------------------------------------------------------------
 
 const getSinceTag = (name: string, comment: Comment): Parser<O.Option<string>> =>
   pipe(
-    RE.ask<Env>(),
+    RE.ask<ParserEnv>(),
     RE.chainEitherK(env =>
       pipe(
         comment.tags,
@@ -153,7 +167,7 @@ const getSinceTag = (name: string, comment: Comment): Parser<O.Option<string>> =
         O.chain(RNEA.head),
         O.fold(
           () =>
-            env.enforceVersion
+            env.settings.enforceVersion
               ? E.left(`Missing @since tag in ${env.path.join('/')}#${name} documentation`)
               : E.right(O.none),
           since => E.right(O.some(since))
@@ -164,7 +178,7 @@ const getSinceTag = (name: string, comment: Comment): Parser<O.Option<string>> =
 
 const getCategoryTag = (name: string, comment: Comment): Parser<O.Option<string>> =>
   pipe(
-    RE.ask<Env>(),
+    RE.ask<ParserEnv>(),
     RE.chainEitherK(env =>
       pipe(
         comment.tags,
@@ -180,13 +194,13 @@ const getCategoryTag = (name: string, comment: Comment): Parser<O.Option<string>
 
 const getDescription = (name: string, comment: Comment): Parser<O.Option<string>> =>
   pipe(
-    RE.ask<Env>(),
+    RE.ask<ParserEnv>(),
     RE.chainEitherK(env =>
       pipe(
         comment.description,
         O.fold(
           () =>
-            env.enforceDescriptions
+            env.settings.enforceDescriptions
               ? E.left(`Missing description in ${env.path.join('/')}#${name} documentation`)
               : E.right(O.none),
           description => E.right(O.some(description))
@@ -197,7 +211,7 @@ const getDescription = (name: string, comment: Comment): Parser<O.Option<string>
 
 const getExamples = (name: string, comment: Comment): Parser<ReadonlyArray<string>> =>
   pipe(
-    RE.ask<Env>(),
+    RE.ask<ParserEnv>(),
     RE.chainEitherK(env =>
       pipe(
         comment.tags,
@@ -205,11 +219,11 @@ const getExamples = (name: string, comment: Comment): Parser<ReadonlyArray<strin
         O.map(RA.compact),
         O.fold(
           () =>
-            env.enforceExamples
+            env.settings.enforceExamples
               ? E.left(`Missing examples in ${env.path.join('/')}#${name} documentation`)
               : E.right<never, ReadonlyArray<string>>(RA.empty),
           examples =>
-            env.enforceExamples && RA.isEmpty(examples)
+            env.settings.enforceExamples && RA.isEmpty(examples)
               ? E.left(`Missing examples in ${env.path.join('/')}#${name} documentation`)
               : E.right(examples)
         )
@@ -222,7 +236,7 @@ const getExamples = (name: string, comment: Comment): Parser<ReadonlyArray<strin
  */
 export const getCommentInfo = (name: string) => (text: string): Parser<CommentInfo> =>
   pipe(
-    RE.right<Env, string, Comment>(parseComment(text)),
+    RE.right<ParserEnv, string, Comment>(parseComment(text)),
     RE.bindTo('comment'),
     RE.bind('since', ({ comment }) => getSinceTag(name, comment)),
     RE.bind('category', ({ comment }) => getCategoryTag(name, comment)),
@@ -269,7 +283,7 @@ const parseInterfaceDeclaration = (id: ast.InterfaceDeclaration): Parser<Interfa
  * @since 0.6.0
  */
 export const parseInterfaces: Parser<ReadonlyArray<Interface>> = pipe(
-  RE.asks<Env, string, ReadonlyArray<ast.InterfaceDeclaration>>(env =>
+  RE.asks<ParserEnv, string, ReadonlyArray<ast.InterfaceDeclaration>>(env =>
     env.sourceFile.getInterfaces().filter(id => id.isExported())
   ),
   RE.chain(flow(traverse(parseInterfaceDeclaration), RE.map(RA.sort(ordByName))))
@@ -304,8 +318,8 @@ const getFunctionDeclarationJSDocs = (fd: ast.FunctionDeclaration): ReadonlyArra
 
 const parseFunctionDeclaration = (fd: ast.FunctionDeclaration): Parser<Function> =>
   pipe(
-    RE.ask<Env>(),
-    RE.chain<Env, string, Env, string>(env =>
+    RE.ask<ParserEnv>(),
+    RE.chain<ParserEnv, string, ParserEnv, string>(env =>
       pipe(
         O.fromNullable(fd.getName()),
         O.chain(O.fromPredicate(name => name.length > 0)),
@@ -350,7 +364,7 @@ const parseFunctionVariableDeclaration = (vd: ast.VariableDeclaration): Parser<F
 }
 
 const getFunctionDeclarations: RE.ReaderEither<
-  Env,
+  ParserEnv,
   string,
   {
     functions: ReadonlyArray<ast.FunctionDeclaration>
@@ -405,12 +419,12 @@ export const parseFunctions: Parser<ReadonlyArray<Function>> = pipe(
 )
 
 // -------------------------------------------------------------------------------------
-// type aliasese
+// type aliases
 // -------------------------------------------------------------------------------------
 
 const parseTypeAliasDeclaration = (ta: ast.TypeAliasDeclaration): Parser<TypeAlias> =>
   pipe(
-    RE.of<Env, string, string>(ta.getName()),
+    RE.of<ParserEnv, string, string>(ta.getName()),
     RE.chain(name =>
       pipe(
         getJSDocText(ta.getJsDocs()),
@@ -430,7 +444,7 @@ const parseTypeAliasDeclaration = (ta: ast.TypeAliasDeclaration): Parser<TypeAli
  * @since 0.6.0
  */
 export const parseTypeAliases: Parser<ReadonlyArray<TypeAlias>> = pipe(
-  RE.asks((env: Env) =>
+  RE.asks((env: ParserEnv) =>
     pipe(
       env.sourceFile.getTypeAliases(),
       RA.filter(
@@ -471,7 +485,7 @@ const parseConstantVariableDeclaration = (vd: ast.VariableDeclaration): Parser<C
  * @since 0.6.0
  */
 export const parseConstants: Parser<ReadonlyArray<Constant>> = pipe(
-  RE.asks((env: Env) =>
+  RE.asks((env: ParserEnv) =>
     pipe(
       env.sourceFile.getVariableDeclarations(),
       RA.filter(
@@ -482,13 +496,13 @@ export const parseConstants: Parser<ReadonlyArray<Constant>> = pipe(
             pipe(
               vd.getInitializer(),
               every([
+                flow(O.fromNullable, O.chain(O.fromPredicate(not(ast.Node.isFunctionLikeDeclaration))), O.isSome),
                 () =>
                   pipe(
                     (vd.getParent().getParent() as ast.VariableStatement).getJsDocs(),
                     not(flow(getJSDocText, parseComment, shouldIgnore))
                   ),
-                () => (vd.getParent().getParent() as ast.VariableStatement).isExported(),
-                flow(O.fromNullable, O.chain(O.fromPredicate(not(ast.Node.isFunctionLikeDeclaration))), O.isSome)
+                () => (vd.getParent().getParent() as ast.VariableStatement).isExported()
               ])
             )
         ])
@@ -504,10 +518,10 @@ export const parseConstants: Parser<ReadonlyArray<Constant>> = pipe(
 
 const parseExportSpecifier = (es: ast.ExportSpecifier): Parser<Export> =>
   pipe(
-    RE.ask<Env>(),
+    RE.ask<ParserEnv>(),
     RE.chain(env =>
       pipe(
-        RE.of<Env, string, string>(es.compilerNode.name.text),
+        RE.of<ParserEnv, string, string>(es.compilerNode.name.text),
         RE.bindTo('name'),
         RE.bind('type', () => RE.of(stripImportTypes(es.getType().getText(es)))),
         RE.bind('signature', ({ name, type }) => RE.of(`export declare const ${name}: ${type}`)),
@@ -537,7 +551,7 @@ const parseExportDeclaration = (ed: ast.ExportDeclaration): Parser<ReadonlyArray
  * @since 0.6.0
  */
 export const parseExports: Parser<ReadonlyArray<Export>> = pipe(
-  RE.asks((env: Env) => env.sourceFile.getExportDeclarations()),
+  RE.asks((env: ParserEnv) => env.sourceFile.getExportDeclarations()),
   RE.chain(traverse(parseExportDeclaration)),
   RE.map(RA.flatten)
 )
@@ -563,7 +577,7 @@ const getMethodSignature = (md: ast.MethodDeclaration): string =>
 
 const parseMethod = (md: ast.MethodDeclaration): Parser<Method> =>
   pipe(
-    RE.of<Env, string, string>(md.getName()),
+    RE.of<ParserEnv, string, string>(md.getName()),
     RE.bindTo('name'),
     RE.bind('overloads', () => RE.of(md.getOverloads())),
     RE.bind('jsdocs', ({ overloads }) =>
@@ -656,8 +670,8 @@ export const getConstructorDeclarationSignature = (c: ast.ConstructorDeclaration
 
 const getClassName = (c: ast.ClassDeclaration): Parser<string> =>
   pipe(
-    RE.ask<Env>(),
-    RE.chain<Env, string, Env, string>(env =>
+    RE.ask<ParserEnv>(),
+    RE.chain<ParserEnv, string, ParserEnv, string>(env =>
       pipe(
         O.fromNullable(c.getName()),
         RE.fromOption(() => `Missing class name in module ${env.path.join('/')}`)
@@ -670,7 +684,7 @@ const getClassCommentInfo = (name: string, c: ast.ClassDeclaration): Parser<Comm
 
 const getClassDeclarationSignature = (name: string, c: ast.ClassDeclaration): Parser<string> =>
   pipe(
-    RE.ask<Env>(),
+    RE.ask<ParserEnv>(),
     RE.map(() => getTypeParameters(c.getTypeParameters())),
     RE.map(typeParameters =>
       pipe(
@@ -703,7 +717,7 @@ const parseClass = (c: ast.ClassDeclaration): Parser<Class> =>
     )
   )
 
-const getClasses: Parser<ReadonlyArray<ast.ClassDeclaration>> = RE.asks((env: Env) =>
+const getClasses: Parser<ReadonlyArray<ast.ClassDeclaration>> = RE.asks((env: ParserEnv) =>
   pipe(
     env.sourceFile.getClasses(),
     RA.filter(c => c.isExported())
@@ -730,7 +744,7 @@ const getModuleName = (path: RNEA.ReadonlyNonEmptyArray<string>): string => Path
  * @internal
  */
 export const parseModuleDocumentation: Parser<Documentable> = pipe(
-  RE.ask<Env>(),
+  RE.ask<ParserEnv>(),
   RE.chainEitherK(env => {
     const name = getModuleName(env.path)
     const onMissingDocumentation = () => E.left(`Missing documentation in ${env.path.join('/')} module`)
@@ -758,7 +772,7 @@ export const parseModuleDocumentation: Parser<Documentable> = pipe(
  * @since 0.6.0
  */
 export const parseModule: Parser<Module> = pipe(
-  RE.ask<Env>(),
+  RE.ask<ParserEnv>(),
   RE.chain(env =>
     pipe(
       parseModuleDocumentation,
@@ -783,46 +797,47 @@ export const parseModule: Parser<Module> = pipe(
 /**
  * @internal
  */
-export const parseFile = (project: ast.Project) => (file: File): RTE.ReaderTaskEither<Settings, string, Module> =>
+export const parseFile = (project: ast.Project) => (file: File): RTE.ReaderTaskEither<Environment, string, Module> =>
   pipe(
-    RTE.ask<Settings>(),
-    RTE.chain(settings =>
+    RTE.ask<Environment>(),
+    RTE.chain(env =>
       pipe(
-        RTE.right<Settings, string, RNEA.ReadonlyNonEmptyArray<string>>(file.path.split(Path.sep) as any),
+        RTE.right<Environment, string, RNEA.ReadonlyNonEmptyArray<string>>(file.path.split(Path.sep) as any),
         RTE.bindTo('path'),
         RTE.bind(
           'sourceFile',
-          (): RTE.ReaderTaskEither<Settings, string, ast.SourceFile> =>
+          (): RTE.ReaderTaskEither<Environment, string, ast.SourceFile> =>
             pipe(
               O.fromNullable(project.getSourceFile(file.path)),
               RTE.fromOption(() => `Unable to locate file: ${file.path}`)
             )
         ),
-        RTE.chainEitherK(env => parseModule({ ...settings, ...env }))
+        RTE.chainEitherK(menv => parseModule({ ...env, ...menv }))
       )
     )
   )
 
-const addFileToProject = (file: File, project: ast.Project): ast.SourceFile =>
-  project.createSourceFile(file.path, file.content)
-
-const createProject = (files: ReadonlyArray<File>): RTE.ReaderTaskEither<Settings, string, ast.Project> =>
+const createProject = (files: ReadonlyArray<File>): RTE.ReaderTaskEither<Environment, string, ast.Project> =>
   pipe(
-    RTE.fromIO<Settings, string, ast.Project>(() => new ast.Project({ useInMemoryFileSystem: true })),
-    RTE.chainIOEitherK(project =>
-      pipe(
-        files,
-        RA.traverse(IOE.ApplicativePar)(file => IOE.tryCatch(() => addFileToProject(file, project), String)),
-        IOE.map(() => project)
+    RTE.ask<Environment>(),
+    RTE.chainFirst(({ ast }) =>
+      RTE.of(
+        pipe(
+          files,
+          RA.map(file => ast.addFile(file)(ast.project))
+        )
       )
-    )
+    ),
+    RTE.map(({ ast }) => ast.project)
   )
 
 /**
  * @category parsers
  * @since 0.6.0
  */
-export const parseFiles = (files: ReadonlyArray<File>): RTE.ReaderTaskEither<Settings, string, ReadonlyArray<Module>> =>
+export const parseFiles = (
+  files: ReadonlyArray<File>
+): RTE.ReaderTaskEither<Environment, string, ReadonlyArray<Module>> =>
   pipe(
     createProject(files),
     RTE.chain(project => pipe(files, RA.traverse(RTE.getReaderTaskValidation(semigroupError))(parseFile(project)))),

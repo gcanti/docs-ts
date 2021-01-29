@@ -7,8 +7,10 @@ import * as IO from 'fp-ts/IO'
 import { pipe } from 'fp-ts/pipeable'
 import * as T from 'fp-ts/Task'
 import * as TE from 'fp-ts/TaskEither'
+import * as ast from 'ts-morph'
 
 import * as Core from './Core'
+import * as Parser from './Parser'
 import { Example } from './Example'
 import { FileSystem } from './FileSystem'
 import { Logger } from './Logger'
@@ -41,7 +43,11 @@ export const exit: (program: TE.TaskEither<string, void>) => T.Task<void> = TE.f
 const capabilities: Core.Capabilities = {
   example: Example,
   fileSystem: FileSystem,
-  logger: Logger
+  logger: Logger,
+  ast: {
+    project: new ast.Project(),
+    addFile: Parser.addFileToProject
+  }
 }
 
 /**

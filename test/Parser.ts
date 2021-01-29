@@ -3,16 +3,28 @@ import * as O from 'fp-ts/lib/Option'
 import * as RA from 'fp-ts/ReadonlyArray'
 import { pipe } from 'fp-ts/function'
 import * as ast from 'ts-morph'
+import * as fs from 'fs-extra'
+import * as path from 'path'
 
 import * as C from '../src/Config'
+import * as E from '../src/Example'
 import * as FS from '../src/FileSystem'
+import * as L from '../src/Logger'
 import * as _ from '../src/Parser'
 
 import { assertLeft, assertRight } from './utils'
 
 let testCounter = 0
 
-const project = new ast.Project()
+const project = new ast.Project({ useInMemoryFileSystem: true })
+
+const addFileToProject = (file: FS.File) => (project: ast.Project) =>
+  project.createSourceFile(file.path, file.content, { overwrite: file.overwrite })
+
+const defaultAst: _.Ast = {
+  project,
+  addFile: addFileToProject
+}
 
 const settings: C.Settings = {
   projectName: 'docs-ts',
@@ -27,10 +39,14 @@ const settings: C.Settings = {
   exclude: RA.empty
 }
 
-const getTestEnv = (sourceText: string): _.Env => ({
+const getTestEnv = (sourceText: string): _.ParserEnv => ({
   path: ['test'],
   sourceFile: project.createSourceFile(`test-${testCounter++}.ts`, sourceText),
-  ...settings
+  example: E.Example,
+  fileSystem: FS.FileSystem,
+  logger: L.Logger,
+  settings,
+  ast: defaultAst
 })
 
 describe('Parser', () => {
@@ -387,10 +403,12 @@ describe('Parser', () => {
 
       it('should support untyped constants', () => {
         const env = getTestEnv(
-          `/**
+          `
+            class A {}
+          /**
             * @since 1.0.0
             */
-            export const empty = new Map<never, never>()`
+            export const empty = new A()`
         )
 
         assertRight(pipe(env, _.parseConstants), actual =>
@@ -402,7 +420,7 @@ describe('Parser', () => {
               since: O.some('1.0.0'),
               deprecated: false,
               category: O.none,
-              signature: 'export declare const empty: Map<never, never>',
+              signature: 'export declare const empty: A',
               examples: RA.empty
             }
           ])
@@ -875,19 +893,32 @@ describe('Parser', () => {
           }`
         )
 
-        assertRight(pipe({ path: ['test'], sourceFile, ...settings }, _.parseExports), actual =>
-          assert.deepStrictEqual(actual, [
+        assertRight(
+          pipe(
             {
-              _tag: 'Export',
-              name: 'b',
-              description: O.none,
-              since: O.some('1.0.0'),
-              deprecated: false,
-              signature: 'export declare const b: 1',
-              category: O.none,
-              examples: RA.empty
-            }
-          ])
+              path: ['test'],
+              sourceFile,
+              example: E.Example,
+              fileSystem: FS.FileSystem,
+              logger: L.Logger,
+              settings,
+              ast: defaultAst
+            },
+            _.parseExports
+          ),
+          actual =>
+            assert.deepStrictEqual(actual, [
+              {
+                _tag: 'Export',
+                name: 'b',
+                description: O.none,
+                since: O.some('1.0.0'),
+                deprecated: false,
+                signature: 'export declare const b: 1',
+                category: O.none,
+                examples: RA.empty
+              }
+            ])
         )
       })
     })
@@ -905,8 +936,18 @@ describe('Parser', () => {
         const file = FS.File('non-existent.ts', '')
         const project = new ast.Project({ useInMemoryFileSystem: true })
 
-        assertLeft(await pipe(settings, _.parseFile(project)(file))(), error =>
-          assert.strictEqual(error, 'Unable to locate file: non-existent.ts')
+        assertLeft(
+          await pipe(
+            {
+              example: E.Example,
+              fileSystem: FS.FileSystem,
+              logger: L.Logger,
+              settings,
+              ast: { ...defaultAst, project }
+            },
+            _.parseFile(project)(file)
+          )(),
+          error => assert.strictEqual(error, 'Unable to locate file: non-existent.ts')
         )
       })
     })
@@ -943,35 +984,46 @@ export function f(a: number, b: number): { [key: string]: number } {
           )
         ]
 
-        assertRight(await pipe(settings, _.parseFiles(files))(), actual =>
-          assert.deepStrictEqual(actual, [
+        assertRight(
+          await pipe(
             {
-              name: 'test1',
-              path: ['test', 'fixtures', 'test1.ts'],
-              description: O.some('a description...'),
-              since: O.some('1.0.0'),
-              deprecated: false,
-              category: O.none,
-              examples: RA.empty,
-              classes: RA.empty,
-              constants: RA.empty,
-              exports: RA.empty,
-              interfaces: RA.empty,
-              typeAliases: RA.empty,
-              functions: [
-                {
-                  _tag: 'Function',
-                  name: 'f',
-                  description: O.some('a description...'),
-                  since: O.some('1.0.0'),
-                  deprecated: false,
-                  category: O.none,
-                  examples: RA.empty,
-                  signatures: ['export declare function f(a: number, b: number): { [key: string]: number }']
-                }
-              ]
-            }
-          ])
+              example: E.Example,
+              fileSystem: FS.FileSystem,
+              logger: L.Logger,
+              settings,
+              ast: { ...defaultAst, project }
+            },
+            _.parseFiles(files)
+          )(),
+          actual =>
+            assert.deepStrictEqual(actual, [
+              {
+                name: 'test1',
+                path: ['test', 'fixtures', 'test1.ts'],
+                description: O.some('a description...'),
+                since: O.some('1.0.0'),
+                deprecated: false,
+                category: O.none,
+                examples: RA.empty,
+                classes: RA.empty,
+                constants: RA.empty,
+                exports: RA.empty,
+                interfaces: RA.empty,
+                typeAliases: RA.empty,
+                functions: [
+                  {
+                    _tag: 'Function',
+                    name: 'f',
+                    description: O.some('a description...'),
+                    since: O.some('1.0.0'),
+                    deprecated: false,
+                    category: O.none,
+                    examples: RA.empty,
+                    signatures: ['export declare function f(a: number, b: number): { [key: string]: number }']
+                  }
+                ]
+              }
+            ])
         )
       })
     })
@@ -1020,8 +1072,9 @@ export function f(a: number, b: number): { [key: string]: number } {
 * @since 1.0.0
 */`
 
-        assertLeft(pipe({ ...env, enforceDescriptions: true }, _.getCommentInfo('name')(text)), error =>
-          assert.strictEqual(error, 'Missing description in test#name documentation')
+        assertLeft(
+          pipe({ ...env, settings: { ...env.settings, enforceDescriptions: true } }, _.getCommentInfo('name')(text)),
+          error => assert.strictEqual(error, 'Missing description in test#name documentation')
         )
       })
 
@@ -1034,8 +1087,9 @@ export function f(a: number, b: number): { [key: string]: number } {
 * @since 1.0.0
 */`
 
-        assertLeft(pipe({ ...env, enforceExamples: true }, _.getCommentInfo('name')(text)), error =>
-          assert.strictEqual(error, 'Missing examples in test#name documentation')
+        assertLeft(
+          pipe({ ...env, settings: { ...env.settings, enforceExamples: true } }, _.getCommentInfo('name')(text)),
+          error => assert.strictEqual(error, 'Missing examples in test#name documentation')
         )
       })
 
@@ -1049,8 +1103,9 @@ export function f(a: number, b: number): { [key: string]: number } {
 * @since 1.0.0
 */`
 
-        assertLeft(pipe({ ...env, enforceExamples: true }, _.getCommentInfo('name')(text)), error =>
-          assert.strictEqual(error, 'Missing examples in test#name documentation')
+        assertLeft(
+          pipe({ ...env, settings: { ...env.settings, enforceExamples: true } }, _.getCommentInfo('name')(text)),
+          error => assert.strictEqual(error, 'Missing examples in test#name documentation')
         )
       })
 
@@ -1062,14 +1117,16 @@ export function f(a: number, b: number): { [key: string]: number } {
 * @category instances
 */`
 
-        assertRight(pipe({ ...env, enforceVersion: false }, _.getCommentInfo('name')(text)), actual =>
-          assert.deepStrictEqual(actual, {
-            description: O.some('description'),
-            since: O.none,
-            category: O.some('instances'),
-            deprecated: false,
-            examples: RA.empty
-          })
+        assertRight(
+          pipe({ ...env, settings: { ...env.settings, enforceVersion: false } }, _.getCommentInfo('name')(text)),
+          actual =>
+            assert.deepStrictEqual(actual, {
+              description: O.some('description'),
+              since: O.none,
+              category: O.some('instances'),
+              deprecated: false,
+              examples: RA.empty
+            })
         )
       })
     })
@@ -1121,5 +1178,16 @@ export function f(a: number, b: number): { [key: string]: number } {
         '{ <A, B>(refinementWithIndex: RefinementWithIndex<number, A, B>): (fa: A[]) => B[]; <A>(predicateWithIndex: PredicateWithIndex<number, A>): (fa: A[]) => A[]; }'
       )
     })
+  })
+
+  it('addFileToProject', () => {
+    const filePath = path.join(process.cwd(), 'test/fixtures/file1.ts')
+    const content = fs.readFileSync(filePath, { encoding: 'utf-8' })
+    const file = FS.File(filePath, content, false)
+
+    const project = new ast.Project()
+    _.addFileToProject(file)(project)
+
+    assert.strictEqual(typeof project.getSourceFile(filePath) !== 'undefined', true)
   })
 })

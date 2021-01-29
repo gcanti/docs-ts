@@ -33,6 +33,7 @@ export interface Capabilities {
   readonly example: Example
   readonly fileSystem: FileSystem
   readonly logger: Logger
+  readonly ast: P.Ast
 }
 
 /**
@@ -177,12 +178,7 @@ const parseFiles = (files: ReadonlyArray<File>): Program<ReadonlyArray<Module>> 
   pipe(
     RTE.ask<Environment, string>(),
     RTE.chainFirst(({ logger }) => RTE.fromTaskEither(logger.debug('Parsing files...'))),
-    RTE.chain(() =>
-      pipe(
-        P.parseFiles(files),
-        RTE.local(({ settings }) => settings)
-      )
-    )
+    RTE.chain(() => P.parseFiles(files))
   )
 
 // -------------------------------------------------------------------------------------

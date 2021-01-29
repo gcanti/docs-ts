@@ -57,7 +57,7 @@ Added in v0.6.0
 **Signature**
 
 ```ts
-export declare const showEntry: any
+export declare const showEntry: S.Show<LogEntry>
 ```
 
 Added in v0.6.0
@@ -109,7 +109,7 @@ Added in v0.6.0
 **Signature**
 
 ```ts
-export declare const debug: (message: string) => any
+export declare const debug: (message: string) => T.Task<void>
 ```
 
 Added in v0.6.0
@@ -119,7 +119,7 @@ Added in v0.6.0
 **Signature**
 
 ```ts
-export declare const error: (message: string) => any
+export declare const error: (message: string) => T.Task<void>
 ```
 
 Added in v0.6.0
@@ -129,7 +129,7 @@ Added in v0.6.0
 **Signature**
 
 ```ts
-export declare const info: (message: string) => any
+export declare const info: (message: string) => T.Task<void>
 ```
 
 Added in v0.6.0

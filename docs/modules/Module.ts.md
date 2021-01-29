@@ -75,11 +75,11 @@ Added in v0.6.0
 ```ts
 export declare const Documentable: (
   name: string,
-  description: any,
-  since: any,
+  description: O.Option<string>,
+  since: O.Option<string>,
   deprecated: boolean,
   examples: ReadonlyArray<Example>,
-  category: any
+  category: O.Option<string>
 ) => Documentable
 ```
 
@@ -171,7 +171,7 @@ Added in v0.6.0
 **Signature**
 
 ```ts
-export declare const ordModule: any
+export declare const ordModule: Ord.Ord<Module>
 ```
 
 Added in v0.6.0

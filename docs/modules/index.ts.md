@@ -25,7 +25,7 @@ Added in v0.2.0
 **Signature**
 
 ```ts
-export declare const exit: (program: any) => any
+export declare const exit: (program: TE.TaskEither<string, void>) => T.Task<void>
 ```
 
 Added in v0.6.0
@@ -35,7 +35,7 @@ Added in v0.6.0
 **Signature**
 
 ```ts
-export declare const main: any
+export declare const main: T.Task<void>
 ```
 
 Added in v0.6.0

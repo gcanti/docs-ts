@@ -16,18 +16,26 @@ describe('Example', () => {
       const result = await _.run('ts-node', 'foo/bar.ts')()
 
       assert.deepStrictEqual(result, E.right(undefined))
-      expect(child_process.spawnSync).toHaveBeenCalledWith('ts-node', ['foo/bar.ts'], { stdio: 'inherit' })
+      expect(child_process.spawnSync).toHaveBeenCalledWith('ts-node', ['foo/bar.ts'], {
+        stdio: 'pipe',
+        encoding: 'utf8'
+      })
 
       mockSpawnSync.mockReset()
     })
 
     it('should return an error message when an example does not pass typechecking', async () => {
-      const mockSpawnSync = jest.spyOn(child_process, 'spawnSync').mockImplementation(() => ({ status: 1 }))
+      const mockSpawnSync = jest
+        .spyOn(child_process, 'spawnSync')
+        .mockImplementation(() => ({ status: 1, stderr: 'Error!' }))
 
       const result = await _.run('ts-node', 'foo/bar.ts')()
 
-      assert.deepStrictEqual(result, E.left('Type checking error'))
-      expect(child_process.spawnSync).toHaveBeenCalledWith('ts-node', ['foo/bar.ts'], { stdio: 'inherit' })
+      assert.deepStrictEqual(result, E.left('Error!'))
+      expect(child_process.spawnSync).toHaveBeenCalledWith('ts-node', ['foo/bar.ts'], {
+        stdio: 'pipe',
+        encoding: 'utf8'
+      })
 
       mockSpawnSync.mockReset()
     })

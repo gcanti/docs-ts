@@ -3,6 +3,7 @@
  */
 import * as E from 'fp-ts/Either'
 import * as TE from 'fp-ts/TaskEither'
+import { pipe } from 'fp-ts/function'
 import { spawnSync } from 'child_process'
 
 // -------------------------------------------------------------------------------------
@@ -30,10 +31,10 @@ export interface Example {
  * @since 0.6.0
  */
 export const run = (command: string, executablePath: string): TE.TaskEither<string, void> =>
-  TE.fromIOEither(() => {
-    const { status } = spawnSync(command, [executablePath], { stdio: 'inherit' })
-    return status === 0 ? E.right(undefined) : E.left('Type checking error')
-  })
+  pipe(
+    TE.fromEither(E.tryCatch(() => spawnSync(command, [executablePath], { stdio: 'pipe', encoding: 'utf8' }), String)),
+    TE.chain(({ status, stderr }) => (status === 0 ? TE.right(undefined) : TE.left(stderr)))
+  )
 
 // -------------------------------------------------------------------------------------
 // instances

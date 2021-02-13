@@ -215,7 +215,7 @@ nav_order: 1
         })
       })
 
-      it.skip('should only cause configurable properties to be overwritten if _config.yml exists', async () => {
+      it('should only cause configurable properties to be overwritten if _config.yml exists', async () => {
         const configYML = `remote_theme: pmarsceill/just-the-docs
 
 # Enable or disable the site search
@@ -238,9 +238,7 @@ additional_config_param: true`
         assertRight(await Core.main(capabilities)(), result => {
           assert.strictEqual(result, undefined)
           assert.strictEqual(
-            fileSystemState['/home/maxbrown/projects/docs-ts/docs/_config.yml'].includes(
-              'additional_config_param: true'
-            ),
+            fileSystemState[join(process.cwd(), 'docs/_config.yml')].includes('additional_config_param: true'),
             true
           )
         })

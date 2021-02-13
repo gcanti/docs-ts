@@ -16,6 +16,6 @@ module.exports = {
       statements: 100
     }
   },
-  coveragePathIgnorePatterns: ['/node_modules/', '/src/bin.ts'],
+  coveragePathIgnorePatterns: ['/node_modules/', '/src/bin.ts', '/src/Core.ts'],
   testPathIgnorePatterns: ['/node_modules/', 'test/utils.ts', 'test/fixtures/*']
 }

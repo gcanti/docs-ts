@@ -795,6 +795,30 @@ describe('Parser', () => {
           })
         )
       })
+
+      it('should return an error when documentation is enforced but no documentation is provided', () => {
+        const env = getTestEnv('export const a: number = 1')
+
+        assertLeft(pipe(env, _.parseModuleDocumentation), actual =>
+          assert.strictEqual(actual, 'Missing documentation in test module')
+        )
+      })
+
+      it('should support absence of module documentation when no documentation is enforced', () => {
+        const defaultEnv = getTestEnv('export const a: number = 1')
+        const env = { ...defaultEnv, settings: { ...defaultEnv.settings, enforceVersion: false } }
+
+        assertRight(pipe(env, _.parseModuleDocumentation), actual =>
+          assert.deepStrictEqual(actual, {
+            name: 'test',
+            description: O.none,
+            since: O.none,
+            deprecated: false,
+            category: O.none,
+            examples: RA.empty
+          })
+        )
+      })
     })
 
     describe('parseExports', () => {

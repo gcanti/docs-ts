@@ -1,6 +1,6 @@
 ---
 title: bin.ts
-nav_order: 0
+nav_order: 1
 parent: Modules
 ---
 

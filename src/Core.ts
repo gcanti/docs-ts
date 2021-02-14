@@ -409,7 +409,7 @@ const getModuleMarkdownFiles = (modules: ReadonlyArray<Module>): Program<Readonl
       pipe(
         getMarkdownOutputPath(module),
         RTE.bindTo('outputPath'),
-        RTE.bind('content', () => RTE.right(printModule(module, order))),
+        RTE.bind('content', () => RTE.right(printModule(module, order + 1))),
         RTE.map(({ content, outputPath }) => File(outputPath, content, true))
       )
     )

@@ -13,9 +13,10 @@
 **Note**: Gaps between patch versions are faulty/broken releases.
 **Note**: A feature tagged as Experimental is in a high state of flux, you're at risk of it changing without notice.
 
-# 0.6.0
+# 0.6.1
 
 - **Breaking Change**
+
   - refactor `Markdown` module (@IMax153)
     - add `Markdown` constructors (@IMax153)
     - add tagged union of `Printable` types (@IMax153)

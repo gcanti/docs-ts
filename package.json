@@ -1,6 +1,6 @@
 {
   "name": "docs-ts",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "description": "Documentation tool for TypeScript packages",
   "files": [
     "lib"

@@ -196,32 +196,32 @@ const getExampleFiles = (modules: ReadonlyArray<Module>): Program<ReadonlyArray<
         RA.chain(module => {
           const prefix = module.path.join('-')
 
-          const getDocumentableExamples = (documentable: Documentable): ReadonlyArray<File> =>
+          const getDocumentableExamples = (id: string) => (documentable: Documentable): ReadonlyArray<File> =>
             pipe(
               documentable.examples,
               RA.mapWithIndex((i, content) =>
                 File(
-                  path.join(env.settings.outDir, 'examples', `${prefix}-${documentable.name}-${i}.ts`),
+                  path.join(env.settings.outDir, 'examples', `${prefix}-${id}-${documentable.name}-${i}.ts`),
                   `${content}\n`,
                   true
                 )
               )
             )
 
-          const moduleExamples = getDocumentableExamples(module)
+          const moduleExamples = getDocumentableExamples('module')(module)
           const methods = pipe(
             module.classes,
             RA.chain(c =>
               foldFiles([
-                pipe(c.methods, RA.chain(getDocumentableExamples)),
-                pipe(c.staticMethods, RA.chain(getDocumentableExamples))
+                pipe(c.methods, RA.chain(getDocumentableExamples(`${c.name}-method`))),
+                pipe(c.staticMethods, RA.chain(getDocumentableExamples(`${c.name}-staticmethod`)))
               ])
             )
           )
-          const interfaces = pipe(module.interfaces, RA.chain(getDocumentableExamples))
-          const typeAliases = pipe(module.typeAliases, RA.chain(getDocumentableExamples))
-          const constants = pipe(module.constants, RA.chain(getDocumentableExamples))
-          const functions = pipe(module.functions, RA.chain(getDocumentableExamples))
+          const interfaces = pipe(module.interfaces, RA.chain(getDocumentableExamples('interface')))
+          const typeAliases = pipe(module.typeAliases, RA.chain(getDocumentableExamples('typealias')))
+          const constants = pipe(module.constants, RA.chain(getDocumentableExamples('constant')))
+          const functions = pipe(module.functions, RA.chain(getDocumentableExamples('function')))
 
           return foldFiles([moduleExamples, methods, interfaces, typeAliases, constants, functions])
         })

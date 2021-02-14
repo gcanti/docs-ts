@@ -8,14 +8,19 @@
     - [Via `npx` (on-demand)](#via-npx-on-demand)
 - [Why](#why)
 - [Usage](#usage)
+    - [Supported JSDoc Tags](#supported-jsdoc-tags)
   - [Example](#example)
 - [Configuration](#configuration)
 - [Documentation](#documentation)
+- [FAQ](#faq)
 - [License](#license)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 > A simple, opinionated, zero-configuration tool for creating beautiful documentation for TypeScript projects.
+
+**:warning: DISCLAIMER :warning:**  
+`docs-ts` is used primarily as an **opinionated** documentation tool for libraries in the `fp-ts` ecosystem. The structure of source code documentation expected by `docs-ts` can be best understood by reviewing the source code of the [`fp-ts`](https://github.com/gcanti/fp-ts) repository.
 
 ## Installation:
 
@@ -43,13 +48,24 @@ Creating and maintaing documentation for a TypeScript project of any size can qu
 
 ## Usage
 
-Using `docs-ts` is as simple as annotating your code with a JSDoc comment. `docs-ts` supports specifying an `@category` JSDoc tag to group associated module exports in the generated documentation. You can also provide examples for your code using an `@example` JSDoc tag. `docs-ts` will also type-check all code annotated with `@example` tags to ensure that you have not made any errors in your sample code. All sample code is also run using `ts-node`, and the NodeJS [assert](https://nodejs.org/api/assert.html) module can be used for on-the-fly testing.
+Using `docs-ts` is as simple as annotating your code with JSDoc comments. Specialized JSDoc tags can be used to perform various functions, such as grouping associated code together, versioning documentation, and running and testing source code. A full list of supported JSDoc tags can be found below.
+
+#### Supported JSDoc Tags
+
+| Tag           | Description                                                                                                                                                                                                                                                                            | Default   |
+|---------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------|
+| `@category`   | Groups associated module exports together in the generated documentation.                                                                                                                                                                                                              | `'utils'` |
+| `@example`    | Allows usage examples to be provided for your source code. All examples are type checked using `ts-node`. Examples are also run using `ts-node` and the NodeJS [assert](https://nodejs.org/api/assert.html) module can be used for on-the-fly testing (see [example](#example) below). |           |
+| `@since`      | Allows for documenting most recent library version in which a given piece of source code was updated.                                                                                                                                                                                  |           |
+| `@deprecated` | Marks source code as deprecated, which will ~~strikethrough~~ the name of the annotated module or function in the generated documentation.                                                                                                                                             | `false`   |
 
 By default, `docs-ts` will search for files in the `src` directory and will output generated files into a `docs` directory. For information on how to configure `docs-ts`, see the [Configuration](#configuration) section below.
 
 ### Example
 
-To illustrate the power of `doc-ts`, here is a small example. Running `npm run docs-ts` (or `yarn docs-ts`) in the root directory of a project containing the following file in the `src` directory...
+The best usage examples of `docs-ts` can be found in [`fp-ts` ecosystem](https://gcanti.github.io/fp-ts/ecosystem/) libraries that generate their documentation with `docs-ts`, such as the main [`fp-ts`](https://github.com/gcanti/fp-ts) repository.
+
+To illustrate the power of `docs-ts`, here is a small example. Running `npm run docs-ts` (or `yarn docs-ts`) in the root directory of a project containing the following file in the `src` directory...
 
 ```ts
 /**
@@ -121,7 +137,7 @@ Added in v0.6.0
 
 ## Configuration
 
-`docs-ts` is meant to be a zero-configuration command-line tool for generating documentation for your TypeScript projects. However, there are several configuration settings that can be specified for `docs-ts`. To customize the configuration of `docs-ts`, create a `docs-ts.json` file in the root directory of your project and indicate the custom configuration parameters that the tool should use when generating documentation.
+`docs-ts` is meant to be a zero-configuration command-line tool by default. However, there are several configuration settings that can be specified for `docs-ts`. To customize the configuration of `docs-ts`, create a `docs-ts.json` file in the root directory of your project and indicate the custom configuration parameters that the tool should use when generating documentation.
 
 The `docs-ts.json` configuration file adheres to the following interface:
 
@@ -154,6 +170,12 @@ The following table describes each configuration parameter, its purpose, and its
 ## Documentation
 
 - [Docs](https://gcanti.github.io/docs-ts)
+
+## FAQ
+
+**Q:** For functions that have overloaded definitions, is it possible to document each overload separately?
+
+**A:** No, `docs-ts` will use the documentation provided for the first overload of a function in its generated output.
 
 ## License
 

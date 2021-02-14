@@ -747,7 +747,17 @@ export const parseModuleDocumentation: Parser<Documentable> = pipe(
   RE.ask<ParserEnv>(),
   RE.chainEitherK(env => {
     const name = getModuleName(env.path)
-    const onMissingDocumentation = () => E.left(`Missing documentation in ${env.path.join('/')} module`)
+    // If any of the settings enforcing documentation are set to `true`, then
+    // a module should have associated documentation
+    const isDocumentationRequired = M.fold(M.monoidAny)([
+      env.settings.enforceDescriptions,
+      env.settings.enforceExamples,
+      env.settings.enforceVersion
+    ])
+    const onMissingDocumentation = () =>
+      isDocumentationRequired
+        ? E.left(`Missing documentation in ${env.path.join('/')} module`)
+        : E.right(Documentable(name, O.none, O.none, false, RA.empty, O.none))
     return pipe(
       env.sourceFile.getStatements(),
       RA.foldLeft(onMissingDocumentation, statement =>

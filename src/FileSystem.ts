@@ -129,9 +129,9 @@ export const search: (
  * @since 0.6.0
  */
 export const FileSystem: FileSystem = {
-  readFile: path => pipe(readFile(path, 'utf8'), TE.mapLeft(toErrorMsg)),
+  readFile: (path) => pipe(readFile(path, 'utf8'), TE.mapLeft(toErrorMsg)),
   writeFile: (path, content) => pipe(writeFile(path, content, { encoding: 'utf8' }), TE.mapLeft(toErrorMsg)),
   exists: flow(exists, TE.mapLeft(toErrorMsg)),
-  remove: pattern => pipe(remove(pattern, {}), TE.mapLeft(toErrorMsg)),
+  remove: (pattern) => pipe(remove(pattern, {}), TE.mapLeft(toErrorMsg)),
   search: (pattern, exclude) => pipe(search(pattern, { ignore: exclude }), TE.mapLeft(toErrorMsg))
 }

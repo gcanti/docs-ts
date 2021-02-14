@@ -144,7 +144,7 @@ describe('Config', () => {
           exclude: RA.empty
         }
 
-        assertRight(await _.decode(config)(), decoded => assert.deepStrictEqual(decoded, config))
+        assertRight(await _.decode(config)(), (decoded) => assert.deepStrictEqual(decoded, config))
       })
 
       it('should decode a valid partial configuration object', async () => {
@@ -152,8 +152,8 @@ describe('Config', () => {
           exclude: RA.of('subdirectory/**/*.ts')
         }
 
-        assertRight(await _.decode({})(), decoded => assert.deepStrictEqual(decoded, {}))
-        assertRight(await _.decode(config)(), decoded => assert.deepStrictEqual(decoded, config))
+        assertRight(await _.decode({})(), (decoded) => assert.deepStrictEqual(decoded, {}))
+        assertRight(await _.decode(config)(), (decoded) => assert.deepStrictEqual(decoded, config))
       })
 
       it('should not decode a configuration object with invalid keys', async () => {
@@ -171,7 +171,7 @@ describe('Config', () => {
           'cannot decode "enableSrch", should be a valid configuration property\n' +
           'cannot decode "them", should be a valid configuration property'
 
-        assertLeft(await _.decode(config)(), error => assert.strict(error, expected))
+        assertLeft(await _.decode(config)(), (error) => assert.strict(error, expected))
       })
     })
   })

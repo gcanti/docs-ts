@@ -115,14 +115,14 @@ describe('Markdown', () => {
   describe('destructors', () => {
     it('fold', () => {
       const fold: (markdown: _.Markdown) => string = _.fold({
-        Bold: c => `Bold(${fold(c)})`,
+        Bold: (c) => `Bold(${fold(c)})`,
         Fence: (l, c) => `Fence(${l}, ${fold(c)})`,
         Header: (l, c) => `Header(${l}, ${fold(c)})`,
         Newline: () => `Newline`,
-        Paragraph: c => `Paragraph(${fold(c)})`,
-        PlainText: s => s,
-        PlainTexts: cs => `PlainTexts(${RA.getShow({ show: fold }).show(cs)})`,
-        Strikethrough: c => `Strikethrough(${fold(c)})`
+        Paragraph: (c) => `Paragraph(${fold(c)})`,
+        PlainText: (s) => s,
+        PlainTexts: (cs) => `PlainTexts(${RA.getShow({ show: fold }).show(cs)})`,
+        Strikethrough: (c) => `Strikethrough(${fold(c)})`
       })
 
       assert.strictEqual(fold(_.Bold(content)), 'Bold(a)')

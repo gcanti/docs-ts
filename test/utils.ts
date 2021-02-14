@@ -4,7 +4,7 @@ import { pipe } from 'fp-ts/lib/function'
 export const assertLeft = <E, A = unknown>(either: E.Either<E, A>, onLeft: (e: E) => void) =>
   pipe(
     either,
-    E.fold(onLeft, right => {
+    E.fold(onLeft, (right) => {
       // tslint:disable-next-line no-console
       console.log(right)
 
@@ -15,7 +15,7 @@ export const assertLeft = <E, A = unknown>(either: E.Either<E, A>, onLeft: (e: E
 export const assertRight = <A, E = unknown>(either: E.Either<E, A>, onRight: (e: A) => void) =>
   pipe(
     either,
-    E.fold(left => {
+    E.fold((left) => {
       // tslint:disable-next-line no-console
       console.log(left)
 

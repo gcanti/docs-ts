@@ -53,7 +53,7 @@ const prefixWithCwd: Endomorphism<FileSystemState> = R.reduceWithIndex<string, s
 )
 
 const fileSystem: FS.FileSystem = {
-  readFile: path =>
+  readFile: (path) =>
     pipe(
       R.lookup(path, fileSystemState),
       TE.fromOption(() => `Error: file not found: ${path}`)
@@ -62,9 +62,9 @@ const fileSystem: FS.FileSystem = {
     fileSystemState = { ...fileSystemState, [join(process.cwd(), path.replace(process.cwd(), ''))]: content }
     return TE.of(undefined)
   },
-  exists: path => TE.of<string, boolean>(pipe(fileSystemState, R.lookup(path), O.isSome)),
-  remove: pattern => {
-    Object.keys(fileSystemState).forEach(path => {
+  exists: (path) => TE.of<string, boolean>(pipe(fileSystemState, R.lookup(path), O.isSome)),
+  remove: (pattern) => {
+    Object.keys(fileSystemState).forEach((path) => {
       if (minimatch(path, pattern)) {
         delete fileSystemState[path]
       }
@@ -75,14 +75,14 @@ const fileSystem: FS.FileSystem = {
     TE.of(
       pipe(
         fileSystemState,
-        R.filterWithIndex(path => minimatch(path, join(process.cwd(), pattern))),
+        R.filterWithIndex((path) => minimatch(path, join(process.cwd(), pattern))),
         R.keys,
-        A.filter(path => !exclude.some(pattern => minimatch(path, join(process.cwd(), pattern))))
+        A.filter((path) => !exclude.some((pattern) => minimatch(path, join(process.cwd(), pattern))))
       )
     )
 }
 
-const addMsgToLog: (msg: string) => TE.TaskEither<string, void> = msg => {
+const addMsgToLog: (msg: string) => TE.TaskEither<string, void> = (msg) => {
   log.push(msg)
   return TE.of(undefined)
 }
@@ -93,7 +93,7 @@ const logger: L.Logger = {
   info: addMsgToLog
 }
 
-const makeCapabilities: (state: FileSystemState) => Core.Capabilities = state => {
+const makeCapabilities: (state: FileSystemState) => Core.Capabilities = (state) => {
   fileSystemState = state
   return {
     logger,
@@ -101,7 +101,7 @@ const makeCapabilities: (state: FileSystemState) => Core.Capabilities = state =>
     example,
     ast: {
       project: new ast.Project({ useInMemoryFileSystem: true }),
-      addFile: file => project => project.createSourceFile(file.path, file.content, { overwrite: file.overwrite })
+      addFile: (file) => (project) => project.createSourceFile(file.path, file.content, { overwrite: file.overwrite })
     }
   }
 }
@@ -113,7 +113,7 @@ describe('Core', () => {
         const state = prefixWithCwd({})
         const capabilities = makeCapabilities(state)
 
-        assertLeft(await Core.main(capabilities)(), error =>
+        assertLeft(await Core.main(capabilities)(), (error) =>
           assert.strictEqual(error.startsWith('Unable to read package.json'), true)
         )
       })
@@ -122,7 +122,7 @@ describe('Core', () => {
         const state = prefixWithCwd({ 'package.json': '{"name": "docs-ts"' })
         const capabilities = makeCapabilities(state)
 
-        assertLeft(await Core.main(capabilities)(), error =>
+        assertLeft(await Core.main(capabilities)(), (error) =>
           assert.strictEqual(error.startsWith('Unexpected end of JSON input'), true)
         )
       })
@@ -131,7 +131,7 @@ describe('Core', () => {
         const state = prefixWithCwd({ 'package.json': JSON.stringify(R.empty) })
         const capabilities = makeCapabilities(state)
 
-        assertLeft(await Core.main(capabilities)(), error =>
+        assertLeft(await Core.main(capabilities)(), (error) =>
           assert.strictEqual(error.startsWith('Unable to decode package.json'), true)
         )
       })
@@ -140,7 +140,7 @@ describe('Core', () => {
         const state = prefixWithCwd({ 'package.json': JSON.stringify({ name: 'docs-ts' }) })
         const capabilities = makeCapabilities(state)
 
-        assertLeft(await Core.main(capabilities)(), error =>
+        assertLeft(await Core.main(capabilities)(), (error) =>
           assert.strictEqual(error, 'Missing homepage in package.json')
         )
       })
@@ -154,7 +154,7 @@ describe('Core', () => {
         })
         const capabilities = makeCapabilities(state)
 
-        assertLeft(await Core.main(capabilities)(), error =>
+        assertLeft(await Core.main(capabilities)(), (error) =>
           assert.strictEqual(error.startsWith('Invalid configuration file detected'), true)
         )
       })
@@ -165,11 +165,11 @@ describe('Core', () => {
         })
         const capabilities = makeCapabilities(state)
 
-        assertRight(await Core.main(capabilities)(), result => {
+        assertRight(await Core.main(capabilities)(), (result) => {
           assert.strictEqual(result, undefined)
 
           const actual = Object.keys(fileSystemState)
-          const expected = [`package.json`, 'docs/index.md', 'docs/modules/index.md', 'docs/_config.yml'].map(path =>
+          const expected = [`package.json`, 'docs/index.md', 'docs/modules/index.md', 'docs/_config.yml'].map((path) =>
             join(process.cwd(), path)
           )
 
@@ -184,7 +184,7 @@ describe('Core', () => {
         })
         const capabilities = makeCapabilities(state)
 
-        assertRight(await Core.main(capabilities)(), result => {
+        assertRight(await Core.main(capabilities)(), (result) => {
           assert.strictEqual(result, undefined)
           assert.strictEqual(A.elem(eqString)('Found configuration file')(log), true)
           assert.strictEqual(
@@ -206,7 +206,7 @@ nav_order: 1
         })
         const capabilities = makeCapabilities(state)
 
-        assertRight(await Core.main(capabilities)(), result => {
+        assertRight(await Core.main(capabilities)(), (result) => {
           assert.strictEqual(result, undefined)
           assert.strictEqual(
             log.includes(`File ${process.cwd()}/docs/index.md already exists, skipping creation`),
@@ -235,7 +235,7 @@ additional_config_param: true`
         })
         const capabilities = makeCapabilities(state)
 
-        assertRight(await Core.main(capabilities)(), result => {
+        assertRight(await Core.main(capabilities)(), (result) => {
           assert.strictEqual(result, undefined)
           assert.strictEqual(
             fileSystemState[join(process.cwd(), 'docs/_config.yml')].includes('additional_config_param: true'),
@@ -263,7 +263,7 @@ export const foo = (): string => 'foo'
         })
         const capabilities = makeCapabilities(state)
 
-        assertRight(await Core.main(capabilities)(), result => {
+        assertRight(await Core.main(capabilities)(), (result) => {
           assert.strictEqual(result, undefined)
           assert.strictEqual(log.includes('Found 1 modules'), true)
           assert.strictEqual(
@@ -302,7 +302,7 @@ export class Foo {
         })
         const capabilities = makeCapabilities(state)
 
-        assertRight(await Core.main(capabilities)(), result => {
+        assertRight(await Core.main(capabilities)(), (result) => {
           assert.strictEqual(result, undefined)
           assert.strictEqual(command, 'ts-node')
           assert.strictEqual(executablePath.includes('docs/examples/index.ts'), true)
@@ -337,7 +337,7 @@ export class Foo {
         })
         const capabilities = makeCapabilities(state)
 
-        assertRight(await Core.main(capabilities)(), result => {
+        assertRight(await Core.main(capabilities)(), (result) => {
           assert.strictEqual(result, undefined)
           assert.strictEqual(command, 'ts-node')
           assert.strictEqual(executablePath.includes('docs/examples/index.ts'), true)
@@ -384,7 +384,7 @@ public bar(): string {
       })
       const capabilities = makeCapabilities(state)
 
-      assertRight(await Core.main(capabilities)(), result => {
+      assertRight(await Core.main(capabilities)(), (result) => {
         assert.strictEqual(result, undefined)
         assert.strictEqual(command, 'ts-node.cmd')
         assert.strictEqual(executablePath.includes('docs/examples/index.ts'), true)

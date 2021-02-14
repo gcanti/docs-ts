@@ -248,7 +248,7 @@ const ts = (code: string) => Fence('ts', PlainText(code))
 
 const since: (v: O.Option<string>) => Markdown = O.fold(
   () => monoidMarkdown.empty,
-  v => foldMarkdown([CRLF, PlainText(`Added in v${v}`)])
+  (v) => foldMarkdown([CRLF, PlainText(`Added in v${v}`)])
 )
 
 const title = (s: string, deprecated: boolean, type?: string): Markdown => {
@@ -258,7 +258,7 @@ const title = (s: string, deprecated: boolean, type?: string): Markdown => {
     O.fromNullable(type),
     O.fold(
       () => markdownTitle,
-      t => foldMarkdown([markdownTitle, PlainText(` ${t}`)])
+      (t) => foldMarkdown([markdownTitle, PlainText(` ${t}`)])
     )
   )
 }
@@ -275,7 +275,7 @@ const signatures = (ss: ReadonlyArray<string>): Markdown =>
   pipe(RA.of(ts(intercalateNewline(ss))), RA.cons(Paragraph(Bold(PlainText('Signature')))), foldMarkdown)
 
 const examples: (es: ReadonlyArray<string>) => Markdown = flow(
-  RA.map(code => pipe(RA.of(ts(code)), RA.cons(Bold(PlainText('Example'))), intercalateCRLF)),
+  RA.map((code) => pipe(RA.of(ts(code)), RA.cons(Bold(PlainText('Example'))), intercalateCRLF)),
   intercalateCRLF
 )
 
@@ -565,9 +565,9 @@ const prettierOptions: prettier.Options = {
   printWidth: 120
 }
 
-const prettify: Endomorphism<string> = s => prettier.format(s, prettierOptions)
+const prettify: Endomorphism<string> = (s) => prettier.format(s, prettierOptions)
 
-const canonicalizeMarkdown: Endomorphism<ReadonlyArray<Markdown>> = RA.filterMap(markdown =>
+const canonicalizeMarkdown: Endomorphism<ReadonlyArray<Markdown>> = RA.filterMap((markdown) =>
   pipe(
     markdown,
     fold({
@@ -576,22 +576,22 @@ const canonicalizeMarkdown: Endomorphism<ReadonlyArray<Markdown>> = RA.filterMap
       Fence: () => O.some(markdown),
       Newline: () => O.some(markdown),
       Paragraph: () => O.some(markdown),
-      PlainText: content => (content.length > 0 ? O.some(markdown) : O.none),
-      PlainTexts: content => O.some(PlainTexts(canonicalizeMarkdown(content))),
+      PlainText: (content) => (content.length > 0 ? O.some(markdown) : O.none),
+      PlainTexts: (content) => O.some(PlainTexts(canonicalizeMarkdown(content))),
       Strikethrough: () => O.some(markdown)
     })
   )
 )
 
 const markdownToString: (markdown: Markdown) => string = fold({
-  Bold: content => foldS(['**', markdownToString(content), '**']),
+  Bold: (content) => foldS(['**', markdownToString(content), '**']),
   Header: (level, content) => foldS(['\n', foldS(RA.replicate(level, '#')), ' ', markdownToString(content), '\n\n']),
   Fence: (language, content) => foldS(['```', language, '\n', markdownToString(content), '\n', '```\n\n']),
   Newline: () => '\n',
-  Paragraph: content => foldS([markdownToString(content), '\n\n']),
-  PlainText: content => content,
-  PlainTexts: content => pipe(content, canonicalizeMarkdown, RA.map(markdownToString), foldS),
-  Strikethrough: content => foldS(['~~', markdownToString(content), '~~'])
+  Paragraph: (content) => foldS([markdownToString(content), '\n\n']),
+  PlainText: (content) => content,
+  PlainTexts: (content) => pipe(content, canonicalizeMarkdown, RA.map(markdownToString), foldS),
+  Strikethrough: (content) => foldS(['~~', markdownToString(content), '~~'])
 })
 
 /**

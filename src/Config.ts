@@ -81,7 +81,7 @@ const C = T.getComonad(monoidConfig)
  * @category constructors
  * @since 0.6.0
  */
-export const build = (projectName: string, projectHomepage: string): ConfigBuilder => config => ({
+export const build = (projectName: string, projectHomepage: string): ConfigBuilder => (config) => ({
   projectName,
   projectHomepage,
   ...config
@@ -106,7 +106,7 @@ export const resolveSettings: (builder: ConfigBuilder) => Settings = C.extract
  * @since 0.6.0
  */
 export const updateSourceDir = (srcDir: string) => (wa: ConfigBuilder): ConfigBuilder =>
-  C.extend(wa, builder =>
+  C.extend(wa, (builder) =>
     builder({
       ...monoidConfig.empty,
       srcDir
@@ -118,7 +118,7 @@ export const updateSourceDir = (srcDir: string) => (wa: ConfigBuilder): ConfigBu
  * @since 0.6.0
  */
 export const updateOutDir = (outDir: string) => (wa: ConfigBuilder): ConfigBuilder =>
-  C.extend(wa, builder =>
+  C.extend(wa, (builder) =>
     builder({
       ...monoidConfig.empty,
       outDir
@@ -130,7 +130,7 @@ export const updateOutDir = (outDir: string) => (wa: ConfigBuilder): ConfigBuild
  * @since 0.6.0
  */
 export const updateTheme = (theme: string) => (wa: ConfigBuilder): ConfigBuilder =>
-  C.extend(wa, builder =>
+  C.extend(wa, (builder) =>
     builder({
       ...monoidConfig.empty,
       theme
@@ -142,7 +142,7 @@ export const updateTheme = (theme: string) => (wa: ConfigBuilder): ConfigBuilder
  * @since 0.6.0
  */
 export const updateSearchEnabled = (enableSearch: boolean) => (wa: ConfigBuilder): ConfigBuilder =>
-  C.extend(wa, builder =>
+  C.extend(wa, (builder) =>
     builder({
       ...monoidConfig.empty,
       enableSearch
@@ -154,7 +154,7 @@ export const updateSearchEnabled = (enableSearch: boolean) => (wa: ConfigBuilder
  * @since 0.6.0
  */
 export const updateEnforceDescriptions = (enforceDescriptions: boolean) => (wa: ConfigBuilder): ConfigBuilder =>
-  C.extend(wa, builder =>
+  C.extend(wa, (builder) =>
     builder({
       ...monoidConfig.empty,
       enforceDescriptions
@@ -166,7 +166,7 @@ export const updateEnforceDescriptions = (enforceDescriptions: boolean) => (wa: 
  * @since 0.6.0
  */
 export const updateEnforceExamples = (enforceExamples: boolean) => (wa: ConfigBuilder): ConfigBuilder =>
-  C.extend(wa, builder =>
+  C.extend(wa, (builder) =>
     builder({
       ...monoidConfig.empty,
       enforceExamples
@@ -178,7 +178,7 @@ export const updateEnforceExamples = (enforceExamples: boolean) => (wa: ConfigBu
  * @since 0.6.0
  */
 export const updateEnforceVersion = (enforceVersion: boolean) => (wa: ConfigBuilder): ConfigBuilder =>
-  C.extend(wa, builder =>
+  C.extend(wa, (builder) =>
     builder({
       ...monoidConfig.empty,
       enforceVersion
@@ -190,7 +190,7 @@ export const updateEnforceVersion = (enforceVersion: boolean) => (wa: ConfigBuil
  * @since 0.6.0
  */
 export const updateExclusions = (exclude: ReadonlyArray<string>) => (wa: ConfigBuilder): ConfigBuilder =>
-  C.extend(wa, builder =>
+  C.extend(wa, (builder) =>
     builder({
       ...monoidConfig.empty,
       exclude

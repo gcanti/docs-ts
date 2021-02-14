@@ -11,8 +11,8 @@
   "scripts": {
     "lint": "tslint -p tsconfig.json",
     "jest": "jest",
-    "prettier": "prettier --no-semi --single-quote --print-width 120 --parser typescript --list-different \"{src,test}/**/*.ts\"",
-    "fix-prettier": "prettier --no-semi --single-quote --print-width 120 --parser typescript --write \"{src,test}/**/*.ts\"",
+    "prettier": "prettier --parser typescript --list-different \"{src,test}/**/*.ts\"",
+    "fix-prettier": "prettier --parser typescript --write \"{src,test}/**/*.ts\"",
     "test": "npm run lint && npm run prettier && npm run jest && npm run docs",
     "clean": "rimraf rm -rf lib/*",
     "build": "npm run clean && tsc",

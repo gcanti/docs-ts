@@ -405,7 +405,7 @@ const getMarkdownOutputPath = (module: Module): Program<string> =>
 const getModuleMarkdownFiles = (modules: ReadonlyArray<Module>): Program<ReadonlyArray<File>> =>
   pipe(
     modules,
-    RA.traverseWithIndex(RTE.ApplicativePar)((order, module) =>
+    RTE.traverseArrayWithIndex((order, module) =>
       pipe(
         getMarkdownOutputPath(module),
         RTE.bindTo('outputPath'),
@@ -417,7 +417,7 @@ const getModuleMarkdownFiles = (modules: ReadonlyArray<Module>): Program<Readonl
 
 const getMarkdownFiles = (modules: ReadonlyArray<Module>): Program<ReadonlyArray<File>> =>
   pipe(
-    RA.sequence(RTE.ApplicativePar)([getHome, getModulesIndex, getConfigYML]),
+    RTE.sequenceArray([getHome, getModulesIndex, getConfigYML]),
     RTE.chain(meta =>
       pipe(
         getModuleMarkdownFiles(modules),

@@ -25,9 +25,10 @@ export interface ConfigBuilder extends T.Traced<Config, Settings> {}
 
 /**
  * @category model
- * @since 0.6.0
+ * @since 0.6.4
  */
 export interface Config {
+  readonly projectHomepage: string
   readonly srcDir: string
   readonly outDir: string
   readonly theme: string
@@ -65,6 +66,7 @@ const getMonoidSetting = <A>(empty: A): M.Monoid<A> => ({
 })
 
 const monoidConfig: M.Monoid<Config> = M.getStructMonoid({
+  projectHomepage: getMonoidSetting(''),
   srcDir: getMonoidSetting('src'),
   outDir: getMonoidSetting('docs'),
   theme: getMonoidSetting('pmarsceill/just-the-docs'),
@@ -79,12 +81,12 @@ const C = T.getComonad(monoidConfig)
 
 /**
  * @category constructors
- * @since 0.6.0
+ * @since 0.6.4
  */
 export const build = (projectName: string, projectHomepage: string): ConfigBuilder => (config) => ({
+  ...config,
   projectName,
-  projectHomepage,
-  ...config
+  projectHomepage: config.projectHomepage.length === 0 ? projectHomepage : config.projectHomepage
 })
 
 // -------------------------------------------------------------------------------------
@@ -100,6 +102,18 @@ export const resolveSettings: (builder: ConfigBuilder) => Settings = C.extract
 // -------------------------------------------------------------------------------------
 // combinators
 // -------------------------------------------------------------------------------------
+
+/**
+ * @category combinators
+ * @since 0.6.4
+ */
+export const updateProjectHomepage = (projectHomepage: string) => (wa: ConfigBuilder): ConfigBuilder =>
+  C.extend(wa, (builder) =>
+    builder({
+      ...monoidConfig.empty,
+      projectHomepage
+    })
+  )
 
 /**
  * @category combinators
@@ -218,7 +232,7 @@ const decodeValidKeys = (
   )
 /**
  * @category utils
- * @since 0.6.0
+ * @since 0.6.4
  */
 export const decode = (input: unknown): TE.TaskEither<string, Partial<Config>> => {
   const configDecoder = pipe(
@@ -226,6 +240,7 @@ export const decode = (input: unknown): TE.TaskEither<string, Partial<Config>> =
     TD.parse(decodeValidKeys),
     TD.compose(
       TD.partial<Config>({
+        projectHomepage: TD.string,
         srcDir: TD.string,
         outDir: TD.string,
         theme: TD.string,

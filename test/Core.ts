@@ -34,7 +34,10 @@ afterAll(() => {
   jest.restoreAllMocks()
 })
 
-const defaultPackageJson: string = JSON.stringify({ name: 'docs-ts', homepage: 'https://docs-ts.com' })
+const defaultPackageJson: string = JSON.stringify({
+  name: 'docs-ts',
+  homepage: 'https://www.github.com/gcanti/docs-ts'
+})
 
 const example: E.Example = {
   run: (c, p) => {
@@ -241,6 +244,37 @@ additional_config_param: true`
             fileSystemState[join(process.cwd(), 'docs/_config.yml')].includes('additional_config_param: true'),
             true
           )
+        })
+      })
+
+      it('should use the homepage specified in the package.json if no config present', async () => {
+        const state = prefixWithCwd({
+          'package.json': defaultPackageJson
+        })
+        const capabilities = makeCapabilities(state)
+
+        assertRight(await Core.main(capabilities)(), (result) => {
+          const config = fileSystemState[join(process.cwd(), 'docs/_config.yml')]
+          assert.strictEqual(result, undefined)
+          assert.strictEqual(config.includes('GitHub'), true)
+          assert.strictEqual(config.includes('Homepage'), false)
+          assert.strictEqual(config.includes('https://www.github.com/gcanti/docs-ts'), true)
+        })
+      })
+
+      it('should use the project homepage specified in the config file if present', async () => {
+        const state = prefixWithCwd({
+          'package.json': defaultPackageJson,
+          'docs-ts.json': JSON.stringify({ projectHomepage: 'https://somewhere.com/user/project' })
+        })
+        const capabilities = makeCapabilities(state)
+
+        assertRight(await Core.main(capabilities)(), (result) => {
+          const config = fileSystemState[join(process.cwd(), 'docs/_config.yml')]
+          assert.strictEqual(result, undefined)
+          assert.strictEqual(config.includes('Homepage'), true)
+          assert.strictEqual(config.includes('GitHub'), false)
+          assert.strictEqual(config.includes('https://somewhere.com/user/project'), true)
         })
       })
     })

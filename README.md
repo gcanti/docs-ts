@@ -19,7 +19,7 @@
 
 > A simple, opinionated, zero-configuration tool for creating beautiful documentation for TypeScript projects.
 
-**:warning: DISCLAIMER :warning:**  
+**:warning: DISCLAIMER :warning:**
 `docs-ts` is used primarily as an **opinionated** documentation tool for libraries in the `fp-ts` ecosystem. The structure of source code documentation expected by `docs-ts` can be best understood by reviewing the source code of the [`fp-ts`](https://github.com/gcanti/fp-ts) repository.
 
 ## Installation:
@@ -58,6 +58,8 @@ Using `docs-ts` is as simple as annotating your code with JSDoc comments. Specia
 | `@example`    | Allows usage examples to be provided for your source code. All examples are type checked using `ts-node`. Examples are also run using `ts-node` and the NodeJS [assert](https://nodejs.org/api/assert.html) module can be used for on-the-fly testing (see [example](#example) below). |           |
 | `@since`      | Allows for documenting most recent library version in which a given piece of source code was updated.                                                                                                                                                                                  |           |
 | `@deprecated` | Marks source code as deprecated, which will ~~strikethrough~~ the name of the annotated module or function in the generated documentation.                                                                                                                                             | `false`   |
+| `@internal`   | Prevents `docs-ts` from generating documentation for the annotated block of code. Additionally, if the `stripInternal` flag is set to `true` in `tsconfig.json`, TypeScript will not emit declarations for the annotated code.                                                         |           |
+| `@ignore`     | Prevents `docs-ts` from generating documentation for the annotated block of code.                                                                                                                                                                                                      |           |
 
 By default, `docs-ts` will search for files in the `src` directory and will output generated files into a `docs` directory. For information on how to configure `docs-ts`, see the [Configuration](#configuration) section below.
 
@@ -143,6 +145,7 @@ The `docs-ts.json` configuration file adheres to the following interface:
 
 ```ts
 interface Config {
+  readonly projectHomepage?: string
   readonly srcDir?: string
   readonly outDir?: string
   readonly theme?: string
@@ -156,16 +159,17 @@ interface Config {
 
 The following table describes each configuration parameter, its purpose, and its default value.
 
-| Parameter           | Description                                                                                               | Default Value                |
-|:--------------------|:----------------------------------------------------------------------------------------------------------|:-----------------------------|
-| srcDir              | The directory in which `docs-ts` will search for TypeScript files to parse.                               | `'src'`                      |
-| outDir              | The directory to which `docs-ts` will generate its output markdown documents.                             | `'docs'`                     |
-| theme               | The theme that `docs-ts` will specify should be used for GitHub Docs in the generated `_config.yml` file. | `'pmarsceill/just-the-docs'` |
-| enableSearch        | Whether or search should be enabled for GitHub Docs in the generated `_config.yml` file.                  | `true`                       |
-| enforceDescriptions | Whether or not descriptions for each module export should be required.                                    | `false`                      |
-| enforceExamples     | Whether or not `@example` tags for each module export should be required.                                 | `false`                      |
-| enforceVersion      | Whether or not `@since` tags for each module export should be required.                                   | `true`                       |
-| exclude             | An array of glob strings specifying files that should be excluded from the documentation.                 | `[]`                         |
+| Parameter           | Description                                                                                                                                                                         | Default Value                      |
+|:--------------------|:------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-----------------------------------|
+| projectHomepage     | Will link to the project homepage from the [Auxiliary Links](https://pmarsceill.github.io/just-the-docs/docs/navigation-structure/#auxiliary-links) of the generated documentation. | `homepage` in `package.json`       |
+| srcDir              | The directory in which `docs-ts` will search for TypeScript files to parse.                                                                                                         | `'src'`                            |
+| outDir              | The directory to which `docs-ts` will generate its output markdown documents.                                                                                                       | `'docs'`                           |
+| theme               | The theme that `docs-ts` will specify should be used for GitHub Docs in the generated `_config.yml` file.                                                                           | `'pmarsceill/just-the-docs'`       |
+| enableSearch        | Whether or search should be enabled for GitHub Docs in the generated `_config.yml` file.                                                                                            | `true`                             |
+| enforceDescriptions | Whether or not descriptions for each module export should be required.                                                                                                              | `false`                            |
+| enforceExamples     | Whether or not `@example` tags for each module export should be required.                                                                                                           | `false`                            |
+| enforceVersion      | Whether or not `@since` tags for each module export should be required.                                                                                                             | `true`                             |
+| exclude             | An array of glob strings specifying files that should be excluded from the documentation.                                                                                           | `[]`                               |
 
 ## Documentation
 

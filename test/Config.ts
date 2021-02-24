@@ -26,6 +26,19 @@ describe('Config', () => {
   })
 
   describe('combinators', () => {
+    it('updateProjectHomepage', () => {
+      const config = pipe(
+        _.build('docs-ts', 'https://github.com/gcanti/docs-ts'),
+        _.updateProjectHomepage('https://github.com/user/project'),
+        _.resolveSettings
+      )
+
+      assert.deepStrictEqual(config, {
+        ...defaultSettings,
+        projectHomepage: 'https://github.com/user/project'
+      })
+    })
+
     it('updateSourceDir', () => {
       const config = pipe(
         _.build('docs-ts', 'https://github.com/gcanti/docs-ts'),

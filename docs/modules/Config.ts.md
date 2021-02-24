@@ -18,6 +18,7 @@ Added in v0.6.0
   - [updateEnforceVersion](#updateenforceversion)
   - [updateExclusions](#updateexclusions)
   - [updateOutDir](#updateoutdir)
+  - [updateProjectHomepage](#updateprojecthomepage)
   - [updateSearchEnabled](#updatesearchenabled)
   - [updateSourceDir](#updatesourcedir)
   - [updateTheme](#updatetheme)
@@ -86,6 +87,16 @@ export declare const updateOutDir: (outDir: string) => (wa: ConfigBuilder) => Co
 
 Added in v0.6.0
 
+## updateProjectHomepage
+
+**Signature**
+
+```ts
+export declare const updateProjectHomepage: (projectHomepage: string) => (wa: ConfigBuilder) => ConfigBuilder
+```
+
+Added in v0.6.4
+
 ## updateSearchEnabled
 
 **Signature**
@@ -126,7 +137,7 @@ Added in v0.6.0
 export declare const build: (projectName: string, projectHomepage: string) => ConfigBuilder
 ```
 
-Added in v0.6.0
+Added in v0.6.4
 
 # destructors
 
@@ -148,6 +159,7 @@ Added in v0.6.0
 
 ```ts
 export interface Config {
+  readonly projectHomepage: string
   readonly srcDir: string
   readonly outDir: string
   readonly theme: string
@@ -159,7 +171,7 @@ export interface Config {
 }
 ```
 
-Added in v0.6.0
+Added in v0.6.4
 
 ## ConfigBuilder (interface)
 

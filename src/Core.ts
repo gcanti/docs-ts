@@ -364,6 +364,11 @@ const resolveConfigYML = (previousContent: string, settings: Config.Settings): s
   )
 /* tslint:enable:no-regex-spaces */
 
+const getHomepageNavigationHeader = (settings: Config.Settings): string => {
+  const isGitHub = settings.projectHomepage.toLowerCase().includes('github')
+  return isGitHub ? settings.projectName + ' on GitHub' : 'Homepage'
+}
+
 const getConfigYML: Program<File> = pipe(
   RTE.ask<Environment, string>(),
   RTE.chainTaskEitherK(({ fileSystem, settings }) => {
@@ -386,7 +391,7 @@ search_enabled: ${settings.enableSearch}
 
 # Aux links for the upper right navigation
 aux_links:
-  '${settings.projectName} on Github:
+  '${getHomepageNavigationHeader(settings)}':
     - '${settings.projectHomepage}'`,
                 false
               )

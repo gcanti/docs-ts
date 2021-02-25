@@ -214,4 +214,4 @@ Added in v0.6.0
 export declare const decode: (input: unknown) => TE.TaskEither<string, Partial<Config>>
 ```
 
-Added in v0.6.0
+Added in v0.6.4

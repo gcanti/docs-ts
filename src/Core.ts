@@ -236,7 +236,7 @@ const replaceProjectName = (source: string): Program<string> =>
   pipe(
     RTE.ask<Environment>(),
     RTE.map(({ settings }) => {
-      const mkImportRegex = (projectName: string) => new RegExp(`from '${projectName}'`, 'g')
+      const mkImportRegex = (projectName: string) => new RegExp(`from ('${projectName}')|("${projectName}")`, 'g')
 
       // Matches imports of the form: `import { foo } from 'projectName'`
       const root = mkImportRegex(settings.projectName)

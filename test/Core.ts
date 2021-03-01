@@ -343,7 +343,7 @@ export class Foo {
         })
       })
 
-      it('should replace imports from the project with the local source folder', async () => {
+      it('should replace imports from the project with the local source folder (single quotes)', async () => {
         const state = prefixWithCwd({
           'package.json': defaultPackageJson,
           'src/utils/foo.ts': `
@@ -359,6 +359,47 @@ export class Foo {
   /**
    * @example
    * import * as Foo from '${JSON.parse(defaultPackageJson)['name']}'
+   *
+   * @since 0.0.1
+   */
+  public bar(): string {
+    return 'bar'
+  }
+}
+          `
+        })
+        const capabilities = makeCapabilities(state)
+
+        assertRight(await Core.main(capabilities)(), (result) => {
+          const exampleFileName = `${[...process.cwd().split('/'), 'src', 'utils', 'foo.ts'].join(
+            '-'
+          )}-Foo-method-bar-0.ts`
+          const exampleFilePath = `${process.cwd()}/docs/examples/${exampleFileName}`
+          const importFromRegex = new RegExp("from '../../src'")
+
+          assert.strictEqual(result, undefined)
+          assert.strictEqual(command, 'ts-node')
+          assert.strictEqual(executablePath.includes('docs/examples/index.ts'), true)
+          assert.strictEqual(importFromRegex.test(fileSystemState[exampleFilePath]), true)
+        })
+      })
+
+      it('should replace imports from the project with the local source folder (double quotes)', async () => {
+        const state = prefixWithCwd({
+          'package.json': defaultPackageJson,
+          'src/utils/foo.ts': `
+/**
+ * @since 0.0.1
+ */
+
+/**
+ * @category utils
+ * @since 0.0.1
+ */
+export class Foo {
+  /**
+   * @example
+   * import * as Foo from "${JSON.parse(defaultPackageJson)['name']}"
    *
    * @since 0.0.1
    */

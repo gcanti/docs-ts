@@ -65,7 +65,7 @@ interface PackageJSON {
   readonly homepage: string
 }
 
-const PackageJSONDecoder = pipe(TD.type({ name: TD.string }), TD.intersect(TD.partial({ homepage: TD.string })))
+const PackageJSONDecoder = pipe(TD.struct({ name: TD.string }), TD.intersect(TD.partial({ homepage: TD.string })))
 
 // -------------------------------------------------------------------------------------
 // files

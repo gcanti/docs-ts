@@ -236,19 +236,13 @@ const replaceProjectName = (source: string): Program<string> =>
   pipe(
     RTE.ask<Environment>(),
     RTE.map(({ settings }) => {
-      const mkImportRegex = (projectName: string) => new RegExp(`from ('${projectName}')|("${projectName}")`, 'g')
+      const importRegex = (projectName: string) =>
+        new RegExp(`from (?<quote>['"])${projectName}(?:\/lib)?(?:\/(?<path>.*))?\\k<quote>`, 'g')
 
-      // Matches imports of the form: `import { foo } from 'projectName'`
-      const root = mkImportRegex(settings.projectName)
-      // Matches imports of the form: `import { foo } from 'projectName/lib/...'`
-      const module = mkImportRegex(`${settings.projectName}/lib/`)
-      // Matches immports of the form: `import { foo } from 'projectName/...'`
-      const other = mkImportRegex(`${settings.projectName}/`)
-
-      return source
-        .replace(root, `from '../../${settings.srcDir}'`)
-        .replace(module, `from '../../${settings.srcDir}/`)
-        .replace(other, `from '../../${settings.srcDir}/`)
+      return source.replace(importRegex(settings.projectName), (...args) => {
+        const groups: { path?: string } = args[args.length - 1]
+        return `from '../../src${Boolean(groups.path) ? `/${groups.path}` : ''}'`
+      })
     })
   )
 

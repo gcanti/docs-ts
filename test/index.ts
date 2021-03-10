@@ -12,7 +12,7 @@ describe('index', () => {
   describe('exit', () => {
     it('should return an error message when the program exits unsuccessfully', async () => {
       const mockConsole = jest.spyOn(console, 'log').mockImplementation(() => {})
-      const mockExit = jest.spyOn(process, 'exit').mockImplementation(() => {})
+      const mockExit = jest.spyOn(process, 'exit').mockImplementation()
 
       await _.exit(TE.left('foo'))()
 
@@ -25,7 +25,7 @@ describe('index', () => {
 
     it('should return a success message when the program exits successfully', async () => {
       const mockConsole = jest.spyOn(console, 'log').mockImplementation(() => {})
-      const mockExit = jest.spyOn(process, 'exit').mockImplementation(() => {})
+      const mockExit = jest.spyOn(process, 'exit').mockImplementation()
 
       await _.exit(TE.right(undefined))()
 

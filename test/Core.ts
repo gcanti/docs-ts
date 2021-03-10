@@ -15,6 +15,8 @@ import * as L from '../src/Logger'
 import * as FS from '../src/FileSystem'
 import { assertLeft, assertRight } from './utils'
 
+import Option = O.Option
+
 type FileSystemState = Record<string, string>
 type Log = Array<string>
 
@@ -384,14 +386,40 @@ export class Foo {
         })
       })
 
-      it('should replace imports from the project with the local source folder (double quotes)', async () => {
-        const state = prefixWithCwd({
-          'package.json': defaultPackageJson,
-          'src/utils/foo.ts': `
+      describe('Package Imports', () => {
+        type PackageName = { scope: Option<string>; name: string }
+
+        type PackageImport = {
+          quotes: 'single' | 'double'
+          packageName: PackageName
+          lib: boolean
+          path: Option<string>
+        }
+
+        const stringifyPackageName = ({ scope, name }: PackageName): string =>
+          `${O.fold(
+            () => '',
+            (str) => `@${str}/`
+          )(scope)}${name}`
+
+        const stringifyPackageImport = ({ quotes, packageName, lib, path }: PackageImport) => {
+          const quote = quotes === 'single' ? "'" : '"'
+          const libStr = lib ? '/lib' : ''
+          const pathStr = O.fold(
+            () => '',
+            (str) => `/${str}`
+          )(path)
+          const packageNameStr = stringifyPackageName(packageName)
+          return `${quote}${packageNameStr}${libStr}${pathStr}${quote}`
+        }
+
+        const mkState = (packageName: PackageName, importLine: string) =>
+          prefixWithCwd({
+            'package.json': JSON.stringify({ name: stringifyPackageName(packageName), homepage: 'http://foo' }),
+            'src/utils/foo.ts': `
 /**
  * @since 0.0.1
  */
-
 /**
  * @category utils
  * @since 0.0.1
@@ -399,30 +427,69 @@ export class Foo {
 export class Foo {
   /**
    * @example
-   * import * as Foo from "${JSON.parse(defaultPackageJson)['name']}"
+   * ${importLine}
+   * 
+   * const bar = 1
    *
    * @since 0.0.1
    */
   public bar(): string {
     return 'bar'
   }
-}
-          `
-        })
-        const capabilities = makeCapabilities(state)
+                            }`
+          })
 
-        assertRight(await Core.main(capabilities)(), (result) => {
-          const exampleFileName = `${[...process.cwd().split('/'), 'src', 'utils', 'foo.ts'].join(
-            '-'
-          )}-Foo-method-bar-0.ts`
-          const exampleFilePath = `${process.cwd()}/docs/examples/${exampleFileName}`
-          const importFromRegex = new RegExp("from '../../src'")
+        /* By using the Array monad we generate a couple of PackageImport permutations
+         */
+        const packageImportPermutations: PackageImport[] = pipe(
+          A.bindTo('quotes')(['single' as const, 'double' as const]),
+          A.bind('scope', () => [O.some('my-org'), O.none]),
+          A.bind('name', () => ['my-package']),
+          A.bind('packageName', () =>
+            pipe(
+              A.bindTo('scope')([O.some('my-org'), O.none]),
+              A.bind('name', () => ['my-package'])
+            )
+          ),
+          A.bind('lib', () => [true, false]),
+          A.bind('path', () => [O.some('seg1'), O.some('seg1/seg2'), O.none])
+        )
 
-          assert.strictEqual(result, undefined)
-          assert.strictEqual(command, 'ts-node')
-          assert.strictEqual(executablePath.includes('docs/examples/index.ts'), true)
-          assert.strictEqual(importFromRegex.test(fileSystemState[exampleFilePath]), true)
-        })
+        test.each(
+          pipe(
+            packageImportPermutations,
+            A.map((packageImport) => [stringifyPackageImport(packageImport), packageImport])
+          )
+        )(
+          'should replace imports like %s from the project with the local source folder',
+          async (packageImportStr, { path, packageName }) => {
+            const state = mkState(packageName, `import * as foo from ${packageImportStr}`)
+            const capabilities = makeCapabilities(state)
+            assertRight(await Core.main(capabilities)(), (result) => {
+              const exampleFileName = `${[...process.cwd().split('/'), 'src', 'utils', 'foo.ts'].join(
+                '-'
+              )}-Foo-method-bar-0.ts`
+              const exampleFilePath = `${process.cwd()}/docs/examples/${exampleFileName}`
+              const importPath =
+                '../../src' +
+                O.fold(
+                  () => '',
+                  (str) => `/${str}`
+                )(path)
+
+              assert.strictEqual(result, undefined)
+              assert.strictEqual(command, 'ts-node')
+              assert.strictEqual(executablePath.includes('docs/examples/index.ts'), true)
+              assert.strictEqual(
+                fileSystemState[exampleFilePath],
+                `import * as foo from '${importPath}'
+
+const bar = 1
+`
+              )
+            })
+          }
+        )
       })
 
       it('should attempt to typecheck examples that include assert statements', async () => {

@@ -41,8 +41,7 @@ const onRight: T.Task<void> = pipe(
 export const exit: (program: TE.TaskEither<string, void>) => T.Task<void> = TE.fold(onLeft, () => onRight)
 
 /**
- * @category utils
- * @since 0.6.7
+ * @internal
  */
 export const compilerOptions: ast.ProjectOptions['compilerOptions'] = {
   strict: true

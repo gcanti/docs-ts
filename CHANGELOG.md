@@ -13,6 +13,11 @@
 **Note**: Gaps between patch versions are faulty/broken releases.
 **Note**: A feature tagged as Experimental is in a high state of flux, you're at risk of it changing without notice.
 
+# 0.6.7
+
+- **Bug Fix**
+  - use `strict: true` in project configuration, fix #36 (@gcanti)
+
 # 0.6.6
 
 - **Bug Fix**

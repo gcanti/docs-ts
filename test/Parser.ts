@@ -11,12 +11,16 @@ import * as E from '../src/Example'
 import * as FS from '../src/FileSystem'
 import * as L from '../src/Logger'
 import * as _ from '../src/Parser'
+import { compilerOptions } from '../src'
 
 import { assertLeft, assertRight } from './utils'
 
 let testCounter = 0
 
-const project = new ast.Project({ useInMemoryFileSystem: true })
+const project = new ast.Project({
+  compilerOptions,
+  useInMemoryFileSystem: true
+})
 
 const addFileToProject = (file: FS.File) => (project: ast.Project) =>
   project.createSourceFile(file.path, file.content, { overwrite: file.overwrite })
@@ -205,6 +209,30 @@ describe('Parser', () => {
         )
 
         assertRight(pipe(env, _.parseFunctions), (actual) => assert.deepStrictEqual(actual, RA.empty))
+      })
+
+      it('should account for nullable polymorphic return types', () => {
+        const env = getTestEnv(
+          `/**
+            * @since 1.0.0
+            */
+           export const toNullable = <A>(ma: A | null): A | null => ma`
+        )
+
+        assertRight(pipe(env, _.parseFunctions), (actual) =>
+          assert.deepStrictEqual(actual, [
+            {
+              _tag: 'Function',
+              deprecated: false,
+              description: O.none,
+              name: 'toNullable',
+              signatures: ['export declare const toNullable: <A>(ma: A | null) => A | null'],
+              since: O.some('1.0.0'),
+              examples: [],
+              category: O.none
+            }
+          ])
+        )
       })
 
       it('should return a const function declaration', () => {

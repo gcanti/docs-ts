@@ -40,12 +40,22 @@ const onRight: T.Task<void> = pipe(
  */
 export const exit: (program: TE.TaskEither<string, void>) => T.Task<void> = TE.fold(onLeft, () => onRight)
 
+/**
+ * @category utils
+ * @since 0.6.7
+ */
+export const compilerOptions: ast.ProjectOptions['compilerOptions'] = {
+  strict: true
+}
+
 const capabilities: Core.Capabilities = {
   example: Example,
   fileSystem: FileSystem,
   logger: Logger,
   ast: {
-    project: new ast.Project(),
+    project: new ast.Project({
+      compilerOptions
+    }),
     addFile: Parser.addFileToProject
   }
 }

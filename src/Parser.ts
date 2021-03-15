@@ -209,7 +209,7 @@ const getDescription = (name: string, comment: Comment): Parser<O.Option<string>
     )
   )
 
-const getExamples = (name: string, comment: Comment): Parser<ReadonlyArray<string>> =>
+const getExamples = (name: string, comment: Comment, isModule: boolean): Parser<ReadonlyArray<string>> =>
   pipe(
     RE.ask<ParserEnv>(),
     RE.chainEitherK((env) =>
@@ -219,11 +219,11 @@ const getExamples = (name: string, comment: Comment): Parser<ReadonlyArray<strin
         O.map(RA.compact),
         O.fold(
           () =>
-            env.settings.enforceExamples
+            M.fold(M.monoidAll)([env.settings.enforceExamples, !isModule])
               ? E.left(`Missing examples in ${env.path.join('/')}#${name} documentation`)
               : E.right<never, ReadonlyArray<string>>(RA.empty),
           (examples) =>
-            env.settings.enforceExamples && RA.isEmpty(examples)
+            M.fold(M.monoidAll)([env.settings.enforceExamples, RA.isEmpty(examples), !isModule])
               ? E.left(`Missing examples in ${env.path.join('/')}#${name} documentation`)
               : E.right(examples)
         )
@@ -234,14 +234,14 @@ const getExamples = (name: string, comment: Comment): Parser<ReadonlyArray<strin
 /**
  * @internal
  */
-export const getCommentInfo = (name: string) => (text: string): Parser<CommentInfo> =>
+export const getCommentInfo = (name: string, isModule = false) => (text: string): Parser<CommentInfo> =>
   pipe(
     RE.right<ParserEnv, string, Comment>(parseComment(text)),
     RE.bindTo('comment'),
     RE.bind('since', ({ comment }) => getSinceTag(name, comment)),
     RE.bind('category', ({ comment }) => getCategoryTag(name, comment)),
     RE.bind('description', ({ comment }) => getDescription(name, comment)),
-    RE.bind('examples', ({ comment }) => getExamples(name, comment)),
+    RE.bind('examples', ({ comment }) => getExamples(name, comment, isModule)),
     RE.bind('deprecated', ({ comment }) => RE.right(pipe(comment.tags, RR.lookup('deprecated'), O.isSome))),
     RE.map(({ category, deprecated, description, examples, since }) => {
       return CommentInfo(description, since, deprecated, examples, category)
@@ -752,11 +752,7 @@ export const parseModuleDocumentation: Parser<Documentable> = pipe(
     const name = getModuleName(env.path)
     // If any of the settings enforcing documentation are set to `true`, then
     // a module should have associated documentation
-    const isDocumentationRequired = M.fold(M.monoidAny)([
-      env.settings.enforceDescriptions,
-      env.settings.enforceExamples,
-      env.settings.enforceVersion
-    ])
+    const isDocumentationRequired = M.fold(M.monoidAny)([env.settings.enforceDescriptions, env.settings.enforceVersion])
     const onMissingDocumentation = () =>
       isDocumentationRequired
         ? E.left(`Missing documentation in ${env.path.join('/')} module`)
@@ -768,7 +764,7 @@ export const parseModuleDocumentation: Parser<Documentable> = pipe(
           statement.getLeadingCommentRanges(),
           RA.foldLeft(onMissingDocumentation, (commentRange) =>
             pipe(
-              getCommentInfo(name)(commentRange.getText())(env),
+              getCommentInfo(name, true)(commentRange.getText())(env),
               E.map((info) =>
                 Documentable(name, info.description, info.since, info.deprecated, info.examples, info.category)
               )

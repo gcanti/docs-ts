@@ -983,6 +983,57 @@ describe('Parser', () => {
           assert.strictEqual(error, 'Missing documentation in test module')
         )
       })
+
+      it('should not require an example for modules when `enforceExamples` is set to true (#38)', () => {
+        const env = getTestEnv(`/**
+* This is the assert module.
+*
+* @since 1.0.0
+*/
+import * as assert from 'assert'
+
+/**
+ * This is the foo export.
+ *
+ * @example
+ * import { foo } from 'test'
+ *
+ * console.log(foo)
+ *
+ * @category foo
+ * @since 1.0.0
+ */
+export const foo = 'foo'`)
+
+        assertRight(pipe({ ...env, settings: { ...env.settings, enforceExamples: true } }, _.parseModule), (actual) =>
+          assert.deepStrictEqual(actual, {
+            name: 'test',
+            description: O.some('This is the assert module.'),
+            since: O.some('1.0.0'),
+            deprecated: false,
+            examples: RA.empty,
+            category: O.none,
+            path: ['test'],
+            classes: RA.empty,
+            interfaces: RA.empty,
+            functions: RA.empty,
+            typeAliases: RA.empty,
+            constants: [
+              {
+                _tag: 'Constant',
+                name: 'foo',
+                description: O.some('This is the foo export.'),
+                since: O.some('1.0.0'),
+                deprecated: false,
+                examples: [`import { foo } from 'test'\n\nconsole.log(foo)`],
+                category: O.some('foo'),
+                signature: 'export declare const foo: "foo"'
+              }
+            ],
+            exports: RA.empty
+          })
+        )
+      })
     })
 
     describe('parseFile', () => {

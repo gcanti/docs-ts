@@ -796,6 +796,45 @@ describe('Parser', () => {
           ])
         )
       })
+
+      it('should ignore internal/ignored methods (#42)', () => {
+        const env = getTestEnv(
+          `/**
+            * a class description...
+            * @since 1.0.0
+            */
+            export class Test<A> {
+              /**
+               * @since 0.0.1
+               * @internal
+               **/
+              private foo(): void {}
+              /**
+               * @since 0.0.1
+               * @ignore
+               **/
+              private bar(): void {}
+            }`
+        )
+
+        assertRight(pipe(env, _.parseClasses), (actual) =>
+          assert.deepStrictEqual(actual, [
+            {
+              _tag: 'Class',
+              name: 'Test',
+              description: O.some('a class description...'),
+              since: O.some('1.0.0'),
+              deprecated: false,
+              category: O.none,
+              examples: RA.empty,
+              signature: 'export declare class Test<A>',
+              methods: RA.empty,
+              staticMethods: RA.empty,
+              properties: RA.empty
+            }
+          ])
+        )
+      })
     })
 
     describe('parseModuleDocumentation', () => {

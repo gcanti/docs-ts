@@ -578,7 +578,7 @@ const getMethodSignature = (md: ast.MethodDeclaration): string =>
     )
   )
 
-const parseMethod = (md: ast.MethodDeclaration): Parser<Method> =>
+const parseMethod = (md: ast.MethodDeclaration): Parser<O.Option<Method>> =>
   pipe(
     RE.of<ParserEnv, string, string>(md.getName()),
     RE.bindTo('name'),
@@ -595,27 +595,31 @@ const parseMethod = (md: ast.MethodDeclaration): Parser<Method> =>
       )
     ),
     RE.chain(({ jsdocs, overloads, name }) =>
-      pipe(
-        getJSDocText(jsdocs),
-        getCommentInfo(name),
-        RE.map((info) => {
-          const signatures = pipe(
-            overloads,
-            RA.foldRight(
-              () => RA.of(getMethodSignature(md)),
-              (init, last) =>
-                RA.snoc(
-                  init.map((md) => md.getText()),
-                  getMethodSignature(last)
+      shouldIgnore(parseComment(getJSDocText(jsdocs)))
+        ? RE.right(O.none)
+        : pipe(
+            getJSDocText(jsdocs),
+            getCommentInfo(name),
+            RE.map((info) => {
+              const signatures = pipe(
+                overloads,
+                RA.foldRight(
+                  () => RA.of(getMethodSignature(md)),
+                  (init, last) =>
+                    RA.snoc(
+                      init.map((md) => md.getText()),
+                      getMethodSignature(last)
+                    )
                 )
-            )
+              )
+              return O.some(
+                Method(
+                  Documentable(name, info.description, info.since, info.deprecated, info.examples, info.category),
+                  signatures
+                )
+              )
+            })
           )
-          return Method(
-            Documentable(name, info.description, info.since, info.deprecated, info.examples, info.category),
-            signatures
-          )
-        })
-      )
     )
   )
 
@@ -706,8 +710,8 @@ const parseClass = (c: ast.ClassDeclaration): Parser<Class> =>
     RE.bindTo('name'),
     RE.bind('info', ({ name }) => getClassCommentInfo(name, c)),
     RE.bind('signature', ({ name }) => getClassDeclarationSignature(name, c)),
-    RE.bind('methods', () => pipe(c.getInstanceMethods(), traverse(parseMethod))),
-    RE.bind('staticMethods', () => pipe(c.getStaticMethods(), traverse(parseMethod))),
+    RE.bind('methods', () => pipe(c.getInstanceMethods(), traverse(parseMethod), RE.map(RA.compact))),
+    RE.bind('staticMethods', () => pipe(c.getStaticMethods(), traverse(parseMethod), RE.map(RA.compact))),
     RE.bind('properties', ({ name }) => parseProperties(name, c)),
     RE.map(({ methods, staticMethods, properties, info, name, signature }) =>
       Class(

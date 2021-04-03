@@ -6,3 +6,4 @@ services:
       - '4000:4000'
     volumes:
       - $PWD/docs:/site/docs
+      - $PWD/.git:/site/.git

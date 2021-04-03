@@ -8,10 +8,8 @@ WORKDIR /site
 
 RUN gem install github-pages 
 
-RUN echo 'source "https://rubygems.org"' >> Gemfile
-RUN echo 'gem "github-pages", "~> 213", :group => :jekyll_plugins' >> Gemfile
-
-ENV PAGES_REPO_NWO="usr/repo"
+RUN echo 'source "https://rubygems.org"' >> /site/Gemfile
+RUN echo 'gem "github-pages", "~> 213", :group => :jekyll_plugins' >> /site/Gemfile
 
 EXPOSE 4000
 

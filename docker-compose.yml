@@ -1,9 +1,15 @@
 version: '3.3'
 services:
   jekyll:
-    build: .
+    build:
+      context: .
+      args:
+        PORT: ${PORT:-4000}
+    environment:
+      PORT: ${PORT:-4000}
+      OUTPUT_DIR: ${OUTPUT_DIR:-docs}
     ports:
-      - '4000:4000'
+      - ${PORT:-4000}:${PORT:-4000}
     volumes:
-      - $PWD/docs:/site/docs
+      - $PWD/${OUTPUT_DIR:-docs}:/site/${OUTPUT_DIR:-docs}
       - $PWD/.git:/site/.git

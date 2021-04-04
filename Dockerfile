@@ -11,6 +11,11 @@ RUN gem install github-pages
 RUN echo 'source "https://rubygems.org"' >> /site/Gemfile
 RUN echo 'gem "github-pages", "~> 213", :group => :jekyll_plugins' >> /site/Gemfile
 
-EXPOSE 4000
+ARG PORT
 
-CMD [ "bundle", "exec", "jekyll", "serve", "--source", "docs", "-H", "0.0.0.0", "-P", "4000" ]
+EXPOSE $PORT
+
+ENV PORT 4000
+ENV OUTPUT_DIR docs
+
+CMD bundle exec jekyll serve --source $OUTPUT_DIR -H 0.0.0.0 -P $PORT

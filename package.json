@@ -19,7 +19,8 @@
     "prepublish": "npm run build",
     "mocha": "mocha -r ts-node/register test/*.ts",
     "doctoc": "doctoc README.md --title \"**Table of contents**\"",
-    "docs": "ts-node docs.ts"
+    "docs": "ts-node docs.ts",
+    "prepare": "npm run build"
   },
   "repository": {
     "type": "git",

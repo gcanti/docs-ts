@@ -147,9 +147,21 @@ From your project, just run the following command.
 
 `docker-compose --file node_modules/docs-ts/docker-compose.yml --project-directory . up --build`
 
-Then the rendered documentation is accessible on `http://localhost:4000`.
+Then the rendered documentation is accessible on `http://localhost:4000`. You can add the command to your project's npm scripts.
 
-You can add the command to your project's npm scripts.
+Optionally you can pass the following environment variables to `docker-compose`:
+
+| Name       | Type    | Default |
+| ---------- | ------- | ------- |
+| OUTPUT_DIR | string  | docs    |
+| PORT       | integer | 4000    |
+
+Note that changes to your documentation are only reflected in the browser after you
+
+- run `docs-ts` again in a second shell
+- and refresh the browser
+
+But you don't have to restart the docker container for every change.
 
 ## Configuration
 

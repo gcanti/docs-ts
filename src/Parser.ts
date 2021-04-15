@@ -470,13 +470,8 @@ const getTypeAliases = (sourceFile: ast.SourceFile) => pipe(sourceFile, children
 export const parseTypeAliases: Parser<ReadonlyArray<TypeAlias>> = pipe(
   RE.asks((env: ParserEnv) =>
     pipe(
-      env.sourceFile.getTypeAliases(),
-      RA.filter(
-        every([
-          (alias) => alias.isExported(),
-          (alias) => pipe(alias.getJsDocs(), not(flow(getJSDocText, parseComment, shouldIgnore)))
-        ])
-      )
+      getTypeAliases(env.sourceFile),
+      RA.filter(every([isExported, flow(getJsDocs, not(flow(getJSDocText, parseComment, shouldIgnore)))]))
     )
   ),
   RE.chain(traverse(parseTypeAliasDeclaration)),

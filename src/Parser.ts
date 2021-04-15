@@ -579,7 +579,7 @@ const getExportDeclarations = (sourceFile: ast.SourceFile) =>
  * @since 0.6.0
  */
 export const parseExports: Parser<ReadonlyArray<Export>> = pipe(
-  RE.asks((env: ParserEnv) => env.sourceFile.getExportDeclarations()),
+  RE.asks((env: ParserEnv) => getExportDeclarations(env.sourceFile)),
   RE.chain(traverse(parseExportDeclaration)),
   RE.map(RA.flatten)
 )

@@ -364,13 +364,13 @@ const parseFunctionDeclaration = (fd: ast.FunctionDeclaration): Parser<Function>
   )
 
 const parseFunctionVariableDeclaration = (vd: ast.VariableDeclaration): Parser<Function> => {
-  const vs: any = vd.getParent().getParent()
-  const name = vd.getName()
+  const vs = vd.parent.parent
+  const name = vd.name.getText()
   return pipe(
-    getJSDocText(vs.getJsDocs()),
+    getJSDocText(getJsDocs(vs)),
     getCommentInfo(name),
     RE.map((info) => {
-      const signature = `export declare const ${name}: ${stripImportTypes(vd.getType().getText(vd))}`
+      const signature = `export declare const ${name}: ${stripImportTypes(vd.type?.getText(vd as any) as string)}`
       return Function(
         Documentable(name, info.description, info.since, info.deprecated, info.examples, info.category),
         RA.of(signature)

@@ -284,7 +284,18 @@ const parseInterfaceDeclaration = (id: ast.InterfaceDeclaration): Parser<Interfa
  */
 export const parseInterfaces: Parser<ReadonlyArray<Interface>> = pipe(
   RE.asks<ParserEnv, string, ReadonlyArray<ast.InterfaceDeclaration>>((env) =>
-    env.sourceFile.getInterfaces().filter((id) => id.isExported())
+    pipe(
+      env.sourceFile.getChildren(),
+      RA.filter(ast.isInterfaceDeclaration),
+      RA.filter((node) =>
+        pipe(
+          node.modifiers,
+          O.fromNullable,
+          O.map(RA.foldMap(M.monoidAny)((ma) => ma.kind === ast.SyntaxKind.ExportKeyword)),
+          O.getOrElse((): boolean => false)
+        )
+      )
+    )
   ),
   RE.chain(flow(traverse(parseInterfaceDeclaration), RE.map(RA.sort(ordByName))))
 )

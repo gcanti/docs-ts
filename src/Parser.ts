@@ -636,17 +636,14 @@ export const getOverloads = (md: ast.MethodDeclaration): ReadonlyArray<ast.Metho
 
 const parseMethod = (md: ast.MethodDeclaration): Parser<O.Option<Method>> =>
   pipe(
-    RE.of<ParserEnv, string, string>(md.getName()),
+    RE.of<ParserEnv, string, string>(md.name.getText()),
     RE.bindTo('name'),
-    RE.bind('overloads', () => RE.of(md.getOverloads())),
+    RE.bind('overloads', () => RE.of(getOverloads(md))),
     RE.bind('jsdocs', ({ overloads }) =>
       RE.of(
         pipe(
           overloads,
-          RA.foldLeft(
-            () => md.getJsDocs(),
-            (x) => x.getJsDocs()
-          )
+          RA.foldLeft(() => getJsDocs(md), getJsDocs)
         )
       )
     ),

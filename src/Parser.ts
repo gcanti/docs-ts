@@ -589,7 +589,7 @@ export const parseExports: Parser<ReadonlyArray<Export>> = pipe(
 // -------------------------------------------------------------------------------------
 
 const getTypeParameters = (tps: ReadonlyArray<ast.TypeParameterDeclaration>): string =>
-  tps.length === 0 ? '' : `<${tps.map((p) => p.getName()).join(', ')}>`
+  tps.length === 0 ? '' : `<${tps.map((p) => p.name.text).join(', ')}>`
 
 const getMethodSignature = (md: ast.MethodDeclaration): string =>
   pipe(

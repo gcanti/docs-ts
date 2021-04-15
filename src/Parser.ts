@@ -610,6 +610,30 @@ const getMethodName = (md: ast.MethodDeclaration) =>
     RA.findFirst(ast.isIdentifier),
     O.map((a) => a.getText())
   )
+
+// match same name, ensure body doesn't exist.
+export const getOverloads = (md: ast.MethodDeclaration): ReadonlyArray<ast.MethodDeclaration> =>
+  pipe(
+    md.parent,
+    children,
+    RA.filter(ast.isMethodDeclaration),
+    // matches method name
+    RA.filter((md1) =>
+      pipe(
+        getMethodName(md1),
+        O.chain((md1) =>
+          pipe(
+            getMethodName(md),
+            O.map((md) => md === md1)
+          )
+        ),
+        O.getOrElse((): boolean => false)
+      )
+    ),
+    // not the implemtnation
+    RA.filter((a) => !a.body)
+  )
+
 const parseMethod = (md: ast.MethodDeclaration): Parser<O.Option<Method>> =>
   pipe(
     RE.of<ParserEnv, string, string>(md.getName()),

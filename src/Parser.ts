@@ -268,11 +268,11 @@ export const parseComment = (text: string): Comment => {
 
 const parseInterfaceDeclaration = (id: ast.InterfaceDeclaration): Parser<Interface> =>
   pipe(
-    getJSDocText(id.getJsDocs()),
-    getCommentInfo(id.getName()),
+    getJSDocText(pipe(id.getChildren(), RA.filter(ast.isJSDoc))),
+    getCommentInfo(id.name.text),
     RE.map((info) =>
       Interface(
-        Documentable(id.getName(), info.description, info.since, info.deprecated, info.examples, info.category),
+        Documentable(id.name.text, info.description, info.since, info.deprecated, info.examples, info.category),
         id.getText()
       )
     )

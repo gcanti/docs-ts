@@ -59,8 +59,8 @@ export interface ParserEnv extends Environment {
  * @since 0.6.0
  */
 export interface Ast {
-  readonly project: ast.Project
-  readonly addFile: (file: File) => R.Reader<ast.Project, void>
+  readonly project: ast.Program
+  readonly addFile: (file: File) => R.Reader<ast.Program, void>
 }
 
 interface Comment {
@@ -151,7 +151,7 @@ const isVariableStatement = (
 /**
  * @internal
  */
-export const addFileToProject = (file: File) => (project: ast.Project) => project.addSourceFileAtPath(file.path)
+export const addFileToProject = (file: File) => (project: ast.Program) => project.addSourceFileAtPath(file.path)
 
 // -------------------------------------------------------------------------------------
 // comments
@@ -810,7 +810,7 @@ export const parseModule: Parser<Module> = pipe(
 /**
  * @internal
  */
-export const parseFile = (project: ast.Project) => (file: File): RTE.ReaderTaskEither<Environment, string, Module> =>
+export const parseFile = (project: ast.Program) => (file: File): RTE.ReaderTaskEither<Environment, string, Module> =>
   pipe(
     RTE.ask<Environment>(),
     RTE.chain((env) =>
@@ -830,7 +830,7 @@ export const parseFile = (project: ast.Project) => (file: File): RTE.ReaderTaskE
     )
   )
 
-const createProject = (files: ReadonlyArray<File>): RTE.ReaderTaskEither<Environment, string, ast.Project> =>
+const createProject = (files: ReadonlyArray<File>): RTE.ReaderTaskEither<Environment, string, ast.Program> =>
   pipe(
     RTE.ask<Environment>(),
     RTE.chainFirst(({ ast }) =>

@@ -382,6 +382,9 @@ const parseFunctionVariableDeclaration = (vd: ast.VariableDeclaration): Parser<F
 const getFunctions = (sourceFile: ast.SourceFile) =>
   pipe(sourceFile.getChildren(), RA.filter(ast.isFunctionDeclaration))
 
+const getVariableDeclarations = (soureceFile: ast.SourceFile) =>
+  pipe(soureceFile.getChildren(), RA.filter(ast.isVariableDeclaration))
+
 const getFunctionDeclarations: RE.ReaderEither<
   ParserEnv,
   string,

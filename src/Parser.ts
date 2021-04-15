@@ -672,6 +672,9 @@ const parseProperty = (classname: string) => (pd: ast.PropertyDeclaration): Pars
   )
 }
 
+const getFirstModifierByKind = <T extends ast.SyntaxKind>(kind: T) => <N extends ast.Node>(prop: N) =>
+  pipe(prop.modifiers, O.fromNullable, O.chain(RA.findFirst((modifier) => modifier.kind === kind)))
+
 const parseProperties = (name: string, c: ast.ClassDeclaration): Parser<ReadonlyArray<Property>> =>
   pipe(
     c.getProperties(),

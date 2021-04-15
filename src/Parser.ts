@@ -708,13 +708,15 @@ const isStatic = (prop: ast.PropertyDeclaration): boolean =>
 
 const parseProperties = (name: string, c: ast.ClassDeclaration): Parser<ReadonlyArray<Property>> =>
   pipe(
-    c.getProperties(),
+    c,
+    children,
+    RA.filter(ast.isPropertyDeclaration),
     // take public, instance properties
     RA.filter(
       every([
-        (prop) => !prop.isStatic(),
-        (prop) => pipe(prop.getFirstModifierByKind(ast.ts.SyntaxKind.PrivateKeyword), O.fromNullable, O.isNone),
-        (prop) => pipe(prop.getJsDocs(), not(flow(getJSDocText, parseComment, shouldIgnore)))
+        not(isStatic),
+        (prop) => pipe(prop, getFirstModifierByKind(ast.SyntaxKind.PrivateKeyword), O.isNone),
+        (prop) => pipe(prop, getJsDocs, not(flow(getJSDocText, parseComment, shouldIgnore)))
       ])
     ),
     traverse(parseProperty(name))

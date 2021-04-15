@@ -603,6 +603,13 @@ const getMethodSignature = (md: ast.MethodDeclaration): string =>
     )
   )
 
+const getMethodName = (md: ast.MethodDeclaration) =>
+  pipe(
+    md,
+    children,
+    RA.findFirst(ast.isIdentifier),
+    O.map((a) => a.getText())
+  )
 const parseMethod = (md: ast.MethodDeclaration): Parser<O.Option<Method>> =>
   pipe(
     RE.of<ParserEnv, string, string>(md.getName()),

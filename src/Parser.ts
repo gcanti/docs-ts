@@ -14,7 +14,7 @@ import * as RNEA from 'fp-ts/ReadonlyNonEmptyArray'
 import * as RR from 'fp-ts/ReadonlyRecord'
 import * as S from 'fp-ts/Semigroup'
 import { flow, not, pipe, Endomorphism, Predicate } from 'fp-ts/function'
-import * as ast from 'ts-morph'
+import * as ast from 'typescript'
 import * as doctrine from 'doctrine'
 import * as Path from 'path'
 

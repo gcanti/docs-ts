@@ -262,13 +262,15 @@ export const parseComment = (text: string): Comment => {
   return { description, tags }
 }
 
+const getJsDocs = (id: ast.Node) => pipe(id.getChildren(), RA.filter(ast.isJSDoc))
+
 // -------------------------------------------------------------------------------------
 // interfaces
 // -------------------------------------------------------------------------------------
 
 const parseInterfaceDeclaration = (id: ast.InterfaceDeclaration): Parser<Interface> =>
   pipe(
-    getJSDocText(pipe(id.getChildren(), RA.filter(ast.isJSDoc))),
+    getJSDocText(getJsDocs(id)),
     getCommentInfo(id.name.text),
     RE.map((info) =>
       Interface(

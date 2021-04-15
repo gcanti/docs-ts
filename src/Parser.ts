@@ -649,14 +649,15 @@ const parseMethod = (md: ast.MethodDeclaration): Parser<O.Option<Method>> =>
   )
 
 const parseProperty = (classname: string) => (pd: ast.PropertyDeclaration): Parser<Property> => {
-  const name = pd.getName()
+  const name = pd.name.getText()
   return pipe(
-    getJSDocText(pd.getJsDocs()),
+    getJSDocText(getJsDocs(pd)),
     getCommentInfo(`${classname}#${name}`),
     RE.map((info) => {
-      const type = stripImportTypes(pd.getType().getText(pd))
+      const type = stripImportTypes(pd.type?.getText(pd as any) as string)
       const readonly = pipe(
-        O.fromNullable(pd.getFirstModifierByKind(ast.ts.SyntaxKind.ReadonlyKeyword)),
+        O.fromNullable(pd.modifiers),
+        O.chain(RA.findFirst((modifier) => modifier.kind === ast.SyntaxKind.ReadonlyKeyword)),
         O.fold(
           () => '',
           () => 'readonly '

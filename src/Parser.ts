@@ -317,13 +317,18 @@ const getFunctionDeclarationSignature = (f: ast.FunctionDeclaration): string => 
   )
 }
 
+const getFunctionDeclarationOverloads = (fd: ast.FunctionDeclaration): ReadonlyArray<ast.FunctionDeclaration> =>
+  pipe(
+    fd.parent.getChildren(),
+    RA.filter(ast.isFunctionDeclaration),
+    // not the best equality check. {node,fd}.id could be used instead and is internally used.
+    RA.filter((node) => node.pos !== fd.pos)
+  )
+
 const getFunctionDeclarationJSDocs = (fd: ast.FunctionDeclaration): ReadonlyArray<ast.JSDoc> =>
   pipe(
-    fd.getOverloads(),
-    RA.foldLeft(
-      () => fd.getJsDocs(),
-      (firstOverload) => firstOverload.getJsDocs()
-    )
+    getFunctionDeclarationOverloads(fd),
+    RA.foldLeft(() => getJsDocs(fd), getJsDocs)
   )
 
 const parseFunctionDeclaration = (fd: ast.FunctionDeclaration): Parser<Function> =>

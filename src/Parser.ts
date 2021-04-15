@@ -696,7 +696,7 @@ const getClassName = (c: ast.ClassDeclaration): Parser<string> =>
     RE.ask<ParserEnv>(),
     RE.chain<ParserEnv, string, ParserEnv, string>((env) =>
       pipe(
-        O.fromNullable(c.getName()),
+        O.fromNullable(c.name?.text),
         RE.fromOption(() => `Missing class name in module ${env.path.join('/')}`)
       )
     )

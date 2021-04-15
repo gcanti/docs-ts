@@ -703,7 +703,7 @@ const getClassName = (c: ast.ClassDeclaration): Parser<string> =>
   )
 
 const getClassCommentInfo = (name: string, c: ast.ClassDeclaration): Parser<CommentInfo> =>
-  pipe(c.getJsDocs(), getJSDocText, getCommentInfo(name))
+  pipe(c, getJsDocs, getJSDocText, getCommentInfo(name))
 
 const getClassDeclarationSignature = (name: string, c: ast.ClassDeclaration): Parser<string> =>
   pipe(

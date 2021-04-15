@@ -444,10 +444,10 @@ export const parseFunctions: Parser<ReadonlyArray<Function>> = pipe(
 
 const parseTypeAliasDeclaration = (ta: ast.TypeAliasDeclaration): Parser<TypeAlias> =>
   pipe(
-    RE.of<ParserEnv, string, string>(ta.getName()),
+    RE.of<ParserEnv, string, string>(ta.name.text),
     RE.chain((name) =>
       pipe(
-        getJSDocText(ta.getJsDocs()),
+        getJSDocText(getJsDocs(ta)),
         getCommentInfo(name),
         RE.map((info) =>
           TypeAlias(

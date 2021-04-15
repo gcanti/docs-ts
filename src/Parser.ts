@@ -336,7 +336,8 @@ const parseFunctionDeclaration = (fd: ast.FunctionDeclaration): Parser<Function>
     RE.ask<ParserEnv>(),
     RE.chain<ParserEnv, string, ParserEnv, string>((env) =>
       pipe(
-        O.fromNullable(fd.getName()),
+        O.fromNullable(fd.name),
+        O.map((name) => name.getText()),
         O.chain(O.fromPredicate((name) => name.length > 0)),
         RE.fromOption(() => `Missing function name in module ${env.path.join('/')}`)
       )
@@ -347,7 +348,7 @@ const parseFunctionDeclaration = (fd: ast.FunctionDeclaration): Parser<Function>
         getCommentInfo(name),
         RE.map((info) => {
           const signatures = pipe(
-            fd.getOverloads(),
+            getFunctionDeclarationOverloads(fd),
             RA.foldRight(
               () => RA.of(getFunctionDeclarationSignature(fd)),
               (init, last) => RA.snoc(init.map(getFunctionDeclarationSignature), getFunctionDeclarationSignature(last))

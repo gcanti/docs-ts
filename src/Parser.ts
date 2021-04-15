@@ -571,6 +571,8 @@ const parseExportDeclaration = (ed: ast.ExportDeclaration): Parser<ReadonlyArray
     traverse(parseExportSpecifier)
   )
 
+const getExportDeclarations = (sourceFile: ast.SourceFile) =>
+  pipe(sourceFile, children, RA.filter(ast.isExportDeclaration))
 
 /**
  * @category parsers

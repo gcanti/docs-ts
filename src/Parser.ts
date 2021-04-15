@@ -593,7 +593,7 @@ const getTypeParameters = (tps: ReadonlyArray<ast.TypeParameterDeclaration>): st
 
 const getMethodSignature = (md: ast.MethodDeclaration): string =>
   pipe(
-    O.fromNullable(md.compilerNode.body),
+    O.fromNullable(md.body),
     O.fold(
       () => md.getText(),
       (body) => {

@@ -307,7 +307,7 @@ export const parseInterfaces: Parser<ReadonlyArray<Interface>> = pipe(
 const getFunctionDeclarationSignature = (f: ast.FunctionDeclaration): string => {
   const text = f.getText()
   return pipe(
-    O.fromNullable(f.compilerNode.body),
+    O.fromNullable(f.body),
     O.fold(
       () => text.replace('export function ', 'export declare function '),
       (body) => {

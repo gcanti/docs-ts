@@ -506,22 +506,22 @@ const parseConstantVariableDeclaration = (vd: ast.VariableDeclaration): Parser<C
 export const parseConstants: Parser<ReadonlyArray<Constant>> = pipe(
   RE.asks((env: ParserEnv) =>
     pipe(
-      env.sourceFile.getVariableDeclarations(),
+      getVariableDeclarations(env.sourceFile),
       RA.filter(
         every([
-          (vd) => isVariableDeclarationList(vd.getParent()),
-          (vd) => isVariableStatement(vd.getParent().getParent() as any),
+          (vd) => isVariableDeclarationList(vd.parent),
+          (vd) => isVariableStatement(vd.parent.parent as any),
           (vd) =>
             pipe(
-              vd.getInitializer(),
+              vd.initializer,
               every([
-                flow(O.fromNullable, O.chain(O.fromPredicate(not(ast.Node.isFunctionLikeDeclaration))), O.isSome),
+                flow(O.fromNullable, O.chain(O.fromPredicate(not(ast.isFunctionLike))), O.isSome),
                 () =>
                   pipe(
-                    (vd.getParent().getParent() as ast.VariableStatement).getJsDocs(),
+                    getJsDocs(vd.parent.parent as ast.VariableStatement),
                     not(flow(getJSDocText, parseComment, shouldIgnore))
                   ),
-                () => (vd.getParent().getParent() as ast.VariableStatement).isExported()
+                () => isExported(vd.parent.parent as ast.VariableStatement)
               ])
             )
         ])

@@ -461,6 +461,8 @@ const parseTypeAliasDeclaration = (ta: ast.TypeAliasDeclaration): Parser<TypeAli
 
 const children = <R extends ast.Node>(node: R) => RA.fromArray(node.getChildren())
 
+const getTypeAliases = (sourceFile: ast.SourceFile) => pipe(sourceFile, children, RA.filter(ast.isTypeAliasDeclaration))
+
 /**
  * @category parsers
  * @since 0.6.0

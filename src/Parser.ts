@@ -483,13 +483,13 @@ export const parseTypeAliases: Parser<ReadonlyArray<TypeAlias>> = pipe(
 // -------------------------------------------------------------------------------------
 
 const parseConstantVariableDeclaration = (vd: ast.VariableDeclaration): Parser<Constant> => {
-  const vs: any = vd.getParent().getParent()
-  const name = vd.getName()
+  const vs: any = vd.parent.parent
+  const name = vd.name.getText()
   return pipe(
-    getJSDocText(vs.getJsDocs()),
+    getJSDocText(getJsDocs(vs)),
     getCommentInfo(name),
     RE.map((info) => {
-      const type = stripImportTypes(vd.getType().getText(vd))
+      const type = stripImportTypes(vd.type?.getText(vd as any) as string)
       const signature = `export declare const ${name}: ${type}`
       return Constant(
         Documentable(name, info.description, info.since, info.deprecated, info.examples, info.category),

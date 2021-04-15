@@ -563,7 +563,14 @@ const parseExportSpecifier = (es: ast.ExportSpecifier): Parser<Export> =>
   )
 
 const parseExportDeclaration = (ed: ast.ExportDeclaration): Parser<ReadonlyArray<Export>> =>
-  pipe(ed.getNamedExports(), traverse(parseExportSpecifier))
+  pipe(
+    ed,
+    children,
+    RA.filter(ast.isNamedExports),
+    RA.chain((node) => node.elements),
+    traverse(parseExportSpecifier)
+  )
+
 
 /**
  * @category parsers

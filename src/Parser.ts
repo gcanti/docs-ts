@@ -142,11 +142,11 @@ const shouldIgnore: Predicate<Comment> = some([
 
 const isVariableDeclarationList = (
   u: ast.VariableDeclarationList | ast.CatchClause
-): u is ast.VariableDeclarationList => u.getKind() === ast.ts.SyntaxKind.VariableDeclarationList
+): u is ast.VariableDeclarationList => u.kind === ast.SyntaxKind.VariableDeclarationList
 
 const isVariableStatement = (
   u: ast.VariableStatement | ast.ForStatement | ast.ForOfStatement | ast.ForInStatement
-): u is ast.VariableStatement => u.getKind() === ast.ts.SyntaxKind.VariableStatement
+): u is ast.VariableStatement => u.kind === ast.SyntaxKind.VariableStatement
 
 /**
  * @internal

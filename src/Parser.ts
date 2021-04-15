@@ -727,7 +727,7 @@ const parseProperties = (name: string, c: ast.ClassDeclaration): Parser<Readonly
  */
 export const getConstructorDeclarationSignature = (c: ast.ConstructorDeclaration): string =>
   pipe(
-    O.fromNullable(c.compilerNode.body),
+    O.fromNullable(c.body),
     O.fold(
       () => c.getText(),
       (body) => {

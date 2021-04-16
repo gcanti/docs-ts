@@ -703,8 +703,8 @@ const parseProperty = (classname: string) => (pd: ast.PropertyDeclaration): Pars
 const getFirstModifierByKind = <T extends ast.SyntaxKind>(kind: T) => <N extends ast.Node>(prop: N) =>
   pipe(prop.modifiers, O.fromNullable, O.chain(RA.findFirst((modifier) => modifier.kind === kind)))
 
-const isStatic = (prop: ast.PropertyDeclaration): boolean =>
-  pipe(prop, getFirstModifierByKind(ast.SyntaxKind.StaticKeyword), O.isSome)
+const isStatic = <T extends ast.ClassElement>(node: T) =>
+  pipe(node, getFirstModifierByKind(ast.SyntaxKind.StaticKeyword), O.isSome)
 
 const parseProperties = (name: string, c: ast.ClassDeclaration): Parser<ReadonlyArray<Property>> =>
   pipe(

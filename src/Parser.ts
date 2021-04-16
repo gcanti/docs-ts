@@ -778,8 +778,8 @@ const parseClass = (c: ast.ClassDeclaration): Parser<Class> =>
     RE.bindTo('name'),
     RE.bind('info', ({ name }) => getClassCommentInfo(name, c)),
     RE.bind('signature', ({ name }) => getClassDeclarationSignature(name, c)),
-    RE.bind('methods', () => pipe(c.getInstanceMethods(), traverse(parseMethod), RE.map(RA.compact))),
-    RE.bind('staticMethods', () => pipe(c.getStaticMethods(), traverse(parseMethod), RE.map(RA.compact))),
+    RE.bind('methods', () => pipe(c, getInstanceMethods, traverse(parseMethod), RE.map(RA.compact))),
+    RE.bind('staticMethods', () => pipe(c, getStaticMethods, traverse(parseMethod), RE.map(RA.compact))),
     RE.bind('properties', ({ name }) => parseProperties(name, c)),
     RE.map(({ methods, staticMethods, properties, info, name, signature }) =>
       Class(

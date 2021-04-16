@@ -769,6 +769,9 @@ const getClassDeclarationSignature = (name: string, c: ast.ClassDeclaration): Pa
 const getStaticMethods = (c: ast.ClassDeclaration): ReadonlyArray<ast.MethodDeclaration> =>
   pipe(c.members, RA.filter(ast.isMethodDeclaration), RA.filter(isStatic))
 
+const getInstanceMethods = (c: ast.ClassDeclaration): ReadonlyArray<ast.MethodDeclaration> =>
+  pipe(c.members, RA.filter(ast.isMethodDeclaration), RA.filter(not(isStatic)))
+
 const parseClass = (c: ast.ClassDeclaration): Parser<Class> =>
   pipe(
     getClassName(c),

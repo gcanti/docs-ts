@@ -33,7 +33,6 @@ export interface Capabilities {
   readonly example: Example
   readonly fileSystem: FileSystem
   readonly logger: Logger
-  readonly ast: P.Ast
 }
 
 /**

@@ -7,7 +7,6 @@ import * as R from 'fp-ts/Record'
 import * as A from 'fp-ts/Array'
 import { eqString } from 'fp-ts/Eq'
 import { pipe, Endomorphism } from 'fp-ts/function'
-import * as ast from 'ts-morph'
 
 import * as Core from '../src/Core'
 import * as E from '../src/Example'
@@ -103,11 +102,7 @@ const makeCapabilities: (state: FileSystemState) => Core.Capabilities = (state) 
   return {
     logger,
     fileSystem,
-    example,
-    ast: {
-      project: new ast.Project({ useInMemoryFileSystem: true }),
-      addFile: (file) => (project) => project.createSourceFile(file.path, file.content, { overwrite: file.overwrite })
-    }
+    example
   }
 }
 

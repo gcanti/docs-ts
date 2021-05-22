@@ -137,6 +137,31 @@ assert.strictEqual(sayHello('Test')(), 'Hello, Test!')
 Added in v0.6.0
 ````
 
+### Run locally
+
+You can also preview the generated docs locally. `docs-ts` emits a file structure that can be rendered by the [jekyll](https://jekyllrb.com/) static site generator. Thus, we need to have this tool installed on the local system.
+We provide a `Dockerfile` and a `docker-compose.yml` file, so you don't have to worry about the details.
+
+From your project, just run the following command.
+
+`docker-compose --file node_modules/docs-ts/docker-compose.yml --project-directory . up --build`
+
+Then the rendered documentation is accessible on `http://localhost:4000`. You can add the command to your project's npm scripts.
+
+Optionally you can pass the following environment variables to `docker-compose`:
+
+| Name       | Type    | Default |
+| ---------- | ------- | ------- |
+| OUTPUT_DIR | string  | docs    |
+| PORT       | integer | 4000    |
+
+Note that changes to your documentation are only reflected in the browser after you
+
+- run `docs-ts` again in a second shell
+- and refresh the browser
+
+But you don't have to restart the docker container for every change.
+
 ## Configuration
 
 `docs-ts` is meant to be a zero-configuration command-line tool by default. However, there are several configuration settings that can be specified for `docs-ts`. To customize the configuration of `docs-ts`, create a `docs-ts.json` file in the root directory of your project and indicate the custom configuration parameters that the tool should use when generating documentation.

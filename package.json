@@ -3,7 +3,9 @@
   "version": "0.6.10",
   "description": "Documentation tool for TypeScript packages",
   "files": [
-    "lib"
+    "lib",
+    "docker-compose.yml",
+    "Dockerfile"
   ],
   "main": "lib/index.js",
   "bin": "lib/bin.js",
@@ -19,7 +21,8 @@
     "prepublish": "npm run build",
     "mocha": "mocha -r ts-node/register test/*.ts",
     "doctoc": "doctoc README.md --title \"**Table of contents**\"",
-    "docs": "ts-node docs.ts"
+    "docs": "ts-node docs.ts",
+    "prepare": "npm run build"
   },
   "repository": {
     "type": "git",

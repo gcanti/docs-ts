@@ -29,10 +29,9 @@ Added in v0.6.0
 **Signature**
 
 ```ts
-export interface Capabilities {
+export interface Capabilities extends L.LoggerEnv {
   readonly example: Example
   readonly fileSystem: FileSystem
-  readonly logger: Logger
   readonly ast: P.Ast
 }
 ```

@@ -2,18 +2,19 @@
  * @since 0.2.0
  */
 import chalk from 'chalk'
+import { SystemClock } from 'clock-ts'
 import { log } from 'fp-ts/Console'
 import * as IO from 'fp-ts/IO'
 import { pipe } from 'fp-ts/pipeable'
 import * as T from 'fp-ts/Task'
 import * as TE from 'fp-ts/TaskEither'
+import * as L from 'logger-fp-ts'
 import * as ast from 'ts-morph'
 
 import * as Core from './Core'
 import * as Parser from './Parser'
 import { Example } from './Example'
 import { FileSystem } from './FileSystem'
-import { Logger } from './Logger'
 
 // -------------------------------------------------------------------------------------
 // utils
@@ -47,7 +48,10 @@ export const compilerOptions: ast.ProjectOptions['compilerOptions'] = {
   strict: true
 }
 
+const Logger = pipe(log, L.withShow(L.getColoredShow(L.ShowLogEntry)))
+
 const capabilities: Core.Capabilities = {
+  clock: SystemClock,
   example: Example,
   fileSystem: FileSystem,
   logger: Logger,

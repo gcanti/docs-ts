@@ -1,24 +1,25 @@
 import * as assert from 'assert'
+import { FixedClock } from 'clock-ts'
 import * as minimatch from 'minimatch'
 import { join } from 'path'
+import * as IO from 'fp-ts/IO'
 import * as O from 'fp-ts/Option'
 import * as TE from 'fp-ts/TaskEither'
 import * as R from 'fp-ts/Record'
 import * as A from 'fp-ts/Array'
-import { eqString } from 'fp-ts/Eq'
 import { pipe, Endomorphism } from 'fp-ts/function'
+import * as L from 'logger-fp-ts'
 import * as ast from 'ts-morph'
 
 import * as Core from '../src/Core'
 import * as E from '../src/Example'
-import * as L from '../src/Logger'
 import * as FS from '../src/FileSystem'
 import { assertLeft, assertRight } from './utils'
 
 import Option = O.Option
 
 type FileSystemState = Record<string, string>
-type Log = Array<string>
+type Log = Array<L.LogEntry>
 
 let command = ''
 let executablePath = ''
@@ -87,20 +88,15 @@ const fileSystem: FS.FileSystem = {
     )
 }
 
-const addMsgToLog: (msg: string) => TE.TaskEither<string, void> = (msg) => {
-  log.push(msg)
-  return TE.of(undefined)
-}
-
-const logger: L.Logger = {
-  debug: addMsgToLog,
-  error: addMsgToLog,
-  info: addMsgToLog
+const logger: L.Logger = (entry) => {
+  log.push(entry)
+  return IO.of(undefined)
 }
 
 const makeCapabilities: (state: FileSystemState) => Core.Capabilities = (state) => {
   fileSystemState = state
   return {
+    clock: FixedClock(new Date('2022-01-01')),
     logger,
     fileSystem,
     example,
@@ -174,7 +170,7 @@ describe('Core', () => {
           assert.strictEqual(result, undefined)
 
           const actual = Object.keys(fileSystemState)
-          const expected = [`package.json`, 'docs/index.md', 'docs/modules/index.md', 'docs/_config.yml'].map((path) =>
+          const expected = [`package.json`, 'docs/_config.yml', 'docs/modules/index.md', 'docs/index.md'].map((path) =>
             join(process.cwd(), path)
           )
 
@@ -191,9 +187,18 @@ describe('Core', () => {
 
         assertRight(await Core.main(capabilities)(), (result) => {
           assert.strictEqual(result, undefined)
-          assert.strictEqual(A.elem(eqString)('Found configuration file')(log), true)
           assert.strictEqual(
-            A.elem(eqString)(`Parsing configuration file found at: ${process.cwd()}/docs-ts.json`)(log),
+            A.elem(L.EqLogEntry)({ message: 'Found configuration file', date: new Date('2022-01-01'), level: 'INFO' })(
+              log
+            ),
+            true
+          )
+          assert.strictEqual(
+            A.elem(L.EqLogEntry)({
+              message: `Parsing configuration file found at: ${process.cwd()}/docs-ts.json`,
+              date: new Date('2022-01-01'),
+              level: 'DEBUG'
+            })(log),
             true
           )
         })
@@ -214,7 +219,11 @@ nav_order: 1
         assertRight(await Core.main(capabilities)(), (result) => {
           assert.strictEqual(result, undefined)
           assert.strictEqual(
-            log.includes(`File ${process.cwd()}/docs/index.md already exists, skipping creation`),
+            A.elem(L.EqLogEntry)({
+              message: `File ${process.cwd()}/docs/index.md already exists, skipping creation`,
+              date: new Date('2022-01-01'),
+              level: 'DEBUG'
+            })(log),
             true
           )
         })
@@ -301,7 +310,10 @@ export const foo = (): string => 'foo'
 
         assertRight(await Core.main(capabilities)(), (result) => {
           assert.strictEqual(result, undefined)
-          assert.strictEqual(log.includes('Found 1 modules'), true)
+          assert.strictEqual(
+            A.elem(L.EqLogEntry)({ message: 'Found 1 modules', date: new Date('2022-01-01'), level: 'INFO' })(log),
+            true
+          )
           assert.strictEqual(
             Object.keys(fileSystemState).includes(join(process.cwd(), 'docs/modules/src/utils/foo.ts.md')),
             true

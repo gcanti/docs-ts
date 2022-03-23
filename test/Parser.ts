@@ -1,4 +1,6 @@
 import * as assert from 'assert'
+import { FixedClock } from 'clock-ts'
+import * as IO from 'fp-ts/IO'
 import * as O from 'fp-ts/lib/Option'
 import * as RA from 'fp-ts/ReadonlyArray'
 import { pipe } from 'fp-ts/function'
@@ -9,7 +11,6 @@ import * as path from 'path'
 import * as C from '../src/Config'
 import * as E from '../src/Example'
 import * as FS from '../src/FileSystem'
-import * as L from '../src/Logger'
 import * as _ from '../src/Parser'
 import { compilerOptions } from '../src'
 
@@ -44,11 +45,12 @@ const settings: C.Settings = {
 }
 
 const getTestEnv = (sourceText: string): _.ParserEnv => ({
+  clock: FixedClock(new Date('2022-01-01')),
   path: ['test'],
   sourceFile: project.createSourceFile(`test-${testCounter++}.ts`, sourceText),
   example: E.Example,
   fileSystem: FS.FileSystem,
-  logger: L.Logger,
+  logger: () => IO.of(undefined),
   settings,
   ast: defaultAst
 })
@@ -987,11 +989,12 @@ describe('Parser', () => {
         assertRight(
           pipe(
             {
+              clock: FixedClock(new Date('2022-01-01')),
               path: ['test'],
               sourceFile,
               example: E.Example,
               fileSystem: FS.FileSystem,
-              logger: L.Logger,
+              logger: () => IO.of(undefined),
               settings,
               ast: defaultAst
             },
@@ -1083,9 +1086,10 @@ export const foo = 'foo'`)
         assertLeft(
           await pipe(
             {
+              clock: FixedClock(new Date('2022-01-01')),
               example: E.Example,
               fileSystem: FS.FileSystem,
-              logger: L.Logger,
+              logger: () => IO.of(undefined),
               settings,
               ast: { ...defaultAst, project }
             },
@@ -1131,9 +1135,10 @@ export function f(a: number, b: number): { [key: string]: number } {
         assertRight(
           await pipe(
             {
+              clock: FixedClock(new Date('2022-01-01')),
               example: E.Example,
               fileSystem: FS.FileSystem,
-              logger: L.Logger,
+              logger: () => IO.of(undefined),
               settings,
               ast: { ...defaultAst, project }
             },

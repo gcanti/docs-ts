@@ -8,13 +8,14 @@ import * as RA from 'fp-ts/ReadonlyArray'
 import * as RTE from 'fp-ts/ReaderTaskEither'
 import * as TE from 'fp-ts/TaskEither'
 import { constVoid, Endomorphism, flow, pipe } from 'fp-ts/function'
+import * as RTEC from 'fp-ts-contrib/ReaderTaskEither'
 import * as TD from 'io-ts/TaskDecoder'
+import * as L from 'logger-fp-ts'
 import * as path from 'path'
 
 import * as Config from './Config'
 import { Example } from './Example'
 import { File, FileSystem } from './FileSystem'
-import { Logger } from './Logger'
 import { printModule } from './Markdown'
 import { Documentable, Module } from './Module'
 import * as P from './Parser'
@@ -29,10 +30,9 @@ const CONFIG_FILE_NAME = 'docs-ts.json'
  * @category model
  * @since 0.6.0
  */
-export interface Capabilities {
+export interface Capabilities extends L.LoggerEnv {
   readonly example: Example
   readonly fileSystem: FileSystem
-  readonly logger: Logger
   readonly ast: P.Ast
 }
 
@@ -85,18 +85,11 @@ const readFiles: (paths: ReadonlyArray<string>) => Effect<ReadonlyArray<File>> =
 const writeFile = (file: File): Effect<void> => {
   const overwrite: Effect<void> = pipe(
     RTE.ask<Capabilities>(),
-    RTE.chainTaskEitherK(({ fileSystem, logger }) =>
-      pipe(
-        logger.debug(`Overwriting file ${file.path}`),
-        TE.chain(() => fileSystem.writeFile(file.path, file.content))
-      )
-    )
+    RTEC.chainFirstReaderIOKW(() => L.debug(`Overwriting file ${file.path}`)),
+    RTE.chainTaskEitherK(({ fileSystem }) => fileSystem.writeFile(file.path, file.content))
   )
 
-  const skip: Effect<void> = pipe(
-    RTE.ask<Capabilities>(),
-    RTE.chainTaskEitherK(({ logger }) => logger.debug(`File ${file.path} already exists, skipping creation`))
-  )
+  const skip: Effect<void> = RTEC.rightReaderIO(L.debug(`File ${file.path} already exists, skipping creation`))
 
   const write: Effect<void> = pipe(
     RTE.ask<Capabilities>(),
@@ -117,7 +110,7 @@ const writeFiles: (files: ReadonlyArray<File>) => Effect<void> = flow(
 
 const readPackageJSON: Effect<PackageJSON> = pipe(
   RTE.ask<Capabilities>(),
-  RTE.chainTaskEitherK(({ fileSystem, logger }) =>
+  RTE.chainTaskEitherK(({ fileSystem }) =>
     pipe(
       fileSystem.readFile(path.join(process.cwd(), 'package.json')),
       TE.mapLeft(() => `Unable to read package.json in "${process.cwd()}"`),
@@ -132,32 +125,25 @@ const readPackageJSON: Effect<PackageJSON> = pipe(
           PackageJSONDecoder.decode(json),
           TE.mapLeft((decodeError) => `Unable to decode package.json:\n${TD.draw(decodeError)}`)
         )
-      ),
-      TE.chain(({ name, homepage }) =>
-        pipe(
-          logger.debug(`Project name detected: ${name}`),
-          TE.chain(() =>
-            pipe(
-              O.fromNullable(homepage),
-              TE.fromOption(() => `Missing homepage in package.json`),
-              TE.map((homepage) => ({ name, homepage }))
-            )
-          )
-        )
       )
+    )
+  ),
+  RTEC.chainFirstReaderIOKW(({ name }) => L.debug(`Project name detected: ${name}`)),
+  RTE.chainEitherKW(({ name, homepage }) =>
+    pipe(
+      O.fromNullable(homepage),
+      E.fromOption(() => `Missing homepage in package.json`),
+      E.map((homepage) => ({ name, homepage }))
     )
   )
 )
 
 const readSourcePaths: Program<ReadonlyArray<string>> = pipe(
   RTE.ask<Environment, string>(),
-  RTE.chainTaskEitherK(({ fileSystem, logger, settings }) =>
-    pipe(
-      fileSystem.search(path.join(settings.srcDir, '**', '*.ts'), settings.exclude),
-      TE.map(RA.map(path.normalize)),
-      TE.chainFirst((paths) => pipe(logger.info(`Found ${paths.length} modules`)))
-    )
-  )
+  RTE.chainTaskEitherK(({ fileSystem, settings }) =>
+    pipe(fileSystem.search(path.join(settings.srcDir, '**', '*.ts'), settings.exclude), TE.map(RA.map(path.normalize)))
+  ),
+  RTEC.chainFirstReaderIOKW((paths) => L.info(`Found ${paths.length} modules`))
 )
 
 const readSourceFiles: Program<ReadonlyArray<File>> = pipe(
@@ -177,7 +163,7 @@ const readSourceFiles: Program<ReadonlyArray<File>> = pipe(
 const parseFiles = (files: ReadonlyArray<File>): Program<ReadonlyArray<Module>> =>
   pipe(
     RTE.ask<Environment, string>(),
-    RTE.chainFirst(({ logger }) => RTE.fromTaskEither(logger.debug('Parsing files...'))),
+    RTEC.chainFirstReaderIOKW(() => L.debug('Parsing files...')),
     RTE.chain(() => P.parseFiles(files))
   )
 
@@ -273,7 +259,7 @@ const cleanExamples: Program<void> = pipe(
 
 const spawnTsNode: Program<void> = pipe(
   RTE.ask<Environment, string>(),
-  RTE.chainFirst(({ logger }) => RTE.fromTaskEither(logger.debug('Type checking examples...'))),
+  RTEC.chainFirstReaderIOKW(() => L.debug('Type checking examples...')),
   RTE.chainTaskEitherK(({ example, settings }) => {
     const command = process.platform === 'win32' ? 'ts-node.cmd' : 'ts-node'
     const executablePath = path.join(process.cwd(), settings.outDir, 'examples', 'index.ts')
@@ -284,7 +270,7 @@ const spawnTsNode: Program<void> = pipe(
 const writeExamples = (examples: ReadonlyArray<File>): Program<void> =>
   pipe(
     RTE.ask<Environment, string>(),
-    RTE.chainFirst(({ logger }) => RTE.fromTaskEither(logger.debug('Writing examples...'))),
+    RTEC.chainFirstReaderIOKW(() => L.debug('Writing examples...')),
     RTE.chain((C) =>
       pipe(
         getExampleIndex(examples),
@@ -427,23 +413,20 @@ const getMarkdownFiles = (modules: ReadonlyArray<Module>): Program<ReadonlyArray
     )
   )
 
+const removeFromFilesystem = (pattern: string) =>
+  pipe(
+    RTE.ask<Environment, string>(),
+    RTE.chainTaskEitherK(({ fileSystem }) => fileSystem.remove(pattern))
+  )
+
 const writeMarkdownFiles = (files: ReadonlyArray<File>): Program<void> =>
   pipe(
     RTE.ask<Environment, string>(),
-    RTE.chainFirst<Environment, string, Environment, void>(({ fileSystem, logger, settings }) => {
-      const outPattern = path.join(settings.outDir, '**/*.ts.md')
-      return pipe(
-        logger.debug(`Cleaning up docs folder: deleting ${outPattern}`),
-        TE.chain(() => fileSystem.remove(outPattern)),
-        RTE.fromTaskEither
-      )
-    }),
-    RTE.chainTaskEitherK((C) =>
-      pipe(
-        C.logger.debug('Writing markdown files...'),
-        TE.chain(() => pipe(C, writeFiles(files)))
-      )
-    )
+    RTE.map(({ settings }) => path.join(settings.outDir, '**/*.ts.md')),
+    RTEC.chainFirstReaderIOKW((outPattern) => L.debug(`Cleaning up docs folder: deleting ${outPattern}`)),
+    RTE.chainFirst(removeFromFilesystem),
+    RTEC.chainFirstReaderIOKW(() => L.debug('Writing markdown files...')),
+    RTE.chainW(() => writeFiles(files))
   )
 
 // -------------------------------------------------------------------------------------
@@ -455,12 +438,8 @@ const getDefaultSettings = (projectName: string, projectHomepage: string): Confi
 
 const hasConfiguration: Effect<boolean> = pipe(
   RTE.ask<Capabilities>(),
-  RTE.chainTaskEitherK(({ fileSystem, logger }) =>
-    pipe(
-      logger.debug('Checking for configuration file...'),
-      TE.chain(() => fileSystem.exists(path.join(process.cwd(), CONFIG_FILE_NAME)))
-    )
-  )
+  RTEC.chainFirstReaderIOKW(() => L.debug('Checking for configuration file...')),
+  RTE.chainTaskEitherK(({ fileSystem }) => fileSystem.exists(path.join(process.cwd(), CONFIG_FILE_NAME)))
 )
 
 const readConfiguration: Effect<File> = pipe(
@@ -470,31 +449,22 @@ const readConfiguration: Effect<File> = pipe(
 
 const parseConfiguration = (defaultSettings: Config.Settings) => (file: File): Effect<Config.Settings> =>
   pipe(
-    RTE.ask<Capabilities>(),
-    RTE.chainTaskEitherK(({ logger }) =>
-      pipe(
-        E.parseJSON(file.content, toErrorMsg),
-        TE.fromEither,
-        TE.chainFirst(() => logger.info(`Found configuration file`)),
-        TE.chainFirst(() => logger.debug(`Parsing configuration file found at: ${file.path}`)),
-        TE.chain(Config.decode),
-        TE.bimap(
-          (decodeError) => `Invalid configuration file detected:\n${decodeError}`,
-          (settings) => ({ ...defaultSettings, ...settings })
-        )
-      )
+    E.parseJSON(file.content, toErrorMsg),
+    RTE.fromEither,
+    RTEC.chainFirstReaderIOK(() => L.info(`Found configuration file`)),
+    RTEC.chainFirstReaderIOK(() => L.debug(`Parsing configuration file found at: ${file.path}`)),
+    RTE.chainTaskEitherK(Config.decode),
+    RTE.bimap(
+      (decodeError) => `Invalid configuration file detected:\n${decodeError}`,
+      (settings) => ({ ...defaultSettings, ...settings })
     )
   )
 
 const useDefaultSettings = (defaultSettings: Config.Settings): Effect<Config.Settings> =>
   pipe(
     RTE.ask<Capabilities>(),
-    RTE.chainTaskEitherK(({ logger }) =>
-      pipe(
-        logger.info('No configuration file detected, using default settings'),
-        TE.map(() => defaultSettings)
-      )
-    )
+    RTEC.chainFirstReaderIOKW(() => L.info('No configuration file detected, using default settings')),
+    RTE.map(() => defaultSettings)
   )
 
 const getDocsConfiguration = (projectName: string, projectHomepage: string): Effect<Config.Settings> =>

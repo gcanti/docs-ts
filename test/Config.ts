@@ -20,7 +20,8 @@ describe('Config', () => {
         enforceDescriptions: false,
         enforceExamples: false,
         enforceVersion: true,
-        exclude: RA.empty
+        exclude: RA.empty,
+        compilerOptions: {}
       })
     })
   })

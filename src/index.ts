@@ -7,10 +7,7 @@ import * as IO from 'fp-ts/IO'
 import { pipe } from 'fp-ts/pipeable'
 import * as T from 'fp-ts/Task'
 import * as TE from 'fp-ts/TaskEither'
-import * as ast from 'ts-morph'
-
 import * as Core from './Core'
-import * as Parser from './Parser'
 import { Example } from './Example'
 import { FileSystem } from './FileSystem'
 import { Logger } from './Logger'
@@ -40,23 +37,11 @@ const onRight: T.Task<void> = pipe(
  */
 export const exit: (program: TE.TaskEither<string, void>) => T.Task<void> = TE.fold(onLeft, () => onRight)
 
-/**
- * @internal
- */
-export const compilerOptions: ast.ProjectOptions['compilerOptions'] = {
-  strict: true
-}
-
 const capabilities: Core.Capabilities = {
   example: Example,
   fileSystem: FileSystem,
   logger: Logger,
-  ast: {
-    project: new ast.Project({
-      compilerOptions
-    }),
-    addFile: Parser.addFileToProject
-  }
+  addFile: (file) => (project) => project.addSourceFileAtPath(file.path)
 }
 
 /**

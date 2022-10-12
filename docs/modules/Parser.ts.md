@@ -13,7 +13,6 @@ Added in v0.6.0
 <h2 class="text-delta">Table of contents</h2>
 
 - [model](#model)
-  - [Ast (interface)](#ast-interface)
   - [Parser (interface)](#parser-interface)
   - [ParserEnv (interface)](#parserenv-interface)
 - [parsers](#parsers)
@@ -29,19 +28,6 @@ Added in v0.6.0
 ---
 
 # model
-
-## Ast (interface)
-
-**Signature**
-
-```ts
-export interface Ast {
-  readonly project: ast.Project
-  readonly addFile: (file: File) => R.Reader<ast.Project, void>
-}
-```
-
-Added in v0.6.0
 
 ## Parser (interface)
 

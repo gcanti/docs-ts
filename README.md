@@ -154,6 +154,7 @@ interface Config {
   readonly enforceExamples?: boolean
   readonly enforceVersion?: boolean
   readonly exclude?: ReadonlyArray<string>
+  readonly compilerOptions?: Record<string, unknown>
 }
 ```
 
@@ -170,6 +171,7 @@ The following table describes each configuration parameter, its purpose, and its
 | enforceExamples     | Whether or not `@example` tags for each module export should be required. (**Note**: examples will not be enforced in module documentation)                                         | `false`                      |
 | enforceVersion      | Whether or not `@since` tags for each module export should be required.                                                                                                             | `true`                       |
 | exclude             | An array of glob strings specifying files that should be excluded from the documentation.                                                                                           | `[]`                         |
+| compilerOptions     | tsconfig compiler options                                                                                                                                                           | {}                           |
 
 ## Documentation
 

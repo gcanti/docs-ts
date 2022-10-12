@@ -10,7 +10,7 @@ import * as TE from 'fp-ts/TaskEither'
 import { constVoid, Endomorphism, flow, pipe } from 'fp-ts/function'
 import * as TD from 'io-ts/TaskDecoder'
 import * as path from 'path'
-
+import * as ast from 'ts-morph'
 import * as Config from './Config'
 import { Example } from './Example'
 import { File, FileSystem } from './FileSystem'
@@ -33,7 +33,7 @@ export interface Capabilities {
   readonly example: Example
   readonly fileSystem: FileSystem
   readonly logger: Logger
-  readonly ast: P.Ast
+  readonly addFile: (file: File) => (project: ast.Project) => void
 }
 
 /**

@@ -3,32 +3,24 @@ import * as O from 'fp-ts/lib/Option'
 import * as RA from 'fp-ts/ReadonlyArray'
 import { pipe } from 'fp-ts/function'
 import * as ast from 'ts-morph'
-import * as fs from 'fs-extra'
-import * as path from 'path'
 
 import * as C from '../src/Config'
 import * as E from '../src/Example'
 import * as FS from '../src/FileSystem'
 import * as L from '../src/Logger'
 import * as _ from '../src/Parser'
-import { compilerOptions } from '../src'
 
 import { assertLeft, assertRight } from './utils'
 
 let testCounter = 0
 
 const project = new ast.Project({
-  compilerOptions,
+  compilerOptions: { strict: true },
   useInMemoryFileSystem: true
 })
 
 const addFileToProject = (file: FS.File) => (project: ast.Project) =>
   project.createSourceFile(file.path, file.content, { overwrite: file.overwrite })
-
-const defaultAst: _.Ast = {
-  project,
-  addFile: addFileToProject
-}
 
 const settings: C.Settings = {
   projectName: 'docs-ts',
@@ -40,7 +32,8 @@ const settings: C.Settings = {
   enforceDescriptions: false,
   enforceExamples: false,
   enforceVersion: true,
-  exclude: RA.empty
+  exclude: RA.empty,
+  compilerOptions: {}
 }
 
 const getTestEnv = (sourceText: string): _.ParserEnv => ({
@@ -50,7 +43,7 @@ const getTestEnv = (sourceText: string): _.ParserEnv => ({
   fileSystem: FS.FileSystem,
   logger: L.Logger,
   settings,
-  ast: defaultAst
+  addFile: addFileToProject
 })
 
 describe('Parser', () => {
@@ -993,7 +986,7 @@ describe('Parser', () => {
               fileSystem: FS.FileSystem,
               logger: L.Logger,
               settings,
-              ast: defaultAst
+              addFile: addFileToProject
             },
             _.parseExports
           ),
@@ -1087,7 +1080,7 @@ export const foo = 'foo'`)
               fileSystem: FS.FileSystem,
               logger: L.Logger,
               settings,
-              ast: { ...defaultAst, project }
+              addFile: addFileToProject
             },
             _.parseFile(project)(file)
           )(),
@@ -1135,7 +1128,7 @@ export function f(a: number, b: number): { [key: string]: number } {
               fileSystem: FS.FileSystem,
               logger: L.Logger,
               settings,
-              ast: { ...defaultAst, project }
+              addFile: addFileToProject
             },
             _.parseFiles(files)
           )(),
@@ -1322,16 +1315,5 @@ export function f(a: number, b: number): { [key: string]: number } {
         '{ <A, B>(refinementWithIndex: RefinementWithIndex<number, A, B>): (fa: A[]) => B[]; <A>(predicateWithIndex: PredicateWithIndex<number, A>): (fa: A[]) => A[]; }'
       )
     })
-  })
-
-  it('addFileToProject', () => {
-    const filePath = path.join(process.cwd(), 'test/fixtures/file1.ts')
-    const content = fs.readFileSync(filePath, { encoding: 'utf-8' })
-    const file = FS.File(filePath, content, false)
-
-    const project = new ast.Project()
-    _.addFileToProject(file)(project)
-
-    assert.strictEqual(typeof project.getSourceFile(filePath) !== 'undefined', true)
   })
 })

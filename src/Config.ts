@@ -37,6 +37,7 @@ export interface Config {
   readonly enforceExamples: boolean
   readonly enforceVersion: boolean
   readonly exclude: ReadonlyArray<string>
+  readonly compilerOptions: Record<string, unknown>
 }
 
 /**
@@ -54,6 +55,7 @@ export interface Settings {
   readonly enforceExamples: boolean
   readonly enforceVersion: boolean
   readonly exclude: ReadonlyArray<string>
+  readonly compilerOptions: Record<string, unknown>
 }
 
 // -------------------------------------------------------------------------------------
@@ -74,7 +76,8 @@ const monoidConfig: M.Monoid<Config> = M.getStructMonoid({
   enforceDescriptions: getMonoidSetting<boolean>(false),
   enforceExamples: getMonoidSetting<boolean>(false),
   enforceVersion: getMonoidSetting<boolean>(true),
-  exclude: getMonoidSetting<ReadonlyArray<string>>(RA.empty)
+  exclude: getMonoidSetting<ReadonlyArray<string>>(RA.empty),
+  compilerOptions: getMonoidSetting<Record<string, unknown>>({})
 })
 
 const C = T.getComonad(monoidConfig)
@@ -248,7 +251,8 @@ export const decode = (input: unknown): TE.TaskEither<string, Partial<Config>> =
         enforceDescriptions: TD.boolean,
         enforceExamples: TD.boolean,
         enforceVersion: TD.boolean,
-        exclude: TD.array(TD.string)
+        exclude: TD.array(TD.string),
+        compilerOptions: TD.UnknownRecord
       })
     )
   )

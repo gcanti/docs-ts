@@ -7,7 +7,6 @@ import * as M from 'fp-ts/Monoid'
 import * as O from 'fp-ts/Option'
 import * as Ord from 'fp-ts/Ord'
 import * as RA from 'fp-ts/ReadonlyArray'
-import * as R from 'fp-ts/Reader'
 import * as RE from 'fp-ts/ReaderEither'
 import * as RTE from 'fp-ts/ReaderTaskEither'
 import * as RNEA from 'fp-ts/ReadonlyNonEmptyArray'
@@ -52,15 +51,6 @@ export interface Parser<A> extends RE.ReaderEither<ParserEnv, string, A> {}
 export interface ParserEnv extends Environment {
   readonly path: RNEA.ReadonlyNonEmptyArray<string>
   readonly sourceFile: ast.SourceFile
-}
-
-/**
- * @category model
- * @since 0.6.0
- */
-export interface Ast {
-  readonly project: ast.Project
-  readonly addFile: (file: File) => R.Reader<ast.Project, void>
 }
 
 interface Comment {
@@ -147,11 +137,6 @@ const isVariableDeclarationList = (
 const isVariableStatement = (
   u: ast.VariableStatement | ast.ForStatement | ast.ForOfStatement | ast.ForInStatement
 ): u is ast.VariableStatement => u.getKind() === ast.ts.SyntaxKind.VariableStatement
-
-/**
- * @internal
- */
-export const addFileToProject = (file: File) => (project: ast.Project) => project.addSourceFileAtPath(file.path)
 
 // -------------------------------------------------------------------------------------
 // comments
@@ -833,15 +818,20 @@ export const parseFile = (project: ast.Project) => (file: File): RTE.ReaderTaskE
 const createProject = (files: ReadonlyArray<File>): RTE.ReaderTaskEither<Environment, string, ast.Project> =>
   pipe(
     RTE.ask<Environment>(),
-    RTE.chainFirst(({ ast }) =>
-      RTE.of(
-        pipe(
-          files,
-          RA.map((file) => ast.addFile(file)(ast.project))
-        )
+    RTE.chain((env) => {
+      const options: ast.ProjectOptions = {
+        compilerOptions: {
+          strict: true,
+          ...env.settings.compilerOptions
+        }
+      }
+      const project = new ast.Project(options)
+      pipe(
+        files,
+        RA.map((file) => env.addFile(file)(project))
       )
-    ),
-    RTE.map(({ ast }) => ast.project)
+      return RTE.of(project)
+    })
   )
 
 /**

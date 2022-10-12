@@ -13,6 +13,11 @@
 **Note**: Gaps between patch versions are faulty/broken releases.
 **Note**: A feature tagged as Experimental is in a high state of flux, you're at risk of it changing without notice.
 
+# 0.7.0
+
+- **New Feature**
+  - add `compilerOptions` to configuration (@gcanti)
+
 # 0.6.10
 
 - **Bug Fix**

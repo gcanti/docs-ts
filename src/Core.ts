@@ -260,7 +260,7 @@ const handleImports: (files: ReadonlyArray<File>) => Program<ReadonlyArray<File>
 const getExampleIndex = (examples: ReadonlyArray<File>): Program<File> => {
   const content = pipe(
     examples,
-    RA.foldMap(M.monoidString)((example) => `import './${path.basename(example.path)}'\n`)
+    RA.foldMap(M.monoidString)((example) => `import './${path.basename(example.path, '.ts')}'\n`)
   )
   return pipe(
     RTE.ask<Environment, string>(),

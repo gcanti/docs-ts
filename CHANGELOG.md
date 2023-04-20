@@ -13,6 +13,10 @@
 **Note**: Gaps between patch versions are faulty/broken releases.
 **Note**: A feature tagged as Experimental is in a high state of flux, you're at risk of it changing without notice.
 
+# 0.7.2
+
+remove extensions from `examples/index.ts`
+
 # 0.7.1
 
 make `docs-ts` compatible with typescript `^5.x`

@@ -38,4 +38,10 @@ Added in v0.6.0
 export declare const main: T.Task<void>
 ```
 
+**Example**
+
+```ts
+assert.deepStrictEqual(1, 1)
+```
+
 Added in v0.6.0

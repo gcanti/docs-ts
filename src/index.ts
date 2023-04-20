@@ -48,6 +48,9 @@ const capabilities: Core.Capabilities = {
 }
 
 /**
+ * @example
+ * assert.deepStrictEqual(1, 1)
+ *
  * @category utils
  * @since 0.6.0
  */

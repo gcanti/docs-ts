@@ -86,11 +86,13 @@ const C = T.getComonad(monoidConfig)
  * @category constructors
  * @since 0.6.4
  */
-export const build = (projectName: string, projectHomepage: string): ConfigBuilder => (config) => ({
-  ...config,
-  projectName,
-  projectHomepage: config.projectHomepage.length === 0 ? projectHomepage : config.projectHomepage
-})
+export const build =
+  (projectName: string, projectHomepage: string): ConfigBuilder =>
+  (config) => ({
+    ...config,
+    projectName,
+    projectHomepage: config.projectHomepage.length === 0 ? projectHomepage : config.projectHomepage
+  })
 
 // -------------------------------------------------------------------------------------
 // destructors
@@ -110,109 +112,127 @@ export const resolveSettings: (builder: ConfigBuilder) => Settings = C.extract
  * @category combinators
  * @since 0.6.4
  */
-export const updateProjectHomepage = (projectHomepage: string) => (wa: ConfigBuilder): ConfigBuilder =>
-  C.extend(wa, (builder) =>
-    builder({
-      ...monoidConfig.empty,
-      projectHomepage
-    })
-  )
+export const updateProjectHomepage =
+  (projectHomepage: string) =>
+  (wa: ConfigBuilder): ConfigBuilder =>
+    C.extend(wa, (builder) =>
+      builder({
+        ...monoidConfig.empty,
+        projectHomepage
+      })
+    )
 
 /**
  * @category combinators
  * @since 0.6.0
  */
-export const updateSourceDir = (srcDir: string) => (wa: ConfigBuilder): ConfigBuilder =>
-  C.extend(wa, (builder) =>
-    builder({
-      ...monoidConfig.empty,
-      srcDir
-    })
-  )
+export const updateSourceDir =
+  (srcDir: string) =>
+  (wa: ConfigBuilder): ConfigBuilder =>
+    C.extend(wa, (builder) =>
+      builder({
+        ...monoidConfig.empty,
+        srcDir
+      })
+    )
 
 /**
  * @category combinators
  * @since 0.6.0
  */
-export const updateOutDir = (outDir: string) => (wa: ConfigBuilder): ConfigBuilder =>
-  C.extend(wa, (builder) =>
-    builder({
-      ...monoidConfig.empty,
-      outDir
-    })
-  )
+export const updateOutDir =
+  (outDir: string) =>
+  (wa: ConfigBuilder): ConfigBuilder =>
+    C.extend(wa, (builder) =>
+      builder({
+        ...monoidConfig.empty,
+        outDir
+      })
+    )
 
 /**
  * @category combinators
  * @since 0.6.0
  */
-export const updateTheme = (theme: string) => (wa: ConfigBuilder): ConfigBuilder =>
-  C.extend(wa, (builder) =>
-    builder({
-      ...monoidConfig.empty,
-      theme
-    })
-  )
+export const updateTheme =
+  (theme: string) =>
+  (wa: ConfigBuilder): ConfigBuilder =>
+    C.extend(wa, (builder) =>
+      builder({
+        ...monoidConfig.empty,
+        theme
+      })
+    )
 
 /**
  * @category combinators
  * @since 0.6.0
  */
-export const updateSearchEnabled = (enableSearch: boolean) => (wa: ConfigBuilder): ConfigBuilder =>
-  C.extend(wa, (builder) =>
-    builder({
-      ...monoidConfig.empty,
-      enableSearch
-    })
-  )
+export const updateSearchEnabled =
+  (enableSearch: boolean) =>
+  (wa: ConfigBuilder): ConfigBuilder =>
+    C.extend(wa, (builder) =>
+      builder({
+        ...monoidConfig.empty,
+        enableSearch
+      })
+    )
 
 /**
  * @category combinators
  * @since 0.6.0
  */
-export const updateEnforceDescriptions = (enforceDescriptions: boolean) => (wa: ConfigBuilder): ConfigBuilder =>
-  C.extend(wa, (builder) =>
-    builder({
-      ...monoidConfig.empty,
-      enforceDescriptions
-    })
-  )
+export const updateEnforceDescriptions =
+  (enforceDescriptions: boolean) =>
+  (wa: ConfigBuilder): ConfigBuilder =>
+    C.extend(wa, (builder) =>
+      builder({
+        ...monoidConfig.empty,
+        enforceDescriptions
+      })
+    )
 
 /**
  * @category combinators
  * @since 0.6.0
  */
-export const updateEnforceExamples = (enforceExamples: boolean) => (wa: ConfigBuilder): ConfigBuilder =>
-  C.extend(wa, (builder) =>
-    builder({
-      ...monoidConfig.empty,
-      enforceExamples
-    })
-  )
+export const updateEnforceExamples =
+  (enforceExamples: boolean) =>
+  (wa: ConfigBuilder): ConfigBuilder =>
+    C.extend(wa, (builder) =>
+      builder({
+        ...monoidConfig.empty,
+        enforceExamples
+      })
+    )
 
 /**
  * @category combinators
  * @since 0.6.0
  */
-export const updateEnforceVersion = (enforceVersion: boolean) => (wa: ConfigBuilder): ConfigBuilder =>
-  C.extend(wa, (builder) =>
-    builder({
-      ...monoidConfig.empty,
-      enforceVersion
-    })
-  )
+export const updateEnforceVersion =
+  (enforceVersion: boolean) =>
+  (wa: ConfigBuilder): ConfigBuilder =>
+    C.extend(wa, (builder) =>
+      builder({
+        ...monoidConfig.empty,
+        enforceVersion
+      })
+    )
 
 /**
  * @category combinators
  * @since 0.6.0
  */
-export const updateExclusions = (exclude: ReadonlyArray<string>) => (wa: ConfigBuilder): ConfigBuilder =>
-  C.extend(wa, (builder) =>
-    builder({
-      ...monoidConfig.empty,
-      exclude
-    })
-  )
+export const updateExclusions =
+  (exclude: ReadonlyArray<string>) =>
+  (wa: ConfigBuilder): ConfigBuilder =>
+    C.extend(wa, (builder) =>
+      builder({
+        ...monoidConfig.empty,
+        exclude
+      })
+    )
 
 // -------------------------------------------------------------------------------------
 // utils

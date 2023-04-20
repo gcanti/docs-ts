@@ -115,10 +115,8 @@ export const remove: (path: string, options: rimraf.Options) => TE.TaskEither<Er
  * @category utils
  * @since 0.6.0
  */
-export const search: (
-  pattern: string,
-  options: glob.IOptions
-) => TE.TaskEither<Error, ReadonlyArray<string>> = TE.taskify<string, glob.IOptions, Error, ReadonlyArray<string>>(glob)
+export const search: (pattern: string, options: glob.IOptions) => TE.TaskEither<Error, ReadonlyArray<string>> =
+  TE.taskify<string, glob.IOptions, Error, ReadonlyArray<string>>(glob)
 
 // -------------------------------------------------------------------------------------
 // instances

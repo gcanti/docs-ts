@@ -16,7 +16,10 @@ import { Logger } from './Logger'
 // utils
 // -------------------------------------------------------------------------------------
 
-const exitProcess = (code: 0 | 1): IO.IO<void> => () => process.exit(code)
+const exitProcess =
+  (code: 0 | 1): IO.IO<void> =>
+  () =>
+    process.exit(code)
 
 const onLeft = (e: string): T.Task<void> =>
   T.fromIO(

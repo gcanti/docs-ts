@@ -196,17 +196,19 @@ const getExampleFiles = (modules: ReadonlyArray<Module>): Program<ReadonlyArray<
         RA.chain((module) => {
           const prefix = module.path.join('-')
 
-          const getDocumentableExamples = (id: string) => (documentable: Documentable): ReadonlyArray<File> =>
-            pipe(
-              documentable.examples,
-              RA.mapWithIndex((i, content) =>
-                File(
-                  path.join(env.settings.outDir, 'examples', `${prefix}-${id}-${documentable.name}-${i}.ts`),
-                  `${content}\n`,
-                  true
+          const getDocumentableExamples =
+            (id: string) =>
+            (documentable: Documentable): ReadonlyArray<File> =>
+              pipe(
+                documentable.examples,
+                RA.mapWithIndex((i, content) =>
+                  File(
+                    path.join(env.settings.outDir, 'examples', `${prefix}-${id}-${documentable.name}-${i}.ts`),
+                    `${content}\n`,
+                    true
+                  )
                 )
               )
-            )
 
           const moduleExamples = getDocumentableExamples('module')(module)
           const methods = pipe(
@@ -344,8 +346,10 @@ nav_order: 2
   )
 )
 
-const replace = (searchValue: string | RegExp, replaceValue: string): Endomorphism<string> => (s) =>
-  s.replace(searchValue, replaceValue)
+const replace =
+  (searchValue: string | RegExp, replaceValue: string): Endomorphism<string> =>
+  (s) =>
+    s.replace(searchValue, replaceValue)
 
 /* tslint:disable:no-regex-spaces */
 const resolveConfigYML = (previousContent: string, settings: Config.Settings): string =>
@@ -468,23 +472,25 @@ const readConfiguration: Effect<File> = pipe(
   RTE.chain(() => readFile(path.join(process.cwd(), CONFIG_FILE_NAME)))
 )
 
-const parseConfiguration = (defaultSettings: Config.Settings) => (file: File): Effect<Config.Settings> =>
-  pipe(
-    RTE.ask<Capabilities>(),
-    RTE.chainTaskEitherK(({ logger }) =>
-      pipe(
-        E.parseJSON(file.content, toErrorMsg),
-        TE.fromEither,
-        TE.chainFirst(() => logger.info(`Found configuration file`)),
-        TE.chainFirst(() => logger.debug(`Parsing configuration file found at: ${file.path}`)),
-        TE.chain(Config.decode),
-        TE.bimap(
-          (decodeError) => `Invalid configuration file detected:\n${decodeError}`,
-          (settings) => ({ ...defaultSettings, ...settings })
+const parseConfiguration =
+  (defaultSettings: Config.Settings) =>
+  (file: File): Effect<Config.Settings> =>
+    pipe(
+      RTE.ask<Capabilities>(),
+      RTE.chainTaskEitherK(({ logger }) =>
+        pipe(
+          E.parseJSON(file.content, toErrorMsg),
+          TE.fromEither,
+          TE.chainFirst(() => logger.info(`Found configuration file`)),
+          TE.chainFirst(() => logger.debug(`Parsing configuration file found at: ${file.path}`)),
+          TE.chain(Config.decode),
+          TE.bimap(
+            (decodeError) => `Invalid configuration file detected:\n${decodeError}`,
+            (settings) => ({ ...defaultSettings, ...settings })
+          )
         )
       )
     )
-  )
 
 const useDefaultSettings = (defaultSettings: Config.Settings): Effect<Config.Settings> =>
   pipe(

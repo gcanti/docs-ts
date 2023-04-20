@@ -169,7 +169,7 @@ describe('Core', () => {
           assert.strictEqual(result, undefined)
 
           const actual = Object.keys(fileSystemState)
-          const expected = [`package.json`, 'docs/index.md', 'docs/modules/index.md', 'docs/_config.yml'].map((path) =>
+          const expected = [`package.json`, 'docs/_config.yml', 'docs/modules/index.md', 'docs/index.md'].map((path) =>
             join(process.cwd(), path)
           )
 

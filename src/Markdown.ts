@@ -2,6 +2,7 @@
  * @since 0.6.0
  */
 import { intercalate } from 'fp-ts/Foldable'
+import { absurd, Endomorphism, flow, pipe } from 'fp-ts/function'
 import * as M from 'fp-ts/Monoid'
 import * as O from 'fp-ts/Option'
 import * as Ord from 'fp-ts/Ord'
@@ -10,11 +11,12 @@ import * as RNEA from 'fp-ts/ReadonlyNonEmptyArray'
 import * as RR from 'fp-ts/ReadonlyRecord'
 import { Semigroup } from 'fp-ts/Semigroup'
 import { Show } from 'fp-ts/Show'
-import { absurd, flow, pipe, Endomorphism } from 'fp-ts/function'
 import * as prettier from 'prettier'
-const toc = require('markdown-toc')
 
 import { Class, Constant, Export, Function, Interface, Method, Module, Property, TypeAlias } from './Module'
+
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const toc = require('markdown-toc')
 
 // -------------------------------------------------------------------------------------
 // model
@@ -228,9 +230,9 @@ export const fold = <R>(patterns: {
 // combinators
 // -------------------------------------------------------------------------------------
 
-const foldS: (as: ReadonlyArray<string>) => string = M.fold(M.monoidString)
+const foldS: (as: ReadonlyArray<string>) => string = M.concatAll(M.monoidString)
 
-const foldMarkdown = (as: ReadonlyArray<Markdown>): Markdown => pipe(as, M.fold(monoidMarkdown))
+const foldMarkdown = (as: ReadonlyArray<Markdown>): Markdown => pipe(as, M.concatAll(monoidMarkdown))
 
 const CRLF: Markdown = PlainTexts(RA.replicate(2, Newline))
 
@@ -441,7 +443,7 @@ const fromPrintable = (p: Printable): Markdown => {
 
 const getPrintables = (module: Module): O.Option<RNEA.ReadonlyNonEmptyArray<Printable>> =>
   pipe(
-    M.fold(RA.getMonoid<Printable>())([
+    M.concatAll(RA.getMonoid<Printable>())([
       module.classes,
       module.constants,
       module.exports,

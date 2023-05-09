@@ -1,9 +1,9 @@
 import * as assert from 'assert'
-import * as RA from 'fp-ts/ReadonlyArray'
 import { pipe } from 'fp-ts/function'
+import * as RA from 'fp-ts/ReadonlyArray'
 
 import * as _ from '../src/Config'
-import { assertRight, assertLeft } from './util'
+import { assertLeft,assertRight } from './util'
 
 const defaultSettings = pipe(_.build('docs-ts', 'https://github.com/gcanti/docs-ts'), _.resolveSettings)
 

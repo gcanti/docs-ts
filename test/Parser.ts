@@ -1,15 +1,14 @@
 import * as assert from 'assert'
+import { pipe } from 'fp-ts/function'
 import * as O from 'fp-ts/lib/Option'
 import * as RA from 'fp-ts/ReadonlyArray'
-import { pipe } from 'fp-ts/function'
 import * as ast from 'ts-morph'
 
 import * as C from '../src/Config'
-import { spawn } from '../src/Spawn'
 import * as FS from '../src/FileSystem'
 import * as L from '../src/Logger'
 import * as _ from '../src/Parser'
-
+import { spawn } from '../src/Spawn'
 import { assertLeft, assertRight } from './util'
 
 let testCounter = 0

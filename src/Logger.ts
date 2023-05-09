@@ -1,15 +1,15 @@
 /**
  * @since 0.6.0
  */
+import chalk from 'chalk'
 import * as C from 'fp-ts/Console'
 import * as D from 'fp-ts/Date'
+import { pipe } from 'fp-ts/function'
 import * as M from 'fp-ts/Monoid'
 import * as S from 'fp-ts/Show'
 import * as T from 'fp-ts/Task'
 import * as TE from 'fp-ts/TaskEither'
-import { pipe } from 'fp-ts/function'
 import * as L from 'logging-ts/lib/Task'
-import chalk from 'chalk'
 
 // -------------------------------------------------------------------------------------
 // model

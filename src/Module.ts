@@ -1,9 +1,9 @@
 /**
  * @since 0.6.0
  */
+import { pipe } from 'fp-ts/function'
 import * as O from 'fp-ts/Option'
 import * as Ord from 'fp-ts/Ord'
-import { pipe } from 'fp-ts/function'
 
 // -------------------------------------------------------------------------------------
 // model

@@ -2,9 +2,9 @@
  * @since 0.8.0
  */
 import * as Core from './Core'
-import { spawn } from './Spawn'
 import { FileSystem } from './FileSystem'
 import { Logger } from './Logger'
+import { spawn } from './Spawn'
 
 /**
  * @category production

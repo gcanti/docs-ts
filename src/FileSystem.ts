@@ -1,8 +1,8 @@
 /**
  * @since 0.6.0
  */
-import * as TE from 'fp-ts/TaskEither'
 import { flow, pipe } from 'fp-ts/function'
+import * as TE from 'fp-ts/TaskEither'
 import * as fs from 'fs-extra'
 import * as glob from 'glob'
 import * as rimraf from 'rimraf'
@@ -45,7 +45,7 @@ export interface File {
  * @category constructors
  * @since 0.6.0
  */
-export const File = (path: string, content: string, overwrite: boolean = false): File => ({
+export const File = (path: string, content: string, overwrite = false): File => ({
   path,
   content,
   overwrite

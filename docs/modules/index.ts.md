@@ -27,10 +27,4 @@ Added in v0.2.0
 export declare const main: Task.Task<void>
 ```
 
-**Example**
-
-```ts
-assert.deepStrictEqual(1, 1)
-```
-
 Added in v0.6.0

@@ -399,8 +399,8 @@ const typeCheckExamples = (modules: ReadonlyArray<Module>): ProgramWithConfig<vo
         : pipe(
             writeExamples(examples),
             RTE.flatMap(() => writeTsConfigJson),
-            RTE.flatMap(() => spawnTsNode)
-            // RTE.flatMap(() => cleanExamples)
+            RTE.flatMap(() => spawnTsNode),
+            RTE.flatMap(() => cleanExamples)
           )
     )
   )

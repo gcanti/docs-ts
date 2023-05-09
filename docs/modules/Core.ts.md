@@ -28,14 +28,23 @@ Added in v0.6.0
 
 **Signature**
 
-```ts
+````ts
 export interface Capabilities {
-  readonly run: (command: string, executable: string) => TE.TaskEither<string, void>
+  /**
+   * Executes a command like:
+   *
+   * ```sh
+   * ts-node examples/index.ts
+   * ```
+   *
+   * where `command = ts-node` and `executable = examples/index.ts`
+   */
+  readonly spawn: (command: string, executable: string) => TE.TaskEither<string, void>
   readonly fileSystem: FileSystem
   readonly logger: Logger
   readonly addFile: (file: File) => (project: ast.Project) => void
 }
-```
+````
 
 Added in v0.6.0
 

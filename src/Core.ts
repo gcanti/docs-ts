@@ -25,7 +25,16 @@ const CONFIG_FILE_NAME = 'docs-ts.json'
  * @since 0.6.0
  */
 export interface Capabilities {
-  readonly run: (command: string, executable: string) => TE.TaskEither<string, void>
+  /**
+   * Executes a command like:
+   *
+   * ```sh
+   * ts-node examples/index.ts
+   * ```
+   *
+   * where `command = ts-node` and `executable = examples/index.ts`
+   */
+  readonly spawn: (command: string, executable: string) => TE.TaskEither<string, void>
   readonly fileSystem: FileSystem
   readonly logger: Logger
   readonly addFile: (file: File) => (project: ast.Project) => void
@@ -271,10 +280,10 @@ const cleanExamples: Program<void> = pipe(
 const spawnTsNode: Program<void> = pipe(
   RTE.ask<Environment, string>(),
   RTE.tap(({ logger }) => RTE.fromTaskEither(logger.debug('Type checking examples...'))),
-  RTE.chainTaskEitherK(({ run, settings }) => {
+  RTE.chainTaskEitherK(({ spawn, settings }) => {
     const command = process.platform === 'win32' ? 'ts-node.cmd' : 'ts-node'
     const executable = path.join(process.cwd(), settings.outDir, 'examples', 'index.ts')
-    return run(command, executable)
+    return spawn(command, executable)
   })
 )
 

@@ -1,10 +1,10 @@
 ---
-title: Run.ts
+title: Spawn.ts
 nav_order: 11
 parent: Modules
 ---
 
-## Run overview
+## Spawn overview
 
 Added in v0.6.0
 
@@ -13,17 +13,17 @@ Added in v0.6.0
 <h2 class="text-delta">Table of contents</h2>
 
 - [utils](#utils)
-  - [run](#run)
+  - [spawn](#spawn)
 
 ---
 
 # utils
 
-## run
+## spawn
 
 Executes a command like:
 
-```
+```sh
 ts-node examples/index.ts
 ```
 
@@ -32,7 +32,7 @@ where `command = ts-node` and `executable = examples/index.ts`
 **Signature**
 
 ```ts
-export declare const run: (command: string, executable: string) => TE.TaskEither<string, void>
+export declare const spawn: (command: string, executable: string) => TE.TaskEither<string, void>
 ```
 
 Added in v0.6.0

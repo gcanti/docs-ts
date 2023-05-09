@@ -9,7 +9,7 @@ import { spawnSync } from 'child_process'
 /**
  * Executes a command like:
  *
- * ```
+ * ```sh
  * ts-node examples/index.ts
  * ```
  *
@@ -18,7 +18,7 @@ import { spawnSync } from 'child_process'
  * @category utils
  * @since 0.6.0
  */
-export const run = (command: string, executable: string): TE.TaskEither<string, void> =>
+export const spawn = (command: string, executable: string): TE.TaskEither<string, void> =>
   pipe(
     TE.fromEither(E.tryCatch(() => spawnSync(command, [executable], { stdio: 'pipe', encoding: 'utf8' }), String)),
     TE.flatMap(({ status, stderr }) => (status === 0 ? TE.right(undefined) : TE.left(stderr)))

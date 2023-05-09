@@ -4,8 +4,8 @@
 import chalk from 'chalk'
 import * as Console from 'fp-ts/Console'
 import * as IO from 'fp-ts/IO'
-import * as T from 'fp-ts/Task'
-import * as TE from 'fp-ts/TaskEither'
+import * as Task from 'fp-ts/Task'
+import * as TaskEither from 'fp-ts/TaskEither'
 
 import * as Core from './Core'
 import { capabilities } from './Production'
@@ -15,13 +15,13 @@ const exit =
   () =>
     process.exit(code)
 
-const handleResult: (program: TE.TaskEither<string, void>) => T.Task<void> = TE.matchE(
-  (e) => T.fromIO(IO.flatMap(Console.log(chalk.bold.red(e)), () => exit(1))),
-  () => T.fromIO(IO.flatMap(Console.log(chalk.bold.green('Docs generation succeeded!')), () => exit(0)))
+const handleResult: (program: TaskEither.TaskEither<string, void>) => Task.Task<void> = TaskEither.matchE(
+  (error) => Task.fromIO(IO.flatMap(Console.log(chalk.bold.red(error)), () => exit(1))),
+  () => Task.fromIO(IO.flatMap(Console.log(chalk.bold.green('Docs generation succeeded!')), () => exit(0)))
 )
 
 /**
  * @category main
  * @since 0.6.0
  */
-export const main: T.Task<void> = handleResult(Core.main(capabilities))
+export const main: Task.Task<void> = handleResult(Core.main(capabilities))

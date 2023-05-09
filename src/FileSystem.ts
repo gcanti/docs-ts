@@ -7,6 +7,8 @@ import * as fs from 'fs-extra'
 import * as glob from 'glob'
 import * as rimraf from 'rimraf'
 
+import { toErrorMsg } from './Logger'
+
 /**
  * Represents operations that can be performed on a file system.
  *
@@ -87,8 +89,6 @@ const search: (pattern: string, options: glob.IOptions) => TE.TaskEither<Error, 
   Error,
   ReadonlyArray<string>
 >(glob)
-
-const toErrorMsg = (err: Error): string => String(err.message)
 
 /**
  * @category instances

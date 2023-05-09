@@ -2,13 +2,13 @@
  * @since 0.6.0
  */
 import * as Eq from 'fp-ts/Eq'
+import { pipe } from 'fp-ts/function'
 import * as M from 'fp-ts/Monoid'
 import * as RA from 'fp-ts/ReadonlyArray'
 import * as RR from 'fp-ts/ReadonlyRecord'
 import * as S from 'fp-ts/Semigroup'
-import * as T from 'fp-ts/Traced'
 import * as TE from 'fp-ts/TaskEither'
-import { pipe } from 'fp-ts/function'
+import * as T from 'fp-ts/Traced'
 import * as DE from 'io-ts/DecodeError'
 import * as FS from 'io-ts/FreeSemigroup'
 import * as TD from 'io-ts/TaskDecoder'
@@ -63,7 +63,7 @@ export interface Settings {
 // -------------------------------------------------------------------------------------
 
 const getMonoidSetting = <A>(empty: A): M.Monoid<A> => ({
-  ...S.getLastSemigroup<A>(),
+  ...S.last<A>(),
   empty
 })
 

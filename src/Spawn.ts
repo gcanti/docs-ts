@@ -1,10 +1,10 @@
 /**
  * @since 0.6.0
  */
-import * as E from 'fp-ts/Either'
-import * as TE from 'fp-ts/TaskEither'
-import { pipe } from 'fp-ts/function'
 import { spawnSync } from 'child_process'
+import * as E from 'fp-ts/Either'
+import { pipe } from 'fp-ts/function'
+import * as TE from 'fp-ts/TaskEither'
 
 /**
  * Executes a command like:

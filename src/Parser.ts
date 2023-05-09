@@ -1,26 +1,25 @@
 /**
  * @since 0.6.0
  */
+import * as doctrine from 'doctrine'
 import * as Apply from 'fp-ts/Apply'
 import * as E from 'fp-ts/Either'
+import { flow, not, pipe, Predicate } from 'fp-ts/function'
 import * as M from 'fp-ts/Monoid'
 import * as O from 'fp-ts/Option'
 import * as Ord from 'fp-ts/Ord'
-import * as RA from 'fp-ts/ReadonlyArray'
 import * as RE from 'fp-ts/ReaderEither'
 import * as RTE from 'fp-ts/ReaderTaskEither'
+import * as RA from 'fp-ts/ReadonlyArray'
 import * as RNEA from 'fp-ts/ReadonlyNonEmptyArray'
 import * as RR from 'fp-ts/ReadonlyRecord'
 import * as S from 'fp-ts/Semigroup'
-import { flow, not, pipe, Endomorphism, Predicate } from 'fp-ts/function'
-import * as ast from 'ts-morph'
-import * as doctrine from 'doctrine'
 import * as Path from 'path'
+import * as ast from 'ts-morph'
 
 import { Environment } from './Core'
 import { File } from './FileSystem'
 import {
-  ordModule,
   Class,
   Constant,
   Documentable,
@@ -30,6 +29,7 @@ import {
   Interface,
   Method,
   Module,
+  ordModule,
   Property,
   TypeAlias
 } from './Module'
@@ -101,10 +101,10 @@ const sequenceS = Apply.sequenceS(applicativeParser)
 const traverse = RA.traverse(applicativeParser)
 
 const every = <A>(predicates: ReadonlyArray<Predicate<A>>): ((a: A) => boolean) =>
-  M.fold(M.getFunctionMonoid(M.monoidAll)<A>())(predicates)
+  M.concatAll(M.getFunctionMonoid(M.monoidAll)<A>())(predicates)
 
 const some = <A>(predicates: ReadonlyArray<Predicate<A>>): ((a: A) => boolean) =>
-  M.fold(M.getFunctionMonoid(M.monoidAny)<A>())(predicates)
+  M.concatAll(M.getFunctionMonoid(M.monoidAny)<A>())(predicates)
 
 const ordByName = pipe(
   Ord.ordString,
@@ -118,7 +118,7 @@ const isNonEmptyString = (s: string) => s.length > 0
 /**
  * @internal
  */
-export const stripImportTypes: Endomorphism<string> = (s) => s.replace(/import\("((?!").)*"\)./g, '')
+export const stripImportTypes = (s: string): string => s.replace(/import\("((?!").)*"\)./g, '')
 
 const getJSDocText: (jsdocs: ReadonlyArray<ast.JSDoc>) => string = RA.foldRight(
   () => '',
@@ -170,7 +170,7 @@ const getCategoryTag = (name: string, comment: Comment): Parser<O.Option<string>
         RR.lookup('category'),
         O.flatMap(RNEA.head),
         E.fromPredicate(
-          not(every([O.isNone, () => RR.hasOwnProperty('category', comment.tags)])),
+          not(every([O.isNone, () => RR.has('category', comment.tags)])),
           () => `Missing @category value in ${env.path.join('/')}#${name} documentation`
         )
       )
@@ -204,11 +204,11 @@ const getExamples = (name: string, comment: Comment, isModule: boolean): Parser<
         O.map(RA.compact),
         O.fold(
           () =>
-            M.fold(M.monoidAll)([env.settings.enforceExamples, !isModule])
+            M.concatAll(M.monoidAll)([env.settings.enforceExamples, !isModule])
               ? E.left(`Missing examples in ${env.path.join('/')}#${name} documentation`)
               : E.right<never, ReadonlyArray<string>>(RA.empty),
           (examples) =>
-            M.fold(M.monoidAll)([env.settings.enforceExamples, RA.isEmpty(examples), !isModule])
+            M.concatAll(M.monoidAll)([env.settings.enforceExamples, RA.isEmpty(examples), !isModule])
               ? E.left(`Missing examples in ${env.path.join('/')}#${name} documentation`)
               : E.right(examples)
         )
@@ -745,7 +745,10 @@ export const parseModuleDocumentation: Parser<Documentable> = pipe(
     const name = getModuleName(env.path)
     // If any of the settings enforcing documentation are set to `true`, then
     // a module should have associated documentation
-    const isDocumentationRequired = M.fold(M.monoidAny)([env.settings.enforceDescriptions, env.settings.enforceVersion])
+    const isDocumentationRequired = M.concatAll(M.monoidAny)([
+      env.settings.enforceDescriptions,
+      env.settings.enforceVersion
+    ])
     const onMissingDocumentation = () =>
       isDocumentationRequired
         ? E.left(`Missing documentation in ${env.path.join('/')} module`)

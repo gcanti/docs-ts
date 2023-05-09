@@ -2,15 +2,16 @@
  * @since 0.6.0
  */
 import * as E from 'fp-ts/Either'
+import { constVoid, flow, pipe } from 'fp-ts/function'
 import * as M from 'fp-ts/Monoid'
 import * as O from 'fp-ts/Option'
-import * as RA from 'fp-ts/ReadonlyArray'
 import * as RTE from 'fp-ts/ReaderTaskEither'
+import * as RA from 'fp-ts/ReadonlyArray'
 import * as TE from 'fp-ts/TaskEither'
-import { constVoid, Endomorphism, flow, pipe } from 'fp-ts/function'
 import * as TD from 'io-ts/TaskDecoder'
 import * as path from 'path'
 import * as ast from 'ts-morph'
+
 import * as Config from './Config'
 import { File, FileSystem } from './FileSystem'
 import { Logger } from './Logger'
@@ -69,7 +70,16 @@ interface PackageJSON {
   readonly homepage: string
 }
 
-const PackageJSONDecoder = pipe(TD.type({ name: TD.string }), TD.intersect(TD.partial({ homepage: TD.string })))
+const PackageJSONDecoder = pipe(
+  TD.struct({
+    name: TD.string
+  }),
+  TD.intersect(
+    TD.partial({
+      homepage: TD.string
+    })
+  )
+)
 
 // -------------------------------------------------------------------------------------
 // files
@@ -189,7 +199,7 @@ const parseFiles = (files: ReadonlyArray<File>): Program<ReadonlyArray<Module>> 
 // examples
 // -------------------------------------------------------------------------------------
 
-const foldFiles = M.fold(RA.getMonoid<File>())
+const foldFiles = M.concatAll(RA.getMonoid<File>())
 
 const getExampleFiles = (modules: ReadonlyArray<Module>): Program<ReadonlyArray<File>> =>
   pipe(
@@ -243,11 +253,11 @@ const replaceProjectName = (source: string): Program<string> =>
     RTE.ask<Environment>(),
     RTE.map(({ settings }) => {
       const importRegex = (projectName: string) =>
-        new RegExp(`from (?<quote>['"])${projectName}(?:\/lib)?(?:\/(?<path>.*))?\\k<quote>`, 'g')
+        new RegExp(`from (?<quote>['"])${projectName}(?:/lib)?(?:/(?<path>.*))?\\k<quote>`, 'g')
 
       return source.replace(importRegex(settings.projectName), (...args) => {
         const groups: { path?: string } = args[args.length - 1]
-        return `from '../../src${Boolean(groups.path) ? `/${groups.path}` : ''}'`
+        return `from '../../src${groups.path ? `/${groups.path}` : ''}'`
       })
     })
   )
@@ -351,22 +361,20 @@ nav_order: 2
 )
 
 const replace =
-  (searchValue: string | RegExp, replaceValue: string): Endomorphism<string> =>
+  (searchValue: string | RegExp, replaceValue: string): ((s: string) => string) =>
   (s) =>
     s.replace(searchValue, replaceValue)
 
-/* tslint:disable:no-regex-spaces */
 const resolveConfigYML = (previousContent: string, settings: Config.Settings): string =>
   pipe(
     previousContent,
     replace(/^remote_theme:.*$/m, `remote_theme: ${settings.theme}`),
     replace(/^search_enabled:.*$/m, `search_enabled: ${settings.enableSearch}`),
     replace(
-      /^  '\S* on GitHub':\n    - '.*'/m,
+      /^ {2}'\S* on GitHub':\n {4}- '.*'/m,
       `  '${settings.projectName} on GitHub':\n    - '${settings.projectHomepage}'`
     )
   )
-/* tslint:enable:no-regex-spaces */
 
 const getHomepageNavigationHeader = (settings: Config.Settings): string => {
   const isGitHub = settings.projectHomepage.toLowerCase().includes('github')

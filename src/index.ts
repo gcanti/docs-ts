@@ -7,9 +7,7 @@ import * as IO from 'fp-ts/IO'
 import * as T from 'fp-ts/Task'
 import * as TE from 'fp-ts/TaskEither'
 import * as Core from './Core'
-import { Example } from './Example'
-import { FileSystem } from './FileSystem'
-import { Logger } from './Logger'
+import { capabilities } from './Production'
 
 const exit =
   (code: 0 | 1): IO.IO<void> =>
@@ -25,11 +23,4 @@ const handleResult: (program: TE.TaskEither<string, void>) => T.Task<void> = TE.
  * @category main
  * @since 0.6.0
  */
-export const main: T.Task<void> = handleResult(
-  Core.main({
-    example: Example,
-    fileSystem: FileSystem,
-    logger: Logger,
-    addFile: (file) => (project) => project.addSourceFileAtPath(file.path)
-  })
-)
+export const main: T.Task<void> = handleResult(Core.main(capabilities))

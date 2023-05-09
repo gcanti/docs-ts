@@ -83,7 +83,7 @@ const writeFile = (file: File): Effect<void> => {
     RTE.chainTaskEitherK(({ fileSystem, logger }) =>
       pipe(
         logger.debug(`Overwriting file ${file.path}`),
-        TE.chain(() => fileSystem.writeFile(file.path, file.content))
+        TE.flatMap(() => fileSystem.writeFile(file.path, file.content))
       )
     )
   )
@@ -100,8 +100,8 @@ const writeFile = (file: File): Effect<void> => {
 
   return pipe(
     RTE.ask<Capabilities>(),
-    RTE.chain(({ fileSystem }) => RTE.fromTaskEither(fileSystem.exists(file.path))),
-    RTE.chain((exists) => (exists ? (file.overwrite ? overwrite : skip) : write))
+    RTE.flatMap(({ fileSystem }) => RTE.fromTaskEither(fileSystem.exists(file.path))),
+    RTE.flatMap((exists) => (exists ? (file.overwrite ? overwrite : skip) : write))
   )
 }
 
@@ -122,16 +122,16 @@ const readPackageJSON: Effect<PackageJSON> = pipe(
           flow(E.toError, (err) => String(err.message))
         )
       ),
-      TE.chain((json) =>
+      TE.flatMap((json) =>
         pipe(
           PackageJSONDecoder.decode(json),
           TE.mapLeft((decodeError) => `Unable to decode package.json:\n${TD.draw(decodeError)}`)
         )
       ),
-      TE.chain(({ name, homepage }) =>
+      TE.flatMap(({ name, homepage }) =>
         pipe(
           logger.debug(`Project name detected: ${name}`),
-          TE.chain(() =>
+          TE.flatMap(() =>
             pipe(
               O.fromNullable(homepage),
               TE.fromOption(() => `Missing homepage in package.json`),
@@ -150,14 +150,14 @@ const readSourcePaths: Program<ReadonlyArray<string>> = pipe(
     pipe(
       fileSystem.search(path.join(settings.srcDir, '**', '*.ts'), settings.exclude),
       TE.map(RA.map(path.normalize)),
-      TE.chainFirst((paths) => pipe(logger.info(`Found ${paths.length} modules`)))
+      TE.tap((paths) => pipe(logger.info(`Found ${paths.length} modules`)))
     )
   )
 )
 
 const readSourceFiles: Program<ReadonlyArray<File>> = pipe(
   RTE.ask<Environment, string>(),
-  RTE.chain((C) =>
+  RTE.flatMap((C) =>
     pipe(
       readSourcePaths,
       RTE.chainTaskEitherK((paths) => pipe(C, readFiles(paths)))
@@ -172,8 +172,8 @@ const readSourceFiles: Program<ReadonlyArray<File>> = pipe(
 const parseFiles = (files: ReadonlyArray<File>): Program<ReadonlyArray<Module>> =>
   pipe(
     RTE.ask<Environment, string>(),
-    RTE.chainFirst(({ logger }) => RTE.fromTaskEither(logger.debug('Parsing files...'))),
-    RTE.chain(() => P.parseFiles(files))
+    RTE.tap(({ logger }) => RTE.fromTaskEither(logger.debug('Parsing files...'))),
+    RTE.flatMap(() => P.parseFiles(files))
   )
 
 // -------------------------------------------------------------------------------------
@@ -188,7 +188,7 @@ const getExampleFiles = (modules: ReadonlyArray<Module>): Program<ReadonlyArray<
     RTE.map((env) =>
       pipe(
         modules,
-        RA.chain((module) => {
+        RA.flatMap((module) => {
           const prefix = module.path.join('-')
 
           const getDocumentableExamples =
@@ -208,17 +208,17 @@ const getExampleFiles = (modules: ReadonlyArray<Module>): Program<ReadonlyArray<
           const moduleExamples = getDocumentableExamples('module')(module)
           const methods = pipe(
             module.classes,
-            RA.chain((c) =>
+            RA.flatMap((c) =>
               foldFiles([
-                pipe(c.methods, RA.chain(getDocumentableExamples(`${c.name}-method`))),
-                pipe(c.staticMethods, RA.chain(getDocumentableExamples(`${c.name}-staticmethod`)))
+                pipe(c.methods, RA.flatMap(getDocumentableExamples(`${c.name}-method`))),
+                pipe(c.staticMethods, RA.flatMap(getDocumentableExamples(`${c.name}-staticmethod`)))
               ])
             )
           )
-          const interfaces = pipe(module.interfaces, RA.chain(getDocumentableExamples('interface')))
-          const typeAliases = pipe(module.typeAliases, RA.chain(getDocumentableExamples('typealias')))
-          const constants = pipe(module.constants, RA.chain(getDocumentableExamples('constant')))
-          const functions = pipe(module.functions, RA.chain(getDocumentableExamples('function')))
+          const interfaces = pipe(module.interfaces, RA.flatMap(getDocumentableExamples('interface')))
+          const typeAliases = pipe(module.typeAliases, RA.flatMap(getDocumentableExamples('typealias')))
+          const constants = pipe(module.constants, RA.flatMap(getDocumentableExamples('constant')))
+          const functions = pipe(module.functions, RA.flatMap(getDocumentableExamples('function')))
 
           return foldFiles([moduleExamples, methods, interfaces, typeAliases, constants, functions])
         })
@@ -270,7 +270,7 @@ const cleanExamples: Program<void> = pipe(
 
 const spawnTsNode: Program<void> = pipe(
   RTE.ask<Environment, string>(),
-  RTE.chainFirst(({ logger }) => RTE.fromTaskEither(logger.debug('Type checking examples...'))),
+  RTE.tap(({ logger }) => RTE.fromTaskEither(logger.debug('Type checking examples...'))),
   RTE.chainTaskEitherK(({ run, settings }) => {
     const command = process.platform === 'win32' ? 'ts-node.cmd' : 'ts-node'
     const executable = path.join(process.cwd(), settings.outDir, 'examples', 'index.ts')
@@ -281,8 +281,8 @@ const spawnTsNode: Program<void> = pipe(
 const writeExamples = (examples: ReadonlyArray<File>): Program<void> =>
   pipe(
     RTE.ask<Environment, string>(),
-    RTE.chainFirst(({ logger }) => RTE.fromTaskEither(logger.debug('Writing examples...'))),
-    RTE.chain((C) =>
+    RTE.tap(({ logger }) => RTE.fromTaskEither(logger.debug('Writing examples...'))),
+    RTE.flatMap((C) =>
       pipe(
         getExampleIndex(examples),
         RTE.map((index) => RA.cons(index, examples)),
@@ -294,14 +294,14 @@ const writeExamples = (examples: ReadonlyArray<File>): Program<void> =>
 const typeCheckExamples = (modules: ReadonlyArray<Module>): Program<void> =>
   pipe(
     getExampleFiles(modules),
-    RTE.chain(handleImports),
-    RTE.chain((examples) =>
+    RTE.flatMap(handleImports),
+    RTE.flatMap((examples) =>
       examples.length === 0
         ? cleanExamples
         : pipe(
             writeExamples(examples),
-            RTE.chain(() => spawnTsNode),
-            RTE.chain(() => cleanExamples)
+            RTE.flatMap(() => spawnTsNode),
+            RTE.flatMap(() => cleanExamples)
           )
     )
   )
@@ -370,7 +370,7 @@ const getConfigYML: Program<File> = pipe(
     const filePath = path.join(process.cwd(), settings.outDir, '_config.yml')
     return pipe(
       fileSystem.exists(filePath),
-      TE.chain((exists) =>
+      TE.flatMap((exists) =>
         exists
           ? pipe(
               fileSystem.readFile(filePath),
@@ -418,7 +418,7 @@ const getModuleMarkdownFiles = (modules: ReadonlyArray<Module>): Program<Readonl
 const getMarkdownFiles = (modules: ReadonlyArray<Module>): Program<ReadonlyArray<File>> =>
   pipe(
     RTE.sequenceArray([getHome, getModulesIndex, getConfigYML]),
-    RTE.chain((meta) =>
+    RTE.flatMap((meta) =>
       pipe(
         getModuleMarkdownFiles(modules),
         RTE.map((files) => RA.getMonoid<File>().concat(meta, files))
@@ -433,14 +433,14 @@ const writeMarkdownFiles = (files: ReadonlyArray<File>): Program<void> =>
       const outPattern = path.join(settings.outDir, '**/*.ts.md')
       return pipe(
         logger.debug(`Cleaning up docs folder: deleting ${outPattern}`),
-        TE.chain(() => fileSystem.remove(outPattern)),
+        TE.flatMap(() => fileSystem.remove(outPattern)),
         RTE.fromTaskEither
       )
     }),
     RTE.chainTaskEitherK((C) =>
       pipe(
         C.logger.debug('Writing markdown files...'),
-        TE.chain(() => pipe(C, writeFiles(files)))
+        TE.flatMap(() => pipe(C, writeFiles(files)))
       )
     )
   )
@@ -457,14 +457,14 @@ const hasConfiguration: Effect<boolean> = pipe(
   RTE.chainTaskEitherK(({ fileSystem, logger }) =>
     pipe(
       logger.debug('Checking for configuration file...'),
-      TE.chain(() => fileSystem.exists(path.join(process.cwd(), CONFIG_FILE_NAME)))
+      TE.flatMap(() => fileSystem.exists(path.join(process.cwd(), CONFIG_FILE_NAME)))
     )
   )
 )
 
 const readConfiguration: Effect<File> = pipe(
   RTE.ask<Capabilities>(),
-  RTE.chain(() => readFile(path.join(process.cwd(), CONFIG_FILE_NAME)))
+  RTE.flatMap(() => readFile(path.join(process.cwd(), CONFIG_FILE_NAME)))
 )
 
 const parseConfiguration =
@@ -476,9 +476,9 @@ const parseConfiguration =
         pipe(
           E.parseJSON(file.content, toErrorMsg),
           TE.fromEither,
-          TE.chainFirst(() => logger.info(`Found configuration file`)),
-          TE.chainFirst(() => logger.debug(`Parsing configuration file found at: ${file.path}`)),
-          TE.chain(Config.decode),
+          TE.tap(() => logger.info(`Found configuration file`)),
+          TE.tap(() => logger.debug(`Parsing configuration file found at: ${file.path}`)),
+          TE.flatMap(Config.decode),
           TE.bimap(
             (decodeError) => `Invalid configuration file detected:\n${decodeError}`,
             (settings) => ({ ...defaultSettings, ...settings })
@@ -503,9 +503,9 @@ const getDocsConfiguration = (projectName: string, projectHomepage: string): Eff
     hasConfiguration,
     RTE.bindTo('hasConfig'),
     RTE.bind('defaultSettings', () => RTE.right(getDefaultSettings(projectName, projectHomepage))),
-    RTE.chain(({ defaultSettings, hasConfig }) =>
+    RTE.flatMap(({ defaultSettings, hasConfig }) =>
       hasConfig
-        ? pipe(readConfiguration, RTE.chain(parseConfiguration(defaultSettings)))
+        ? pipe(readConfiguration, RTE.flatMap(parseConfiguration(defaultSettings)))
         : useDefaultSettings(defaultSettings)
     )
   )
@@ -520,19 +520,19 @@ const getDocsConfiguration = (projectName: string, projectHomepage: string): Eff
  */
 export const main: Effect<void> = pipe(
   RTE.ask<Capabilities>(),
-  RTE.chain((capabilities) =>
+  RTE.flatMap((capabilities) =>
     pipe(
       readPackageJSON,
-      RTE.chain((pkg) =>
+      RTE.flatMap((pkg) =>
         pipe(
           getDocsConfiguration(pkg.name, pkg.homepage),
           RTE.chainTaskEitherK((settings) => {
             const program = pipe(
               readSourceFiles,
-              RTE.chain(parseFiles),
-              RTE.chainFirst(typeCheckExamples),
-              RTE.chain(getMarkdownFiles),
-              RTE.chain(writeMarkdownFiles)
+              RTE.flatMap(parseFiles),
+              RTE.tap(typeCheckExamples),
+              RTE.flatMap(getMarkdownFiles),
+              RTE.flatMap(writeMarkdownFiles)
             )
             return program({ ...capabilities, settings })
           })

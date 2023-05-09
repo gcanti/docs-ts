@@ -369,6 +369,26 @@ const writeExamples = (examples: ReadonlyArray<File>): ProgramWithConfig<void> =
     )
   )
 
+const writeTsConfigJson: ProgramWithConfig<void> = pipe(
+  RTE.ask<EnvironmentWithConfig, string>(),
+  RTE.tap(({ logger }) => RTE.fromTaskEither(logger.debug('Writing example tsconfig...'))),
+  RTE.flatMap((env) =>
+    writeFile(
+      File(
+        path.join(process.cwd(), env.config.outDir, 'examples', 'tsconfig.json'),
+        JSON.stringify(
+          {
+            compilerOptions: env.config.compilerOptions
+          },
+          null,
+          2
+        ),
+        true
+      )
+    )
+  )
+)
+
 const typeCheckExamples = (modules: ReadonlyArray<Module>): ProgramWithConfig<void> =>
   pipe(
     getExampleFiles(modules),
@@ -378,8 +398,9 @@ const typeCheckExamples = (modules: ReadonlyArray<Module>): ProgramWithConfig<vo
         ? cleanExamples
         : pipe(
             writeExamples(examples),
-            RTE.flatMap(() => spawnTsNode),
-            RTE.flatMap(() => cleanExamples)
+            RTE.flatMap(() => writeTsConfigJson),
+            RTE.flatMap(() => spawnTsNode)
+            // RTE.flatMap(() => cleanExamples)
           )
     )
   )

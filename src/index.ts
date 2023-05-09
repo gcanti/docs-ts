@@ -21,6 +21,9 @@ const handleResult: (program: TaskEither.TaskEither<string, void>) => Task.Task<
 )
 
 /**
+ * @example
+ * assert.deepStrictEqual(1, 1)
+ *
  * @category main
  * @since 0.6.0
  */

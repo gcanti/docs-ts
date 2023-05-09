@@ -14,9 +14,9 @@ Added in v0.6.0
 
 - [model](#model)
   - [Capabilities (interface)](#capabilities-interface)
-  - [Effect (interface)](#effect-interface)
-  - [Environment (interface)](#environment-interface)
+  - [EnvironmentWithConfig (interface)](#environmentwithconfig-interface)
   - [Program (interface)](#program-interface)
+  - [ProgramWithConfig (interface)](#programwithconfig-interface)
 - [program](#program)
   - [main](#main)
 
@@ -48,23 +48,13 @@ export interface Capabilities {
 
 Added in v0.6.0
 
-## Effect (interface)
+## EnvironmentWithConfig (interface)
 
 **Signature**
 
 ```ts
-export interface Effect<A> extends RTE.ReaderTaskEither<Capabilities, string, A> {}
-```
-
-Added in v0.6.0
-
-## Environment (interface)
-
-**Signature**
-
-```ts
-export interface Environment extends Capabilities {
-  readonly settings: Config.Settings
+export interface EnvironmentWithConfig extends Capabilities {
+  readonly config: Config.Config
 }
 ```
 
@@ -75,7 +65,17 @@ Added in v0.6.0
 **Signature**
 
 ```ts
-export interface Program<A> extends RTE.ReaderTaskEither<Environment, string, A> {}
+export interface Program<A> extends RTE.ReaderTaskEither<Capabilities, string, A> {}
+```
+
+Added in v0.6.0
+
+## ProgramWithConfig (interface)
+
+**Signature**
+
+```ts
+export interface ProgramWithConfig<A> extends RTE.ReaderTaskEither<EnvironmentWithConfig, string, A> {}
 ```
 
 Added in v0.6.0
@@ -87,7 +87,7 @@ Added in v0.6.0
 **Signature**
 
 ```ts
-export declare const main: Effect<void>
+export declare const main: Program<void>
 ```
 
 Added in v0.6.0

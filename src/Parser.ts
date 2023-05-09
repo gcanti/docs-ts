@@ -21,7 +21,7 @@ import * as T from 'fp-ts/Task'
 import * as Path from 'path'
 import * as ast from 'ts-morph'
 
-import { Environment } from './Core'
+import { EnvironmentWithConfig } from './Core'
 import { File } from './FileSystem'
 import {
   Class,
@@ -52,7 +52,7 @@ export interface Parser<A> extends RE.ReaderEither<ParserEnv, string, A> {}
  * @category model
  * @since 0.6.0
  */
-export interface ParserEnv extends Environment {
+export interface ParserEnv extends EnvironmentWithConfig {
   readonly path: RNEA.ReadonlyNonEmptyArray<string>
   readonly sourceFile: ast.SourceFile
 }
@@ -156,7 +156,7 @@ const getSinceTag = (name: string, comment: Comment): Parser<O.Option<string>> =
         O.flatMap(RNEA.head),
         O.fold(
           () =>
-            env.settings.enforceVersion
+            env.config.enforceVersion
               ? E.left(`Missing @since tag in ${env.path.join('/')}#${name} documentation`)
               : E.right(O.none),
           (since) => E.right(O.some(since))
@@ -189,7 +189,7 @@ const getDescription = (name: string, comment: Comment): Parser<O.Option<string>
         comment.description,
         O.fold(
           () =>
-            env.settings.enforceDescriptions
+            env.config.enforceDescriptions
               ? E.left(`Missing description in ${env.path.join('/')}#${name} documentation`)
               : E.right(O.none),
           (description) => E.right(O.some(description))
@@ -208,11 +208,11 @@ const getExamples = (name: string, comment: Comment, isModule: boolean): Parser<
         O.map(RA.compact),
         O.fold(
           () =>
-            M.concatAll(B.MonoidAll)([env.settings.enforceExamples, !isModule])
+            M.concatAll(B.MonoidAll)([env.config.enforceExamples, !isModule])
               ? E.left(`Missing examples in ${env.path.join('/')}#${name} documentation`)
               : E.right<never, ReadonlyArray<string>>(RA.empty),
           (examples) =>
-            M.concatAll(B.MonoidAll)([env.settings.enforceExamples, RA.isEmpty(examples), !isModule])
+            M.concatAll(B.MonoidAll)([env.config.enforceExamples, RA.isEmpty(examples), !isModule])
               ? E.left(`Missing examples in ${env.path.join('/')}#${name} documentation`)
               : E.right(examples)
         )
@@ -748,11 +748,11 @@ export const parseModuleDocumentation: Parser<Documentable> = pipe(
   RE.ask<ParserEnv>(),
   RE.chainEitherK((env) => {
     const name = getModuleName(env.path)
-    // If any of the settings enforcing documentation are set to `true`, then
+    // if any of the settings enforcing documentation are set to `true`, then
     // a module should have associated documentation
     const isDocumentationRequired = M.concatAll(B.MonoidAny)([
-      env.settings.enforceDescriptions,
-      env.settings.enforceVersion
+      env.config.enforceDescriptions,
+      env.config.enforceVersion
     ])
     const onMissingDocumentation = () =>
       isDocumentationRequired
@@ -809,16 +809,18 @@ export const parseModule: Parser<Module> = pipe(
  */
 export const parseFile =
   (project: ast.Project) =>
-  (file: File): RTE.ReaderTaskEither<Environment, string, Module> =>
+  (file: File): RTE.ReaderTaskEither<EnvironmentWithConfig, string, Module> =>
     pipe(
-      RTE.ask<Environment>(),
+      RTE.ask<EnvironmentWithConfig>(),
       RTE.flatMap((env) =>
         pipe(
-          RTE.right<Environment, string, RNEA.ReadonlyNonEmptyArray<string>>(file.path.split(Path.sep) as any),
+          RTE.right<EnvironmentWithConfig, string, RNEA.ReadonlyNonEmptyArray<string>>(
+            file.path.split(Path.sep) as any
+          ),
           RTE.bindTo('path'),
           RTE.bind(
             'sourceFile',
-            (): RTE.ReaderTaskEither<Environment, string, ast.SourceFile> =>
+            (): RTE.ReaderTaskEither<EnvironmentWithConfig, string, ast.SourceFile> =>
               pipe(
                 O.fromNullable(project.getSourceFile(file.path)),
                 RTE.fromOption(() => `Unable to locate file: ${file.path}`)
@@ -829,14 +831,14 @@ export const parseFile =
       )
     )
 
-const createProject = (files: ReadonlyArray<File>): RTE.ReaderTaskEither<Environment, string, ast.Project> =>
+const createProject = (files: ReadonlyArray<File>): RTE.ReaderTaskEither<EnvironmentWithConfig, string, ast.Project> =>
   pipe(
-    RTE.ask<Environment>(),
+    RTE.ask<EnvironmentWithConfig>(),
     RTE.flatMap((env) => {
       const options: ast.ProjectOptions = {
         compilerOptions: {
           strict: true,
-          ...env.settings.compilerOptions
+          ...env.config.compilerOptions
         }
       }
       const project = new ast.Project(options)
@@ -854,7 +856,7 @@ const createProject = (files: ReadonlyArray<File>): RTE.ReaderTaskEither<Environ
  */
 export const parseFiles = (
   files: ReadonlyArray<File>
-): RTE.ReaderTaskEither<Environment, string, ReadonlyArray<Module>> =>
+): RTE.ReaderTaskEither<EnvironmentWithConfig, string, ReadonlyArray<Module>> =>
   pipe(
     createProject(files),
     RTE.flatMap((project) =>

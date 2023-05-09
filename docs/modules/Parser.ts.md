@@ -44,7 +44,7 @@ Added in v0.6.0
 **Signature**
 
 ```ts
-export interface ParserEnv extends Environment {
+export interface ParserEnv extends EnvironmentWithConfig {
   readonly path: RNEA.ReadonlyNonEmptyArray<string>
   readonly sourceFile: ast.SourceFile
 }
@@ -91,7 +91,7 @@ Added in v0.6.0
 ```ts
 export declare const parseFiles: (
   files: ReadonlyArray<File>
-) => RTE.ReaderTaskEither<Environment, string, ReadonlyArray<Module>>
+) => RTE.ReaderTaskEither<EnvironmentWithConfig, string, ReadonlyArray<Module>>
 ```
 
 Added in v0.6.0

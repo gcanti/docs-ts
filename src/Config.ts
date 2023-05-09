@@ -10,6 +10,7 @@ import * as D from 'io-ts/Decoder'
  * @since 0.6.4
  */
 export interface Config {
+  readonly projectName: string
   readonly projectHomepage: string
   readonly srcDir: string
   readonly outDir: string
@@ -22,15 +23,8 @@ export interface Config {
   readonly compilerOptions: Record<string, unknown>
 }
 
-/**
- * @category model
- * @since 0.6.0
- */
-export interface Settings extends Config {
-  readonly projectName: string
-}
-
 const ConfigDecoder = D.partial<Config>({
+  projectName: D.string,
   projectHomepage: D.string,
   srcDir: D.string,
   outDir: D.string,

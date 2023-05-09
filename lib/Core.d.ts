@@ -27,23 +27,23 @@ export interface Capabilities {
  * @category model
  * @since 0.6.0
  */
-export interface Effect<A> extends RTE.ReaderTaskEither<Capabilities, string, A> {
+export interface Program<A> extends RTE.ReaderTaskEither<Capabilities, string, A> {
 }
 /**
  * @category model
  * @since 0.6.0
  */
-export interface Environment extends Capabilities {
-    readonly settings: Config.Settings;
+export interface EnvironmentWithConfig extends Capabilities {
+    readonly config: Config.Config;
 }
 /**
  * @category model
  * @since 0.6.0
  */
-export interface Program<A> extends RTE.ReaderTaskEither<Environment, string, A> {
+export interface ProgramWithConfig<A> extends RTE.ReaderTaskEither<EnvironmentWithConfig, string, A> {
 }
 /**
  * @category program
  * @since 0.6.0
  */
-export declare const main: Effect<void>;
+export declare const main: Program<void>;

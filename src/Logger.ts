@@ -77,7 +77,7 @@ const logWithLevel =
   (message: string): T.Task<void> =>
     pipe(
       T.fromIO(D.create),
-      T.chain((date) => mainLogger({ message, date, level }))
+      T.flatMap((date) => mainLogger({ message, date, level }))
     )
 
 /**

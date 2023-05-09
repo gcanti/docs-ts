@@ -12,15 +12,27 @@ Added in v0.6.0
 
 <h2 class="text-delta">Table of contents</h2>
 
+- [main](#main)
+  - [main](#main-1)
 - [model](#model)
   - [Capabilities (interface)](#capabilities-interface)
   - [EnvironmentWithConfig (interface)](#environmentwithconfig-interface)
   - [Program (interface)](#program-interface)
   - [ProgramWithConfig (interface)](#programwithconfig-interface)
-- [program](#program)
-  - [main](#main)
 
 ---
+
+# main
+
+## main
+
+**Signature**
+
+```ts
+export declare const main: Program<void>
+```
+
+Added in v0.6.0
 
 # model
 
@@ -76,18 +88,6 @@ Added in v0.6.0
 
 ```ts
 export interface ProgramWithConfig<A> extends RTE.ReaderTaskEither<EnvironmentWithConfig, string, A> {}
-```
-
-Added in v0.6.0
-
-# program
-
-## main
-
-**Signature**
-
-```ts
-export declare const main: Program<void>
 ```
 
 Added in v0.6.0

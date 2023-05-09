@@ -20,7 +20,118 @@ import { printModule } from './Markdown'
 import { Documentable, Module } from './Module'
 import * as Parser from './Parser'
 
+/**
+ * @category main
+ * @since 0.6.0
+ */
+export const main: Program<void> = pipe(
+  RTE.Do,
+  RTE.bind('capabilities', () => RTE.ask<Capabilities>()),
+  RTE.bind('pkg', () => parsePackageJSON),
+  RTE.bind('config', ({ pkg }) => getConfig(pkg.name, pkg.homepage)),
+  RTE.chainTaskEitherK(({ config, capabilities }) => {
+    const program = pipe(
+      readSourceFiles,
+      RTE.flatMap(parseFiles),
+      RTE.tap(typeCheckExamples),
+      RTE.flatMap(getMarkdownFiles),
+      RTE.flatMap(writeMarkdownFiles)
+    )
+    return program({ ...capabilities, config })
+  })
+)
+
+// -------------------------------------------------------------------------------------
+// PackageJSON
+// -------------------------------------------------------------------------------------
+
+interface PackageJSON {
+  readonly name: string
+  readonly homepage: string
+}
+
+const PackageJSONDecoder = pipe(
+  Decoder.struct({
+    name: Decoder.string,
+    homepage: Decoder.string
+  })
+)
+
+const parsePackageJSON: Program<PackageJSON> = ({ fileSystem }) => {
+  const read = pipe(
+    fileSystem.readFile(path.join(process.cwd(), 'package.json')),
+    TaskEither.mapLeft(() => `Unable to read package.json in "${process.cwd()}"`)
+  )
+  const parse = (packageJsonSource: string) =>
+    pipe(
+      Json.parse(packageJsonSource),
+      Either.mapLeft((u) => Either.toError(u).message),
+      TaskEither.fromEither
+    )
+  const decode = (json: Json.Json) =>
+    pipe(
+      PackageJSONDecoder.decode(json),
+      Either.mapLeft((decodeError) => `Unable to decode package.json:\n${Decoder.draw(decodeError)}`),
+      TaskEither.fromEither
+    )
+  return pipe(read, TaskEither.flatMap(parse), TaskEither.flatMap(decode))
+}
+
+// -------------------------------------------------------------------------------------
+// config
+// -------------------------------------------------------------------------------------
+
 const CONFIG_FILE_NAME = 'docs-ts.json'
+
+const getConfig =
+  (projectName: string, projectHomepage: string): Program<Config.Config> =>
+  (capabilities) => {
+    const configPath = path.join(process.cwd(), CONFIG_FILE_NAME)
+    const defaultConfig = getDefaultConfig(projectName, projectHomepage)
+    return pipe(
+      capabilities.fileSystem.exists(configPath),
+      TaskEither.flatMap((exists) =>
+        exists
+          ? pipe(
+              capabilities.fileSystem.readFile(configPath),
+              TaskEither.flatMap((content) =>
+                TaskEither.fromEither(
+                  pipe(
+                    Json.parse(content),
+                    Either.mapLeft((u) => Either.toError(u).message)
+                  )
+                )
+              ),
+              TaskEither.tap(() => capabilities.logger.info(`Configuration file found`)),
+              TaskEither.flatMap((json) => TaskEither.fromEither(Config.decode(json))),
+              TaskEither.bimap(
+                (decodeError) => `Invalid configuration file detected:\n${decodeError}`,
+                (config) => ({ ...defaultConfig, ...config })
+              )
+            )
+          : pipe(
+              capabilities.logger.info('No configuration file detected, using default configuration'),
+              TaskEither.map(() => defaultConfig)
+            )
+      )
+    )
+  }
+
+const getDefaultConfig = (projectName: string, projectHomepage: string): Config.Config => {
+  return {
+    projectName,
+    projectHomepage,
+    srcDir: 'src',
+    outDir: 'docs',
+    theme: 'pmarsceill/just-the-docs',
+    enableSearch: true,
+    enforceDescriptions: false,
+    enforceExamples: false,
+    enforceVersion: true,
+    exclude: [],
+    compilerOptions: {}
+  }
+}
 
 /**
  * @category model
@@ -61,18 +172,6 @@ export interface EnvironmentWithConfig extends Capabilities {
  * @since 0.6.0
  */
 export interface ProgramWithConfig<A> extends RTE.ReaderTaskEither<EnvironmentWithConfig, string, A> {}
-
-interface PackageJSON {
-  readonly name: string
-  readonly homepage: string
-}
-
-const PackageJSONDecoder = pipe(
-  Decoder.struct({
-    name: Decoder.string,
-    homepage: Decoder.string
-  })
-)
 
 // -------------------------------------------------------------------------------------
 // filesystem APIs
@@ -120,30 +219,6 @@ const writeFile = (file: File): Program<void> => {
 const writeFiles: (files: ReadonlyArray<File>) => Program<void> = flow(
   ReadonlyArray.traverse(RTE.ApplicativePar)(writeFile),
   RTE.map(constVoid)
-)
-
-const readPackageJSON: Program<PackageJSON> = pipe(
-  RTE.ask<Capabilities>(),
-  RTE.chainTaskEitherK(({ fileSystem }) =>
-    pipe(
-      fileSystem.readFile(path.join(process.cwd(), 'package.json')),
-      TaskEither.mapLeft(() => `Unable to read package.json in "${process.cwd()}"`),
-      TaskEither.chainEitherK((packageJsonSource) =>
-        pipe(
-          packageJsonSource,
-          Json.parse,
-          Either.mapLeft((u) => Either.toError(u).message)
-        )
-      ),
-      TaskEither.flatMap((json) =>
-        pipe(
-          PackageJSONDecoder.decode(json),
-          TaskEither.fromEither,
-          TaskEither.mapLeft((decodeError) => `Unable to decode package.json:\n${Decoder.draw(decodeError)}`)
-        )
-      )
-    )
-  )
 )
 
 const readSourcePaths: ProgramWithConfig<ReadonlyArray<string>> = pipe(
@@ -445,112 +520,3 @@ const writeMarkdownFiles = (files: ReadonlyArray<File>): ProgramWithConfig<void>
       )
     )
   )
-
-// -------------------------------------------------------------------------------------
-// config
-// -------------------------------------------------------------------------------------
-
-const getDefaultConfig = (projectName: string, projectHomepage: string): Config.Config => {
-  return {
-    projectName,
-    projectHomepage,
-    srcDir: 'src',
-    outDir: 'docs',
-    theme: 'pmarsceill/just-the-docs',
-    enableSearch: true,
-    enforceDescriptions: false,
-    enforceExamples: false,
-    enforceVersion: true,
-    exclude: [],
-    compilerOptions: {}
-  }
-}
-
-const parseConfig =
-  (defaultConfig: Config.Config) =>
-  (file: File): Program<Config.Config> =>
-    pipe(
-      RTE.ask<Capabilities>(),
-      RTE.chainTaskEitherK(({ logger }) =>
-        pipe(
-          Json.parse(file.content),
-          Either.mapLeft((u) => Either.toError(u).message),
-          TaskEither.fromEither,
-          TaskEither.tap(() => logger.info(`Found configuration file`)),
-          TaskEither.tap(() => logger.debug(`Parsing configuration file found at: ${file.path}`)),
-          TaskEither.flatMap((json) => TaskEither.fromEither(Config.decode(json))),
-          TaskEither.bimap(
-            (decodeError) => `Invalid configuration file detected:\n${decodeError}`,
-            (config) => ({ ...defaultConfig, ...config })
-          )
-        )
-      )
-    )
-
-const useDefaultConfig = (defaultConfig: Config.Config): Program<Config.Config> =>
-  pipe(
-    RTE.ask<Capabilities>(),
-    RTE.chainTaskEitherK(({ logger }) =>
-      pipe(
-        logger.info('No configuration file detected, using default configuration'),
-        TaskEither.map(() => defaultConfig)
-      )
-    )
-  )
-
-const hasConfig: Program<boolean> = pipe(
-  RTE.ask<Capabilities>(),
-  RTE.chainTaskEitherK(({ fileSystem, logger }) =>
-    pipe(
-      logger.debug('Checking for configuration file...'),
-      TaskEither.flatMap(() => fileSystem.exists(path.join(process.cwd(), CONFIG_FILE_NAME)))
-    )
-  )
-)
-
-const readConfig: Program<File> = pipe(
-  RTE.ask<Capabilities>(),
-  RTE.flatMap(() => readFile(path.join(process.cwd(), CONFIG_FILE_NAME)))
-)
-
-const getConfig = (projectName: string, projectHomepage: string): Program<Config.Config> =>
-  pipe(
-    RTE.Do,
-    RTE.bind('hasConfig', () => hasConfig),
-    RTE.bind('defaultConfig', () => RTE.right(getDefaultConfig(projectName, projectHomepage))),
-    RTE.flatMap(({ defaultConfig, hasConfig }) =>
-      hasConfig ? pipe(readConfig, RTE.flatMap(parseConfig(defaultConfig))) : useDefaultConfig(defaultConfig)
-    )
-  )
-
-// -------------------------------------------------------------------------------------
-// program
-// -------------------------------------------------------------------------------------
-
-/**
- * @category program
- * @since 0.6.0
- */
-export const main: Program<void> = pipe(
-  RTE.ask<Capabilities>(),
-  RTE.flatMap((capabilities) =>
-    pipe(
-      readPackageJSON,
-      RTE.flatMap((pkg) =>
-        pipe(
-          getConfig(pkg.name, pkg.homepage),
-          RTE.chainTaskEitherK((config) => {
-            const program = pipe(
-              readSourceFiles,
-              RTE.flatMap(parseFiles),
-              RTE.tap(typeCheckExamples),
-              RTE.flatMap(getMarkdownFiles),
-              RTE.flatMap(writeMarkdownFiles)
-            )
-            return program({ ...capabilities, config })
-          })
-        )
-      )
-    )
-  )
-)

@@ -275,7 +275,15 @@ const parseInterfaceDeclaration = (id: ast.InterfaceDeclaration): Parser<Interfa
  */
 export const parseInterfaces: Parser<ReadonlyArray<Interface>> = pipe(
   RE.asks<ParserEnv, ReadonlyArray<ast.InterfaceDeclaration>, string>((env) =>
-    env.sourceFile.getInterfaces().filter((id) => id.isExported())
+    pipe(
+      env.sourceFile.getInterfaces(),
+      RA.filter(
+        every([
+          (id) => id.isExported(),
+          (id) => pipe(id.getJsDocs(), not(flow(getJSDocText, parseComment, shouldIgnore)))
+        ])
+      )
+    )
   ),
   RE.flatMap(flow(traverse(parseInterfaceDeclaration), RE.map(RA.sort(ordByName))))
 )

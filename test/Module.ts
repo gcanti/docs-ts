@@ -7,8 +7,8 @@ import * as _ from '../src/Module'
 
 const documentable = (name: string) => _.Documentable(name, O.none, O.some('1.0.0'), false, RA.empty, O.none)
 
-describe('Module', () => {
-  describe('constructors', () => {
+describe.concurrent('Module', () => {
+  describe.concurrent('constructors', () => {
     it('Documentable', () => {
       assert.deepStrictEqual(documentable('A'), {
         name: 'A',
@@ -126,7 +126,7 @@ describe('Module', () => {
     })
   })
 
-  describe('instances', () => {
+  describe.concurrent('instances', () => {
     it('ordModule', () => {
       const m1 = _.Module(
         documentable('test1'),

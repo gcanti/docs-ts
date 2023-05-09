@@ -3,8 +3,8 @@ import chalk from 'chalk'
 
 import * as _ from '../src/Logger'
 
-describe('Logger', () => {
-  describe('constructors', () => {
+describe.concurrent('Logger', () => {
+  describe.concurrent('constructors', () => {
     it('LogEntry', () => {
       const date = new Date(Date.now())
 
@@ -84,7 +84,7 @@ describe('Logger', () => {
     })
   })
 
-  describe('instances', () => {
+  describe.concurrent('instances', () => {
     it('showEntry', () => {
       const date = new Date(Date.now())
       const entry = _.LogEntry('test', date, 'DEBUG')

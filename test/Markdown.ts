@@ -52,8 +52,8 @@ const testCases = {
   typeAlias: TypeAlias(Documentable('A', O.none, O.some('1.0.0'), false, RA.empty, O.none), 'export type A = number')
 }
 
-describe('Markdown', () => {
-  describe('constructors', () => {
+describe.concurrent('Markdown', () => {
+  describe.concurrent('constructors', () => {
     it('Bold', () => {
       assert.deepStrictEqual(_.Bold(content), {
         _tag: 'Bold',
@@ -112,7 +112,7 @@ describe('Markdown', () => {
     })
   })
 
-  describe('destructors', () => {
+  describe.concurrent('destructors', () => {
     it('fold', () => {
       const fold: (markdown: _.Markdown) => string = _.fold({
         Bold: (c) => `Bold(${fold(c)})`,
@@ -140,7 +140,7 @@ describe('Markdown', () => {
     })
   })
 
-  describe('instances', () => {
+  describe.concurrent('instances', () => {
     it('semigroupMarkdown', () => {
       assert.deepStrictEqual(_.semigroupMarkdown.concat(_.Bold(content), _.Strikethrough(content)), {
         _tag: 'PlainTexts',
@@ -209,7 +209,7 @@ aa~~a~~
     })
   })
 
-  describe('printers', () => {
+  describe.concurrent('printers', () => {
     it('printClass', () => {
       assert.strictEqual(
         _.printClass(testCases.class),

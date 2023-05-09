@@ -1,28 +1,9 @@
 /**
  * @since 0.6.0
  */
+import * as E from 'fp-ts/Either'
 import { pipe } from 'fp-ts/function'
-import * as M from 'fp-ts/Monoid'
-import * as RA from 'fp-ts/ReadonlyArray'
-import * as RR from 'fp-ts/ReadonlyRecord'
-import * as Semigroup from 'fp-ts/Semigroup'
-import * as S from 'fp-ts/string'
-import * as Task from 'fp-ts/Task'
-import * as TE from 'fp-ts/TaskEither'
-import * as T from 'fp-ts/Traced'
-import * as DE from 'io-ts/DecodeError'
-import * as FS from 'io-ts/FreeSemigroup'
-import * as TD from 'io-ts/TaskDecoder'
-
-// -------------------------------------------------------------------------------------
-// model
-// -------------------------------------------------------------------------------------
-
-/**
- * @category model
- * @since 0.6.0
- */
-export interface ConfigBuilder extends T.Traced<Config, Settings> {}
+import * as D from 'io-ts/Decoder'
 
 /**
  * @category model
@@ -45,237 +26,25 @@ export interface Config {
  * @category model
  * @since 0.6.0
  */
-export interface Settings {
+export interface Settings extends Config {
   readonly projectName: string
-  readonly projectHomepage: string
-  readonly srcDir: string
-  readonly outDir: string
-  readonly theme: string
-  readonly enableSearch: boolean
-  readonly enforceDescriptions: boolean
-  readonly enforceExamples: boolean
-  readonly enforceVersion: boolean
-  readonly exclude: ReadonlyArray<string>
-  readonly compilerOptions: Record<string, unknown>
 }
 
-// -------------------------------------------------------------------------------------
-// constructors
-// -------------------------------------------------------------------------------------
-
-const getMonoidSetting = <A>(empty: A): M.Monoid<A> => ({
-  ...Semigroup.last<A>(),
-  empty
+const ConfigDecoder = D.partial<Config>({
+  projectHomepage: D.string,
+  srcDir: D.string,
+  outDir: D.string,
+  theme: D.string,
+  enableSearch: D.boolean,
+  enforceDescriptions: D.boolean,
+  enforceExamples: D.boolean,
+  enforceVersion: D.boolean,
+  exclude: D.array(D.string),
+  compilerOptions: D.UnknownRecord
 })
 
-const monoidConfig: M.Monoid<Config> = M.struct({
-  projectHomepage: getMonoidSetting(''),
-  srcDir: getMonoidSetting('src'),
-  outDir: getMonoidSetting('docs'),
-  theme: getMonoidSetting('pmarsceill/just-the-docs'),
-  enableSearch: getMonoidSetting<boolean>(true),
-  enforceDescriptions: getMonoidSetting<boolean>(false),
-  enforceExamples: getMonoidSetting<boolean>(false),
-  enforceVersion: getMonoidSetting<boolean>(true),
-  exclude: getMonoidSetting<ReadonlyArray<string>>(RA.empty),
-  compilerOptions: getMonoidSetting<Record<string, unknown>>({})
-})
-
-const C = T.getComonad(monoidConfig)
-
 /**
- * @category constructors
  * @since 0.6.4
  */
-export const build =
-  (projectName: string, projectHomepage: string): ConfigBuilder =>
-  (config) => ({
-    ...config,
-    projectName,
-    projectHomepage: config.projectHomepage.length === 0 ? projectHomepage : config.projectHomepage
-  })
-
-// -------------------------------------------------------------------------------------
-// destructors
-// -------------------------------------------------------------------------------------
-
-/**
- * @category destructors
- * @since 0.6.0
- */
-export const resolveSettings: (builder: ConfigBuilder) => Settings = C.extract
-
-// -------------------------------------------------------------------------------------
-// combinators
-// -------------------------------------------------------------------------------------
-
-/**
- * @category combinators
- * @since 0.6.4
- */
-export const updateProjectHomepage =
-  (projectHomepage: string) =>
-  (wa: ConfigBuilder): ConfigBuilder =>
-    C.extend(wa, (builder) =>
-      builder({
-        ...monoidConfig.empty,
-        projectHomepage
-      })
-    )
-
-/**
- * @category combinators
- * @since 0.6.0
- */
-export const updateSourceDir =
-  (srcDir: string) =>
-  (wa: ConfigBuilder): ConfigBuilder =>
-    C.extend(wa, (builder) =>
-      builder({
-        ...monoidConfig.empty,
-        srcDir
-      })
-    )
-
-/**
- * @category combinators
- * @since 0.6.0
- */
-export const updateOutDir =
-  (outDir: string) =>
-  (wa: ConfigBuilder): ConfigBuilder =>
-    C.extend(wa, (builder) =>
-      builder({
-        ...monoidConfig.empty,
-        outDir
-      })
-    )
-
-/**
- * @category combinators
- * @since 0.6.0
- */
-export const updateTheme =
-  (theme: string) =>
-  (wa: ConfigBuilder): ConfigBuilder =>
-    C.extend(wa, (builder) =>
-      builder({
-        ...monoidConfig.empty,
-        theme
-      })
-    )
-
-/**
- * @category combinators
- * @since 0.6.0
- */
-export const updateSearchEnabled =
-  (enableSearch: boolean) =>
-  (wa: ConfigBuilder): ConfigBuilder =>
-    C.extend(wa, (builder) =>
-      builder({
-        ...monoidConfig.empty,
-        enableSearch
-      })
-    )
-
-/**
- * @category combinators
- * @since 0.6.0
- */
-export const updateEnforceDescriptions =
-  (enforceDescriptions: boolean) =>
-  (wa: ConfigBuilder): ConfigBuilder =>
-    C.extend(wa, (builder) =>
-      builder({
-        ...monoidConfig.empty,
-        enforceDescriptions
-      })
-    )
-
-/**
- * @category combinators
- * @since 0.6.0
- */
-export const updateEnforceExamples =
-  (enforceExamples: boolean) =>
-  (wa: ConfigBuilder): ConfigBuilder =>
-    C.extend(wa, (builder) =>
-      builder({
-        ...monoidConfig.empty,
-        enforceExamples
-      })
-    )
-
-/**
- * @category combinators
- * @since 0.6.0
- */
-export const updateEnforceVersion =
-  (enforceVersion: boolean) =>
-  (wa: ConfigBuilder): ConfigBuilder =>
-    C.extend(wa, (builder) =>
-      builder({
-        ...monoidConfig.empty,
-        enforceVersion
-      })
-    )
-
-/**
- * @category combinators
- * @since 0.6.0
- */
-export const updateExclusions =
-  (exclude: ReadonlyArray<string>) =>
-  (wa: ConfigBuilder): ConfigBuilder =>
-    C.extend(wa, (builder) =>
-      builder({
-        ...monoidConfig.empty,
-        exclude
-      })
-    )
-
-// -------------------------------------------------------------------------------------
-// utils
-// -------------------------------------------------------------------------------------
-
-const validConfigurationkeys = RR.keys(monoidConfig.empty)
-const semigroupError = DE.getSemigroup<string>()
-const validation = TE.getApplicativeTaskValidation(Task.ApplyPar, semigroupError)
-
-const decodeValidKeys = (
-  record: RR.ReadonlyRecord<string, unknown>
-): TE.TaskEither<TD.DecodeError, RR.ReadonlyRecord<string, unknown>> =>
-  pipe(
-    record,
-    RR.traverseWithIndex(validation)((key, value) =>
-      RA.elem(S.Eq)(key)(validConfigurationkeys)
-        ? TE.right(value)
-        : TE.left(FS.of(DE.leaf(key, `a valid configuration property`)))
-    )
-  )
-/**
- * @category utils
- * @since 0.6.4
- */
-export const decode = (input: unknown): TE.TaskEither<string, Partial<Config>> => {
-  const configDecoder = pipe(
-    TD.UnknownRecord,
-    TD.parse(decodeValidKeys),
-    TD.compose(
-      TD.partial<Config>({
-        projectHomepage: TD.string,
-        srcDir: TD.string,
-        outDir: TD.string,
-        theme: TD.string,
-        enableSearch: TD.boolean,
-        enforceDescriptions: TD.boolean,
-        enforceExamples: TD.boolean,
-        enforceVersion: TD.boolean,
-        exclude: TD.array(TD.string),
-        compilerOptions: TD.UnknownRecord
-      })
-    )
-  )
-  return pipe(configDecoder.decode(input), TE.mapLeft(TD.draw))
-}
+export const decode = (input: unknown): E.Either<string, Partial<Config>> =>
+  pipe(ConfigDecoder.decode(input), E.mapLeft(D.draw))

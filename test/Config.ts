@@ -3,7 +3,6 @@ import * as E from 'fp-ts/Either'
 import * as RA from 'fp-ts/ReadonlyArray'
 
 import * as _ from '../src/Config'
-import { assertRight } from './util'
 
 describe.concurrent('Config', () => {
   describe.concurrent('decode', () => {
@@ -18,7 +17,7 @@ describe.concurrent('Config', () => {
         exclude: RA.empty
       }
 
-      assertRight(_.decode(config), (decoded) => assert.deepStrictEqual(decoded, config))
+      assert.deepStrictEqual(_.decode(config), E.right(config))
     })
 
     it('should decode a valid partial configuration object', async () => {
@@ -26,8 +25,8 @@ describe.concurrent('Config', () => {
         exclude: RA.of('subdirectory/**/*.ts')
       }
 
-      assertRight(_.decode({}), (decoded) => assert.deepStrictEqual(decoded, {}))
-      assertRight(_.decode(config), (decoded) => assert.deepStrictEqual(decoded, config))
+      assert.deepStrictEqual(_.decode({}), E.right({}))
+      assert.deepStrictEqual(_.decode(config), E.right(config))
     })
 
     it('should not decode a configuration object with invalid keys', async () => {

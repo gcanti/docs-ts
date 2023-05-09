@@ -7,6 +7,7 @@ import * as E from 'fp-ts/Either';
  * @since 0.6.4
  */
 export interface Config {
+    readonly projectName: string;
     readonly projectHomepage: string;
     readonly srcDir: string;
     readonly outDir: string;
@@ -17,13 +18,6 @@ export interface Config {
     readonly enforceVersion: boolean;
     readonly exclude: ReadonlyArray<string>;
     readonly compilerOptions: Record<string, unknown>;
-}
-/**
- * @category model
- * @since 0.6.0
- */
-export interface Settings extends Config {
-    readonly projectName: string;
 }
 /**
  * @since 0.6.4

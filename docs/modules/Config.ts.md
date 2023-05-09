@@ -14,7 +14,6 @@ Added in v0.6.0
 
 - [model](#model)
   - [Config (interface)](#config-interface)
-  - [Settings (interface)](#settings-interface)
 - [utils](#utils)
   - [decode](#decode)
 
@@ -28,6 +27,7 @@ Added in v0.6.0
 
 ```ts
 export interface Config {
+  readonly projectName: string
   readonly projectHomepage: string
   readonly srcDir: string
   readonly outDir: string
@@ -42,18 +42,6 @@ export interface Config {
 ```
 
 Added in v0.6.4
-
-## Settings (interface)
-
-**Signature**
-
-```ts
-export interface Settings extends Config {
-  readonly projectName: string
-}
-```
-
-Added in v0.6.0
 
 # utils
 

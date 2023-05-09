@@ -2,7 +2,7 @@ import * as RE from 'fp-ts/ReaderEither';
 import * as RTE from 'fp-ts/ReaderTaskEither';
 import * as RNEA from 'fp-ts/ReadonlyNonEmptyArray';
 import * as ast from 'ts-morph';
-import { Environment } from './Core';
+import { EnvironmentWithConfig } from './Core';
 import { File } from './FileSystem';
 import { Class, Constant, Export, Function, Interface, Module, TypeAlias } from './Module';
 /**
@@ -15,7 +15,7 @@ export interface Parser<A> extends RE.ReaderEither<ParserEnv, string, A> {
  * @category model
  * @since 0.6.0
  */
-export interface ParserEnv extends Environment {
+export interface ParserEnv extends EnvironmentWithConfig {
     readonly path: RNEA.ReadonlyNonEmptyArray<string>;
     readonly sourceFile: ast.SourceFile;
 }
@@ -58,4 +58,4 @@ export declare const parseModule: Parser<Module>;
  * @category parsers
  * @since 0.6.0
  */
-export declare const parseFiles: (files: ReadonlyArray<File>) => RTE.ReaderTaskEither<Environment, string, ReadonlyArray<Module>>;
+export declare const parseFiles: (files: ReadonlyArray<File>) => RTE.ReaderTaskEither<EnvironmentWithConfig, string, ReadonlyArray<Module>>;

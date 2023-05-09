@@ -1,10 +1,11 @@
 import * as assert from 'assert'
+import * as E from 'fp-ts/Either'
 import { pipe } from 'fp-ts/function'
 import * as O from 'fp-ts/lib/Option'
 import * as RA from 'fp-ts/ReadonlyArray'
 import * as ast from 'ts-morph'
 
-import * as C from '../src/Config'
+import * as Config from '../src/Config'
 import * as FS from '../src/FileSystem'
 import * as L from '../src/Logger'
 import * as _ from '../src/Parser'
@@ -21,7 +22,7 @@ const project = new ast.Project({
 const addFileToProject = (file: FS.File) => (project: ast.Project) =>
   project.createSourceFile(file.path, file.content, { overwrite: file.overwrite })
 
-const settings: C.Settings = {
+const config: Config.Config = {
   projectName: 'docs-ts',
   projectHomepage: 'https://github.com/gcanti/docs-ts',
   srcDir: 'src',
@@ -41,7 +42,7 @@ const getTestEnv = (sourceText: string): _.ParserEnv => ({
   spawn: spawn,
   fileSystem: FS.FileSystem,
   logger: L.Logger,
-  settings,
+  config,
   addFile: addFileToProject
 })
 
@@ -51,13 +52,13 @@ describe.concurrent('Parser', () => {
       it('should return no `Interface`s if the file is empty', () => {
         const env = getTestEnv('')
 
-        assertRight(pipe(env, _.parseInterfaces), (actual) => assert.deepStrictEqual(actual, RA.empty))
+        assert.deepStrictEqual(_.parseInterfaces(env), E.right(RA.empty))
       })
 
       it('should return no `Interface`s if there are no exported interfaces', () => {
         const env = getTestEnv('interface A {}')
 
-        assertRight(pipe(env, _.parseInterfaces), (actual) => assert.deepStrictEqual(actual, RA.empty))
+        assert.deepStrictEqual(_.parseInterfaces(env), E.right(RA.empty))
       })
 
       it('should return an `Interface`', () => {
@@ -69,10 +70,10 @@ describe.concurrent('Parser', () => {
             */
             export interface A {}`
         )
-        assertRight(pipe(env, _.parseInterfaces), (actual) =>
-          assert.deepStrictEqual(
-            actual,
-            RA.of({
+        assert.deepStrictEqual(
+          _.parseInterfaces(env),
+          E.right([
+            {
               _tag: 'Interface',
               deprecated: true,
               description: O.some('a description...'),
@@ -81,8 +82,8 @@ describe.concurrent('Parser', () => {
               since: O.some('1.0.0'),
               examples: RA.empty,
               category: O.none
-            })
-          )
+            }
+          ])
         )
       })
 
@@ -99,8 +100,9 @@ describe.concurrent('Parser', () => {
           export interface A {}
           `
         )
-        assertRight(pipe(env, _.parseInterfaces), (actual) =>
-          assert.deepStrictEqual(actual, [
+        assert.deepStrictEqual(
+          _.parseInterfaces(env),
+          E.right([
             {
               _tag: 'Interface',
               name: 'A',
@@ -137,7 +139,7 @@ describe.concurrent('Parser', () => {
       it('should not return private function declarations', () => {
         const env = getTestEnv(`function sum(a: number, b: number): number { return a + b }`)
 
-        assertRight(pipe(env, _.parseFunctions), (actual) => assert.deepStrictEqual(actual, RA.empty))
+        assert.deepStrictEqual(_.parseFunctions(env), E.right(RA.empty))
       })
 
       it('should not return ignored function declarations', () => {
@@ -148,7 +150,7 @@ describe.concurrent('Parser', () => {
             export function sum(a: number, b: number): number { return a + b }`
         )
 
-        assertRight(pipe(env, _.parseFunctions), (actual) => assert.deepStrictEqual(actual, RA.empty))
+        assert.deepStrictEqual(_.parseFunctions(env), E.right(RA.empty))
       })
 
       it('should not return ignored function declarations with overloads', () => {
@@ -160,7 +162,7 @@ describe.concurrent('Parser', () => {
             export function sum(a: number, b: number): number { return a + b }`
         )
 
-        assertRight(pipe(env, _.parseFunctions), (actual) => assert.deepStrictEqual(actual, RA.empty))
+        assert.deepStrictEqual(_.parseFunctions(env), E.right(RA.empty))
       })
 
       it('should not return internal function declarations', () => {
@@ -171,7 +173,7 @@ describe.concurrent('Parser', () => {
             export function sum(a: number, b: number): number { return a + b }`
         )
 
-        assertRight(pipe(env, _.parseFunctions), (actual) => assert.deepStrictEqual(actual, RA.empty))
+        assert.deepStrictEqual(_.parseFunctions(env), E.right(RA.empty))
       })
 
       it('should not return internal function declarations even with overloads', () => {
@@ -183,7 +185,7 @@ describe.concurrent('Parser', () => {
             export function sum(a: number, b: number): number { return a + b }`
         )
 
-        assertRight(pipe(env, _.parseFunctions), (actual) => assert.deepStrictEqual(actual, RA.empty))
+        assert.deepStrictEqual(_.parseFunctions(env), E.right(RA.empty))
       })
 
       it('should not return private const function declarations', () => {
@@ -200,7 +202,7 @@ describe.concurrent('Parser', () => {
             export const sum = (a: number, b: number): number => a + b `
         )
 
-        assertRight(pipe(env, _.parseFunctions), (actual) => assert.deepStrictEqual(actual, RA.empty))
+        assert.deepStrictEqual(_.parseFunctions(env), E.right(RA.empty))
       })
 
       it('should account for nullable polymorphic return types', () => {
@@ -211,8 +213,9 @@ describe.concurrent('Parser', () => {
            export const toNullable = <A>(ma: A | null): A | null => ma`
         )
 
-        assertRight(pipe(env, _.parseFunctions), (actual) =>
-          assert.deepStrictEqual(actual, [
+        assert.deepStrictEqual(
+          _.parseFunctions(env),
+          E.right([
             {
               _tag: 'Function',
               deprecated: false,
@@ -241,8 +244,9 @@ describe.concurrent('Parser', () => {
             export const f = (a: number, b: number): { [key: string]: number } => ({ a, b })`
         )
 
-        assertRight(pipe(env, _.parseFunctions), (actual) =>
-          assert.deepStrictEqual(actual, [
+        assert.deepStrictEqual(
+          _.parseFunctions(env),
+          E.right([
             {
               _tag: 'Function',
               deprecated: true,
@@ -268,8 +272,9 @@ describe.concurrent('Parser', () => {
             export function f(a: number, b: number): { [key: string]: number } { return { a, b } }`
         )
 
-        assertRight(pipe(env, _.parseFunctions), (actual) =>
-          assert.deepStrictEqual(actual, [
+        assert.deepStrictEqual(
+          _.parseFunctions(env),
+          E.right([
             {
               _tag: 'Function',
               deprecated: false,
@@ -294,8 +299,9 @@ describe.concurrent('Parser', () => {
             export function f(a: number, b: number): { [key: string]: number } { return { a, b } }`
         )
 
-        assertRight(pipe(env, _.parseFunctions), (actual) =>
-          assert.deepStrictEqual(actual, [
+        assert.deepStrictEqual(
+          _.parseFunctions(env),
+          E.right([
             {
               _tag: 'Function',
               deprecated: true,
@@ -322,8 +328,9 @@ describe.concurrent('Parser', () => {
             export function f(a: any, b: any): { [key: string]: number } { return { a, b } }`
         )
 
-        assertRight(pipe(env, _.parseFunctions), (actual) =>
-          assert.deepStrictEqual(actual, [
+        assert.deepStrictEqual(
+          _.parseFunctions(env),
+          E.right([
             {
               _tag: 'Function',
               name: 'f',
@@ -865,10 +872,11 @@ describe.concurrent('Parser', () => {
 
       it('should support absence of module documentation when no documentation is enforced', () => {
         const defaultEnv = getTestEnv('export const a: number = 1')
-        const env = { ...defaultEnv, settings: { ...defaultEnv.settings, enforceVersion: false } }
+        const env: _.ParserEnv = { ...defaultEnv, config: { ...defaultEnv.config, enforceVersion: false } }
 
-        assertRight(pipe(env, _.parseModuleDocumentation), (actual) =>
-          assert.deepStrictEqual(actual, {
+        assert.deepStrictEqual(
+          pipe(env, _.parseModuleDocumentation),
+          E.right({
             name: 'test',
             description: O.none,
             since: O.none,
@@ -984,7 +992,7 @@ describe.concurrent('Parser', () => {
               spawn: spawn,
               fileSystem: FS.FileSystem,
               logger: L.Logger,
-              settings,
+              config,
               addFile: addFileToProject
             },
             _.parseExports
@@ -1036,7 +1044,7 @@ import * as assert from 'assert'
  */
 export const foo = 'foo'`)
 
-        assertRight(pipe({ ...env, settings: { ...env.settings, enforceExamples: true } }, _.parseModule), (actual) =>
+        assertRight(pipe({ ...env, config: { ...env.config, enforceExamples: true } }, _.parseModule), (actual) =>
           assert.deepStrictEqual(actual, {
             name: 'test',
             description: O.some('This is the assert module.'),
@@ -1078,7 +1086,7 @@ export const foo = 'foo'`)
               spawn,
               fileSystem: FS.FileSystem,
               logger: L.Logger,
-              settings,
+              config,
               addFile: addFileToProject
             },
             _.parseFile(project)(file)
@@ -1126,7 +1134,7 @@ export function f(a: number, b: number): { [key: string]: number } {
               spawn,
               fileSystem: FS.FileSystem,
               logger: L.Logger,
-              settings,
+              config,
               addFile: addFileToProject
             },
             _.parseFiles(files)
@@ -1209,7 +1217,7 @@ export function f(a: number, b: number): { [key: string]: number } {
 */`
 
         assertLeft(
-          pipe({ ...env, settings: { ...env.settings, enforceDescriptions: true } }, _.getCommentInfo('name')(text)),
+          pipe({ ...env, config: { ...env.config, enforceDescriptions: true } }, _.getCommentInfo('name')(text)),
           (error) => assert.strictEqual(error, 'Missing description in test#name documentation')
         )
       })
@@ -1224,7 +1232,7 @@ export function f(a: number, b: number): { [key: string]: number } {
 */`
 
         assertLeft(
-          pipe({ ...env, settings: { ...env.settings, enforceExamples: true } }, _.getCommentInfo('name')(text)),
+          pipe({ ...env, config: { ...env.config, enforceExamples: true } }, _.getCommentInfo('name')(text)),
           (error) => assert.strictEqual(error, 'Missing examples in test#name documentation')
         )
       })
@@ -1240,7 +1248,7 @@ export function f(a: number, b: number): { [key: string]: number } {
 */`
 
         assertLeft(
-          pipe({ ...env, settings: { ...env.settings, enforceExamples: true } }, _.getCommentInfo('name')(text)),
+          pipe({ ...env, config: { ...env.config, enforceExamples: true } }, _.getCommentInfo('name')(text)),
           (error) => assert.strictEqual(error, 'Missing examples in test#name documentation')
         )
       })
@@ -1254,7 +1262,7 @@ export function f(a: number, b: number): { [key: string]: number } {
 */`
 
         assertRight(
-          pipe({ ...env, settings: { ...env.settings, enforceVersion: false } }, _.getCommentInfo('name')(text)),
+          pipe({ ...env, config: { ...env.config, enforceVersion: false } }, _.getCommentInfo('name')(text)),
           (actual) =>
             assert.deepStrictEqual(actual, {
               description: O.some('description'),

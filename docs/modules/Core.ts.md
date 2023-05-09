@@ -30,7 +30,7 @@ Added in v0.6.0
 
 ```ts
 export interface Capabilities {
-  readonly example: Example
+  readonly run: (command: string, executable: string) => TE.TaskEither<string, void>
   readonly fileSystem: FileSystem
   readonly logger: Logger
   readonly addFile: (file: File) => (project: ast.Project) => void

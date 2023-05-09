@@ -12,7 +12,6 @@ import * as TD from 'io-ts/TaskDecoder'
 import * as path from 'path'
 import * as ast from 'ts-morph'
 import * as Config from './Config'
-import { Example } from './Example'
 import { File, FileSystem } from './FileSystem'
 import { Logger } from './Logger'
 import { printModule } from './Markdown'
@@ -21,16 +20,12 @@ import * as P from './Parser'
 
 const CONFIG_FILE_NAME = 'docs-ts.json'
 
-// -------------------------------------------------------------------------------------
-// model
-// -------------------------------------------------------------------------------------
-
 /**
  * @category model
  * @since 0.6.0
  */
 export interface Capabilities {
-  readonly example: Example
+  readonly run: (command: string, executable: string) => TE.TaskEither<string, void>
   readonly fileSystem: FileSystem
   readonly logger: Logger
   readonly addFile: (file: File) => (project: ast.Project) => void
@@ -276,10 +271,10 @@ const cleanExamples: Program<void> = pipe(
 const spawnTsNode: Program<void> = pipe(
   RTE.ask<Environment, string>(),
   RTE.chainFirst(({ logger }) => RTE.fromTaskEither(logger.debug('Type checking examples...'))),
-  RTE.chainTaskEitherK(({ example, settings }) => {
+  RTE.chainTaskEitherK(({ run, settings }) => {
     const command = process.platform === 'win32' ? 'ts-node.cmd' : 'ts-node'
-    const executablePath = path.join(process.cwd(), settings.outDir, 'examples', 'index.ts')
-    return example.run(command, executablePath)
+    const executable = path.join(process.cwd(), settings.outDir, 'examples', 'index.ts')
+    return run(command, executable)
   })
 )
 

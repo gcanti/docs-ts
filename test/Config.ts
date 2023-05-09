@@ -3,12 +3,12 @@ import * as RA from 'fp-ts/ReadonlyArray'
 import { pipe } from 'fp-ts/function'
 
 import * as _ from '../src/Config'
-import { assertRight, assertLeft } from './utils'
+import { assertRight, assertLeft } from './util'
 
 const defaultSettings = pipe(_.build('docs-ts', 'https://github.com/gcanti/docs-ts'), _.resolveSettings)
 
-describe('Config', () => {
-  describe('constructors/destructors', () => {
+describe.concurrent('Config', () => {
+  describe.concurrent('constructors/destructors', () => {
     it('build and resolveSettings', () => {
       assert.deepStrictEqual(defaultSettings, {
         projectName: 'docs-ts',
@@ -26,7 +26,7 @@ describe('Config', () => {
     })
   })
 
-  describe('combinators', () => {
+  describe.concurrent('combinators', () => {
     it('updateProjectHomepage', () => {
       const config = pipe(
         _.build('docs-ts', 'https://github.com/gcanti/docs-ts'),
@@ -145,8 +145,8 @@ describe('Config', () => {
     })
   })
 
-  describe('utils', () => {
-    describe('decode', () => {
+  describe.concurrent('utils', () => {
+    describe.concurrent('decode', () => {
       it('should decode a valid configuration object', async () => {
         const config: unknown = {
           srcDir: 'src',

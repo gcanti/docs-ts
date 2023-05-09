@@ -10,7 +10,7 @@ import * as FS from '../src/FileSystem'
 import * as L from '../src/Logger'
 import * as _ from '../src/Parser'
 
-import { assertLeft, assertRight } from './utils'
+import { assertLeft, assertRight } from './util'
 
 let testCounter = 0
 
@@ -46,9 +46,9 @@ const getTestEnv = (sourceText: string): _.ParserEnv => ({
   addFile: addFileToProject
 })
 
-describe('Parser', () => {
-  describe('parsers', () => {
-    describe('parseInterfaces', () => {
+describe.concurrent('Parser', () => {
+  describe.concurrent('parsers', () => {
+    describe.concurrent('parseInterfaces', () => {
       it('should return no `Interface`s if the file is empty', () => {
         const env = getTestEnv('')
 
@@ -127,7 +127,7 @@ describe('Parser', () => {
       })
     })
 
-    describe('parseFunctions', () => {
+    describe.concurrent('parseFunctions', () => {
       it('should raise an error if the function is anonymous', () => {
         const env = getTestEnv(`export function(a: number, b: number): number { return a + b }`)
         const expected = 'Missing function name in module test'
@@ -343,7 +343,7 @@ describe('Parser', () => {
       })
     })
 
-    describe('parseTypeAlias', () => {
+    describe.concurrent('parseTypeAlias', () => {
       it('should return a `TypeAlias`', () => {
         const env = getTestEnv(
           `/**
@@ -371,7 +371,7 @@ describe('Parser', () => {
       })
     })
 
-    describe('parseConstants', () => {
+    describe.concurrent('parseConstants', () => {
       it('should handle a constant value', () => {
         const env = getTestEnv(
           `/**
@@ -491,7 +491,7 @@ describe('Parser', () => {
       })
     })
 
-    describe('parseClasses', () => {
+    describe.concurrent('parseClasses', () => {
       it('should raise an error if the class is anonymous', () => {
         const env = getTestEnv(`export class {}`)
 
@@ -830,7 +830,7 @@ describe('Parser', () => {
       })
     })
 
-    describe('parseModuleDocumentation', () => {
+    describe.concurrent('parseModuleDocumentation', () => {
       it('should return a description field and a deprecated field', () => {
         const env = getTestEnv(
           `/**
@@ -881,7 +881,7 @@ describe('Parser', () => {
       })
     })
 
-    describe('parseExports', () => {
+    describe.concurrent('parseExports', () => {
       it('should return no `Export`s if the file is empty', () => {
         const env = getTestEnv('')
 
@@ -1007,7 +1007,7 @@ describe('Parser', () => {
       })
     })
 
-    describe('parseModule', () => {
+    describe.concurrent('parseModule', () => {
       it('should raise an error if `@since` tag is missing', async () => {
         const env = getTestEnv(`import * as assert from 'assert'`)
 
@@ -1068,7 +1068,7 @@ export const foo = 'foo'`)
       })
     })
 
-    describe('parseFile', () => {
+    describe.concurrent('parseFile', () => {
       it('should not parse a non-existent file', async () => {
         const file = FS.File('non-existent.ts', '')
         const project = new ast.Project({ useInMemoryFileSystem: true })
@@ -1089,7 +1089,7 @@ export const foo = 'foo'`)
       })
     })
 
-    describe('parseFiles', () => {
+    describe.concurrent('parseFiles', () => {
       it('should parse an array of files', async () => {
         const files = [
           FS.File(
@@ -1166,8 +1166,8 @@ export function f(a: number, b: number): { [key: string]: number } {
     })
   })
 
-  describe('utils', () => {
-    describe('getCommentInfo', () => {
+  describe.concurrent('utils', () => {
+    describe.concurrent('getCommentInfo', () => {
       it('should parse comment information', () => {
         const env = getTestEnv('')
 

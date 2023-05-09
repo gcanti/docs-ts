@@ -13,7 +13,9 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
     "forceConsistentCasingInFileNames": true,
-    "stripInternal": true
+    "stripInternal": true,
+    "skipLibCheck": true,
+    "types": ["vitest/globals"]
   },
-  "include": ["./src"]
+  "include": ["./src", "./test"]
 }

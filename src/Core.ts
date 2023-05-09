@@ -5,12 +5,11 @@ import * as E from 'fp-ts/Either'
 import { constVoid, flow, pipe } from 'fp-ts/function'
 import * as Json from 'fp-ts/Json'
 import * as M from 'fp-ts/Monoid'
-import * as O from 'fp-ts/Option'
 import * as RTE from 'fp-ts/ReaderTaskEither'
 import * as RA from 'fp-ts/ReadonlyArray'
 import * as S from 'fp-ts/string'
 import * as TE from 'fp-ts/TaskEither'
-import * as TD from 'io-ts/TaskDecoder'
+import * as D from 'io-ts/Decoder'
 import * as path from 'path'
 import * as ast from 'ts-morph'
 
@@ -73,14 +72,10 @@ interface PackageJSON {
 }
 
 const PackageJSONDecoder = pipe(
-  TD.struct({
-    name: TD.string
-  }),
-  TD.intersect(
-    TD.partial({
-      homepage: TD.string
-    })
-  )
+  D.struct({
+    name: D.string,
+    homepage: D.string
+  })
 )
 
 // -------------------------------------------------------------------------------------
@@ -137,9 +132,9 @@ const readPackageJSON: Effect<PackageJSON> = pipe(
     pipe(
       fileSystem.readFile(path.join(process.cwd(), 'package.json')),
       TE.mapLeft(() => `Unable to read package.json in "${process.cwd()}"`),
-      TE.chainEitherK((json) =>
+      TE.chainEitherK((packageJsonSource) =>
         pipe(
-          json,
+          packageJsonSource,
           Json.parse,
           E.mapLeft((u) => E.toError(u).message)
         )
@@ -147,19 +142,14 @@ const readPackageJSON: Effect<PackageJSON> = pipe(
       TE.flatMap((json) =>
         pipe(
           PackageJSONDecoder.decode(json),
-          TE.mapLeft((decodeError) => `Unable to decode package.json:\n${TD.draw(decodeError)}`)
+          TE.fromEither,
+          TE.mapLeft((decodeError) => `Unable to decode package.json:\n${D.draw(decodeError)}`)
         )
       ),
       TE.flatMap(({ name, homepage }) =>
         pipe(
           logger.debug(`Project name detected: ${name}`),
-          TE.flatMap(() =>
-            pipe(
-              O.fromNullable(homepage),
-              TE.fromOption(() => `Missing homepage in package.json`),
-              TE.map((homepage) => ({ name, homepage }))
-            )
-          )
+          TE.map(() => ({ name, homepage }))
         )
       )
     )
@@ -514,7 +504,7 @@ const parseConfiguration =
           TE.flatMap((json) => TE.fromEither(Config.decode(json))),
           TE.bimap(
             (decodeError) => `Invalid configuration file detected:\n${decodeError}`,
-            (settings) => ({ ...defaultSettings, ...settings })
+            (config) => ({ ...defaultSettings, ...config })
           )
         )
       )

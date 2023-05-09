@@ -160,18 +160,19 @@ interface Config {
 
 The following table describes each configuration parameter, its purpose, and its default value.
 
-| Parameter           | Description                                                                                                                                                                         | Default Value                |
-| :------------------ | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------------- |
-| projectHomepage     | Will link to the project homepage from the [Auxiliary Links](https://pmarsceill.github.io/just-the-docs/docs/navigation-structure/#auxiliary-links) of the generated documentation. | `homepage` in `package.json` |
-| srcDir              | The directory in which `docs-ts` will search for TypeScript files to parse.                                                                                                         | `'src'`                      |
-| outDir              | The directory to which `docs-ts` will generate its output markdown documents.                                                                                                       | `'docs'`                     |
-| theme               | The theme that `docs-ts` will specify should be used for GitHub Docs in the generated `_config.yml` file.                                                                           | `'pmarsceill/just-the-docs'` |
-| enableSearch        | Whether or search should be enabled for GitHub Docs in the generated `_config.yml` file.                                                                                            | `true`                       |
-| enforceDescriptions | Whether or not descriptions for each module export should be required.                                                                                                              | `false`                      |
-| enforceExamples     | Whether or not `@example` tags for each module export should be required. (**Note**: examples will not be enforced in module documentation)                                         | `false`                      |
-| enforceVersion      | Whether or not `@since` tags for each module export should be required.                                                                                                             | `true`                       |
-| exclude             | An array of glob strings specifying files that should be excluded from the documentation.                                                                                           | `[]`                         |
-| compilerOptions     | tsconfig compiler options                                                                                                                                                           | {}                           |
+| Parameter               | Description                                                                                                                                                                         | Default Value                |
+| :---------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------------- |
+| projectHomepage         | Will link to the project homepage from the [Auxiliary Links](https://pmarsceill.github.io/just-the-docs/docs/navigation-structure/#auxiliary-links) of the generated documentation. | `homepage` in `package.json` |
+| srcDir                  | The directory in which `docs-ts` will search for TypeScript files to parse.                                                                                                         | `'src'`                      |
+| outDir                  | The directory to which `docs-ts` will generate its output markdown documents.                                                                                                       | `'docs'`                     |
+| theme                   | The theme that `docs-ts` will specify should be used for GitHub Docs in the generated `_config.yml` file.                                                                           | `'pmarsceill/just-the-docs'` |
+| enableSearch            | Whether or search should be enabled for GitHub Docs in the generated `_config.yml` file.                                                                                            | `true`                       |
+| enforceDescriptions     | Whether or not descriptions for each module export should be required.                                                                                                              | `false`                      |
+| enforceExamples         | Whether or not `@example` tags for each module export should be required. (**Note**: examples will not be enforced in module documentation)                                         | `false`                      |
+| enforceVersion          | Whether or not `@since` tags for each module export should be required.                                                                                                             | `true`                       |
+| exclude                 | An array of glob strings specifying files that should be excluded from the documentation.                                                                                           | `[]`                         |
+| parseCompilerOptions    | tsconfig for parsing options                                                                                                                                                        | {}                           |
+| examplesCompilerOptions | tsconfig for the examples options                                                                                                                                                   | {}                           |
 
 ## Documentation
 

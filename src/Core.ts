@@ -129,7 +129,8 @@ const getDefaultConfig = (projectName: string, projectHomepage: string): Config.
     enforceExamples: false,
     enforceVersion: true,
     exclude: [],
-    compilerOptions: {}
+    parseCompilerOptions: {},
+    examplesCompilerOptions: {}
   }
 }
 
@@ -378,7 +379,7 @@ const writeTsConfigJson: ProgramWithConfig<void> = pipe(
         path.join(process.cwd(), env.config.outDir, 'examples', 'tsconfig.json'),
         JSON.stringify(
           {
-            compilerOptions: env.config.compilerOptions
+            compilerOptions: env.config.examplesCompilerOptions
           },
           null,
           2

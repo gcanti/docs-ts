@@ -838,7 +838,7 @@ const createProject = (files: ReadonlyArray<File>): RTE.ReaderTaskEither<Environ
       const options: ast.ProjectOptions = {
         compilerOptions: {
           strict: true,
-          ...env.config.compilerOptions
+          ...env.config.parseCompilerOptions
         }
       }
       const project = new ast.Project(options)

@@ -1,5 +1,5 @@
 import * as RTE from 'fp-ts/ReaderTaskEither';
-import * as TE from 'fp-ts/TaskEither';
+import * as TaskEither from 'fp-ts/TaskEither';
 import * as ast from 'ts-morph';
 import * as Config from './Config';
 import { File, FileSystem } from './FileSystem';
@@ -18,7 +18,7 @@ export interface Capabilities {
      *
      * where `command = ts-node` and `executable = examples/index.ts`
      */
-    readonly spawn: (command: string, executable: string) => TE.TaskEither<string, void>;
+    readonly spawn: (command: string, executable: string) => TaskEither.TaskEither<string, void>;
     readonly fileSystem: FileSystem;
     readonly logger: Logger;
     readonly addFile: (file: File) => (project: ast.Project) => void;

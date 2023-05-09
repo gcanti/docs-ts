@@ -2,7 +2,7 @@
  * @since 0.8.0
  */
 import * as Core from './Core'
-import { run } from './Run'
+import { spawn } from './Spawn'
 import { FileSystem } from './FileSystem'
 import { Logger } from './Logger'
 
@@ -11,7 +11,7 @@ import { Logger } from './Logger'
  * @since 0.8.0
  */
 export const capabilities: Core.Capabilities = {
-  run,
+  spawn: spawn,
   fileSystem: FileSystem,
   logger: Logger,
   addFile: (file) => (project) => project.addSourceFileAtPath(file.path)

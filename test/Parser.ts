@@ -5,7 +5,7 @@ import { pipe } from 'fp-ts/function'
 import * as ast from 'ts-morph'
 
 import * as C from '../src/Config'
-import { run } from '../src/Run'
+import { spawn } from '../src/Spawn'
 import * as FS from '../src/FileSystem'
 import * as L from '../src/Logger'
 import * as _ from '../src/Parser'
@@ -39,7 +39,7 @@ const settings: C.Settings = {
 const getTestEnv = (sourceText: string): _.ParserEnv => ({
   path: ['test'],
   sourceFile: project.createSourceFile(`test-${testCounter++}.ts`, sourceText),
-  run,
+  spawn: spawn,
   fileSystem: FS.FileSystem,
   logger: L.Logger,
   settings,
@@ -982,7 +982,7 @@ describe.concurrent('Parser', () => {
             {
               path: ['test'],
               sourceFile,
-              run,
+              spawn: spawn,
               fileSystem: FS.FileSystem,
               logger: L.Logger,
               settings,
@@ -1076,7 +1076,7 @@ export const foo = 'foo'`)
         assertLeft(
           await pipe(
             {
-              run,
+              spawn,
               fileSystem: FS.FileSystem,
               logger: L.Logger,
               settings,
@@ -1124,7 +1124,7 @@ export function f(a: number, b: number): { [key: string]: number } {
         assertRight(
           await pipe(
             {
-              run,
+              spawn,
               fileSystem: FS.FileSystem,
               logger: L.Logger,
               settings,

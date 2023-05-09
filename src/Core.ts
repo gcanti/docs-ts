@@ -469,8 +469,21 @@ const writeMarkdownFiles = (files: ReadonlyArray<File>): Program<void> =>
 // config
 // -------------------------------------------------------------------------------------
 
-const getDefaultSettings = (projectName: string, projectHomepage: string): Config.Settings =>
-  pipe(Config.build(projectName, projectHomepage), Config.resolveSettings)
+const getDefaultSettings = (projectName: string, projectHomepage: string): Config.Settings => {
+  return {
+    projectName,
+    projectHomepage,
+    srcDir: 'src',
+    outDir: 'docs',
+    theme: 'pmarsceill/just-the-docs',
+    enableSearch: true,
+    enforceDescriptions: false,
+    enforceExamples: false,
+    enforceVersion: true,
+    exclude: [],
+    compilerOptions: {}
+  }
+}
 
 const hasConfiguration: Effect<boolean> = pipe(
   RTE.ask<Capabilities>(),
@@ -498,7 +511,7 @@ const parseConfiguration =
           TE.fromEither,
           TE.tap(() => logger.info(`Found configuration file`)),
           TE.tap(() => logger.debug(`Parsing configuration file found at: ${file.path}`)),
-          TE.flatMap(Config.decode),
+          TE.flatMap((json) => TE.fromEither(Config.decode(json))),
           TE.bimap(
             (decodeError) => `Invalid configuration file detected:\n${decodeError}`,
             (settings) => ({ ...defaultSettings, ...settings })

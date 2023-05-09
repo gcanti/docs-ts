@@ -5,6 +5,11 @@ import * as Config from './Config';
 import { File, FileSystem } from './FileSystem';
 import { Logger } from './Logger';
 /**
+ * @category main
+ * @since 0.6.0
+ */
+export declare const main: Program<void>;
+/**
  * @category model
  * @since 0.6.0
  */
@@ -42,8 +47,3 @@ export interface EnvironmentWithConfig extends Capabilities {
  */
 export interface ProgramWithConfig<A> extends RTE.ReaderTaskEither<EnvironmentWithConfig, string, A> {
 }
-/**
- * @category program
- * @since 0.6.0
- */
-export declare const main: Program<void>;

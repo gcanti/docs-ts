@@ -7,10 +7,6 @@ import * as fs from 'fs-extra'
 import * as glob from 'glob'
 import * as rimraf from 'rimraf'
 
-// -------------------------------------------------------------------------------------
-// model
-// -------------------------------------------------------------------------------------
-
 /**
  * Represents operations that can be performed on a file system.
  *
@@ -19,9 +15,19 @@ import * as rimraf from 'rimraf'
  */
 export interface FileSystem {
   readonly readFile: (path: string) => TE.TaskEither<string, string>
+  /**
+   * If the parent directory does not exist, it's created.
+   */
   readonly writeFile: (path: string, content: string) => TE.TaskEither<string, void>
   readonly exists: (path: string) => TE.TaskEither<string, boolean>
+  /**
+   * Removes a file or directory based upon the specified pattern. The directory can have contents.
+   * If the path does not exist, silently does nothing.
+   */
   readonly remove: (pattern: string) => TE.TaskEither<string, void>
+  /**
+   * Searches for files matching the specified glob pattern.
+   */
   readonly search: (pattern: string, exclude: ReadonlyArray<string>) => TE.TaskEither<string, ReadonlyArray<string>>
 }
 
@@ -37,11 +43,9 @@ export interface File {
   readonly overwrite: boolean
 }
 
-// -------------------------------------------------------------------------------------
-// constructors
-// -------------------------------------------------------------------------------------
-
 /**
+ * By default files are readonly (`overwrite = false`).
+ *
  * @category constructors
  * @since 0.6.0
  */
@@ -51,35 +55,14 @@ export const File = (path: string, content: string, overwrite = false): File => 
   overwrite
 })
 
-// -------------------------------------------------------------------------------------
-// utils
-// -------------------------------------------------------------------------------------
-
-/**
- * @internal
- */
-export const toErrorMsg = (err: Error): string => String(err.message)
-
-/**
- * Reads a file.
- *
- * @category utils
- * @since 0.6.0
- */
-export const readFile: (path: string, encoding: string) => TE.TaskEither<Error, string> = TE.taskify<
+const readFile: (path: string, encoding: string) => TE.TaskEither<Error, string> = TE.taskify<
   string,
   string,
   Error,
   string
 >(fs.readFile)
 
-/**
- * Similar to `writeFile` (i.e. it overwrites), except that if the parent directory does not exist, it's created.
- *
- * @category utils
- * @since 0.6.0
- */
-export const writeFile: (
+const writeFile: (
   path: string,
   data: string,
   options: {
@@ -89,38 +72,23 @@ export const writeFile: (
   }
 ) => TE.TaskEither<Error, void> = TE.taskify<string, string, fs.WriteFileOptions, Error, void>(fs.outputFile)
 
-/**
- * @category utils
- * @since 0.6.0
- */
-export const exists: (path: string) => TE.TaskEither<Error, boolean> = TE.taskify<string, Error, boolean>(fs.pathExists)
+const exists: (path: string) => TE.TaskEither<Error, boolean> = TE.taskify<string, Error, boolean>(fs.pathExists)
 
-/**
- * Removes a file or directory based upon the specified pattern. The directory can have contents.
- * If the path does not exist, silently does nothing.
- *
- * @category utils
- * @since 0.6.0
- */
-export const remove: (path: string, options: rimraf.Options) => TE.TaskEither<Error, void> = TE.taskify<
+const remove: (path: string, options: rimraf.Options) => TE.TaskEither<Error, void> = TE.taskify<
   string,
   rimraf.Options,
   Error,
   void
 >(rimraf)
 
-/**
- * Searches for files matching the specified glob pattern.
- *
- * @category utils
- * @since 0.6.0
- */
-export const search: (pattern: string, options: glob.IOptions) => TE.TaskEither<Error, ReadonlyArray<string>> =
-  TE.taskify<string, glob.IOptions, Error, ReadonlyArray<string>>(glob)
+const search: (pattern: string, options: glob.IOptions) => TE.TaskEither<Error, ReadonlyArray<string>> = TE.taskify<
+  string,
+  glob.IOptions,
+  Error,
+  ReadonlyArray<string>
+>(glob)
 
-// -------------------------------------------------------------------------------------
-// instances
-// -------------------------------------------------------------------------------------
+const toErrorMsg = (err: Error): string => String(err.message)
 
 /**
  * @category instances

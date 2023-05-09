@@ -70,7 +70,7 @@ const errorLogger = L.filter(getLoggerEntry(chalk.bold.red), (e) => e.level === 
 
 const infoLogger = L.filter(getLoggerEntry(chalk.bold.magenta), (e) => e.level === 'INFO')
 
-const mainLogger = pipe([debugLogger, errorLogger, infoLogger], M.fold(L.getMonoid<LogEntry>()))
+const mainLogger = pipe([debugLogger, errorLogger, infoLogger], M.concatAll(L.getMonoid<LogEntry>()))
 
 const logWithLevel =
   (level: LogLevel) =>

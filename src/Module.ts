@@ -4,6 +4,7 @@
 import { pipe } from 'fp-ts/function'
 import * as O from 'fp-ts/Option'
 import * as Ord from 'fp-ts/Ord'
+import * as S from 'fp-ts/string'
 
 // -------------------------------------------------------------------------------------
 // model
@@ -252,6 +253,6 @@ export const Export = (documentable: Documentable, signature: string): Export =>
  * @since 0.6.0
  */
 export const ordModule: Ord.Ord<Module> = pipe(
-  Ord.ordString,
+  S.Ord,
   Ord.contramap((module: Module) => module.path.join('/').toLowerCase())
 )

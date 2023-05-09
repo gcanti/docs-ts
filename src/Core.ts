@@ -3,10 +3,12 @@
  */
 import * as E from 'fp-ts/Either'
 import { constVoid, flow, pipe } from 'fp-ts/function'
+import * as Json from 'fp-ts/Json'
 import * as M from 'fp-ts/Monoid'
 import * as O from 'fp-ts/Option'
 import * as RTE from 'fp-ts/ReaderTaskEither'
 import * as RA from 'fp-ts/ReadonlyArray'
+import * as S from 'fp-ts/string'
 import * as TE from 'fp-ts/TaskEither'
 import * as TD from 'io-ts/TaskDecoder'
 import * as path from 'path'
@@ -136,9 +138,10 @@ const readPackageJSON: Effect<PackageJSON> = pipe(
       fileSystem.readFile(path.join(process.cwd(), 'package.json')),
       TE.mapLeft(() => `Unable to read package.json in "${process.cwd()}"`),
       TE.chainEitherK((json) =>
-        E.parseJSON(
+        pipe(
           json,
-          flow(E.toError, (err) => String(err.message))
+          Json.parse,
+          E.mapLeft((u) => E.toError(u).message)
         )
       ),
       TE.flatMap((json) =>
@@ -274,7 +277,7 @@ const handleImports: (files: ReadonlyArray<File>) => Program<ReadonlyArray<File>
 const getExampleIndex = (examples: ReadonlyArray<File>): Program<File> => {
   const content = pipe(
     examples,
-    RA.foldMap(M.monoidString)((example) => `import './${path.basename(example.path, '.ts')}'\n`)
+    RA.foldMap(S.Monoid)((example) => `import './${path.basename(example.path, '.ts')}'\n`)
   )
   return pipe(
     RTE.ask<Environment, string>(),
@@ -304,7 +307,7 @@ const writeExamples = (examples: ReadonlyArray<File>): Program<void> =>
     RTE.flatMap((C) =>
       pipe(
         getExampleIndex(examples),
-        RTE.map((index) => RA.cons(index, examples)),
+        RTE.map((index) => pipe(examples, RA.prepend(index))),
         RTE.chainTaskEitherK((files) => pipe(C, writeFiles(files)))
       )
     )
@@ -491,7 +494,7 @@ const parseConfiguration =
       RTE.ask<Capabilities>(),
       RTE.chainTaskEitherK(({ logger }) =>
         pipe(
-          E.parseJSON(file.content, toErrorMsg),
+          pipe(Json.parse(file.content), E.mapLeft(toErrorMsg)),
           TE.fromEither,
           TE.tap(() => logger.info(`Found configuration file`)),
           TE.tap(() => logger.debug(`Parsing configuration file found at: ${file.path}`)),

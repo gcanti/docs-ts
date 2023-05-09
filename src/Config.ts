@@ -1,12 +1,13 @@
 /**
  * @since 0.6.0
  */
-import * as Eq from 'fp-ts/Eq'
 import { pipe } from 'fp-ts/function'
 import * as M from 'fp-ts/Monoid'
 import * as RA from 'fp-ts/ReadonlyArray'
 import * as RR from 'fp-ts/ReadonlyRecord'
-import * as S from 'fp-ts/Semigroup'
+import * as Semigroup from 'fp-ts/Semigroup'
+import * as S from 'fp-ts/string'
+import * as Task from 'fp-ts/Task'
 import * as TE from 'fp-ts/TaskEither'
 import * as T from 'fp-ts/Traced'
 import * as DE from 'io-ts/DecodeError'
@@ -63,11 +64,11 @@ export interface Settings {
 // -------------------------------------------------------------------------------------
 
 const getMonoidSetting = <A>(empty: A): M.Monoid<A> => ({
-  ...S.last<A>(),
+  ...Semigroup.last<A>(),
   empty
 })
 
-const monoidConfig: M.Monoid<Config> = M.getStructMonoid({
+const monoidConfig: M.Monoid<Config> = M.struct({
   projectHomepage: getMonoidSetting(''),
   srcDir: getMonoidSetting('src'),
   outDir: getMonoidSetting('docs'),
@@ -240,7 +241,7 @@ export const updateExclusions =
 
 const validConfigurationkeys = RR.keys(monoidConfig.empty)
 const semigroupError = DE.getSemigroup<string>()
-const validation = TE.getTaskValidation(semigroupError)
+const validation = TE.getApplicativeTaskValidation(Task.ApplyPar, semigroupError)
 
 const decodeValidKeys = (
   record: RR.ReadonlyRecord<string, unknown>
@@ -248,7 +249,7 @@ const decodeValidKeys = (
   pipe(
     record,
     RR.traverseWithIndex(validation)((key, value) =>
-      RA.elem(Eq.eqString)(key)(validConfigurationkeys)
+      RA.elem(S.Eq)(key)(validConfigurationkeys)
         ? TE.right(value)
         : TE.left(FS.of(DE.leaf(key, `a valid configuration property`)))
     )

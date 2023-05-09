@@ -1,16 +1,17 @@
 /**
  * @since 0.6.0
  */
+import { Endomorphism } from 'fp-ts/Endomorphism'
 import { intercalate } from 'fp-ts/Foldable'
-import { absurd, Endomorphism, flow, pipe } from 'fp-ts/function'
+import { absurd, flow, pipe } from 'fp-ts/function'
 import * as M from 'fp-ts/Monoid'
 import * as O from 'fp-ts/Option'
-import * as Ord from 'fp-ts/Ord'
 import * as RA from 'fp-ts/ReadonlyArray'
 import * as RNEA from 'fp-ts/ReadonlyNonEmptyArray'
 import * as RR from 'fp-ts/ReadonlyRecord'
 import { Semigroup } from 'fp-ts/Semigroup'
 import { Show } from 'fp-ts/Show'
+import * as S from 'fp-ts/string'
 import * as prettier from 'prettier'
 
 import { Class, Constant, Export, Function, Interface, Method, Module, Property, TypeAlias } from './Module'
@@ -230,7 +231,7 @@ export const fold = <R>(patterns: {
 // combinators
 // -------------------------------------------------------------------------------------
 
-const foldS: (as: ReadonlyArray<string>) => string = M.concatAll(M.monoidString)
+const foldS: (as: ReadonlyArray<string>) => string = M.concatAll(S.Monoid)
 
 const foldMarkdown = (as: ReadonlyArray<Markdown>): Markdown => pipe(as, M.concatAll(monoidMarkdown))
 
@@ -238,7 +239,7 @@ const CRLF: Markdown = PlainTexts(RA.replicate(2, Newline))
 
 const intercalateCRLF = (xs: ReadonlyArray<Markdown>): Markdown => intercalate(monoidMarkdown, RA.Foldable)(CRLF, xs)
 
-const intercalateNewline = (xs: ReadonlyArray<string>): string => intercalate(M.monoidString, RA.Foldable)('\n', xs)
+const intercalateNewline = (xs: ReadonlyArray<string>): string => intercalate(S.Monoid, RA.Foldable)('\n', xs)
 
 const h1 = (content: Markdown) => Header(1, content)
 
@@ -271,13 +272,13 @@ const description: (d: O.Option<string>) => Markdown = flow(
 )
 
 const signature = (s: string): Markdown =>
-  pipe(RA.of(ts(s)), RA.cons(Paragraph(Bold(PlainText('Signature')))), foldMarkdown)
+  pipe(RA.of(ts(s)), RA.prepend(Paragraph(Bold(PlainText('Signature')))), foldMarkdown)
 
 const signatures = (ss: ReadonlyArray<string>): Markdown =>
-  pipe(RA.of(ts(intercalateNewline(ss))), RA.cons(Paragraph(Bold(PlainText('Signature')))), foldMarkdown)
+  pipe(RA.of(ts(intercalateNewline(ss))), RA.prepend(Paragraph(Bold(PlainText('Signature')))), foldMarkdown)
 
 const examples: (es: ReadonlyArray<string>) => Markdown = flow(
-  RA.map((code) => pipe(RA.of(ts(code)), RA.cons(Bold(PlainText('Example'))), intercalateCRLF)),
+  RA.map((code) => pipe(RA.of(ts(code)), RA.prepend(Bold(PlainText('Example'))), intercalateCRLF)),
   intercalateCRLF
 )
 
@@ -511,17 +512,17 @@ export const printModule = (module: Module, order: number): string => {
             O.getOrElse(() => DEFAULT_CATEGORY)
           )
         ),
-        RR.collect((category, printables) => {
+        RR.collect(S.Ord)((category, printables) => {
           const title = pipe(h1(PlainText(category)), showMarkdown.show)
           const documentation = pipe(
             printables,
             RA.map(flow(fromPrintable, showMarkdown.show)),
-            RA.sort(Ord.ordString),
+            RA.sort(S.Ord),
             intercalateNewline
           )
           return intercalateNewline([title, documentation])
         }),
-        RA.sort(Ord.ordString),
+        RA.sort(S.Ord),
         intercalateNewline
       )
     ),
@@ -567,7 +568,7 @@ const prettierOptions: prettier.Options = {
   printWidth: 120
 }
 
-const prettify: Endomorphism<string> = (s) => prettier.format(s, prettierOptions)
+const prettify = (s: string): string => prettier.format(s, prettierOptions)
 
 const canonicalizeMarkdown: Endomorphism<ReadonlyArray<Markdown>> = RA.filterMap((markdown) =>
   pipe(

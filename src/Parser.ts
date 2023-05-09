@@ -3,17 +3,21 @@
  */
 import * as doctrine from 'doctrine'
 import * as Apply from 'fp-ts/Apply'
+import * as B from 'fp-ts/boolean'
 import * as E from 'fp-ts/Either'
-import { flow, not, pipe, Predicate } from 'fp-ts/function'
+import { flow, getMonoid, pipe } from 'fp-ts/function'
 import * as M from 'fp-ts/Monoid'
 import * as O from 'fp-ts/Option'
 import * as Ord from 'fp-ts/Ord'
+import { not, Predicate } from 'fp-ts/Predicate'
 import * as RE from 'fp-ts/ReaderEither'
 import * as RTE from 'fp-ts/ReaderTaskEither'
 import * as RA from 'fp-ts/ReadonlyArray'
 import * as RNEA from 'fp-ts/ReadonlyNonEmptyArray'
 import * as RR from 'fp-ts/ReadonlyRecord'
-import * as S from 'fp-ts/Semigroup'
+import * as Semigroup from 'fp-ts/Semigroup'
+import * as S from 'fp-ts/string'
+import * as T from 'fp-ts/Task'
 import * as Path from 'path'
 import * as ast from 'ts-morph'
 
@@ -92,22 +96,22 @@ const CommentInfo = (
 // utils
 // -------------------------------------------------------------------------------------
 
-const semigroupError = pipe(S.semigroupString, S.getIntercalateSemigroup('\n'))
+const semigroupError = pipe(S.Semigroup, Semigroup.intercalate('\n'))
 
-const applicativeParser = RE.getReaderValidation(semigroupError)
+const applicativeParser = RE.getApplicativeReaderValidation(semigroupError)
 
 const sequenceS = Apply.sequenceS(applicativeParser)
 
 const traverse = RA.traverse(applicativeParser)
 
 const every = <A>(predicates: ReadonlyArray<Predicate<A>>): ((a: A) => boolean) =>
-  M.concatAll(M.getFunctionMonoid(M.monoidAll)<A>())(predicates)
+  M.concatAll(getMonoid(B.MonoidAll)<A>())(predicates)
 
 const some = <A>(predicates: ReadonlyArray<Predicate<A>>): ((a: A) => boolean) =>
-  M.concatAll(M.getFunctionMonoid(M.monoidAny)<A>())(predicates)
+  M.concatAll(getMonoid(B.MonoidAny)<A>())(predicates)
 
 const ordByName = pipe(
-  Ord.ordString,
+  S.Ord,
   Ord.contramap(({ name }: { name: string }) => name)
 )
 
@@ -204,11 +208,11 @@ const getExamples = (name: string, comment: Comment, isModule: boolean): Parser<
         O.map(RA.compact),
         O.fold(
           () =>
-            M.concatAll(M.monoidAll)([env.settings.enforceExamples, !isModule])
+            M.concatAll(B.MonoidAll)([env.settings.enforceExamples, !isModule])
               ? E.left(`Missing examples in ${env.path.join('/')}#${name} documentation`)
               : E.right<never, ReadonlyArray<string>>(RA.empty),
           (examples) =>
-            M.concatAll(M.monoidAll)([env.settings.enforceExamples, RA.isEmpty(examples), !isModule])
+            M.concatAll(B.MonoidAll)([env.settings.enforceExamples, RA.isEmpty(examples), !isModule])
               ? E.left(`Missing examples in ${env.path.join('/')}#${name} documentation`)
               : E.right(examples)
         )
@@ -322,7 +326,8 @@ const parseFunctionDeclaration = (fd: ast.FunctionDeclaration): Parser<Function>
             fd.getOverloads(),
             RA.foldRight(
               () => RA.of(getFunctionDeclarationSignature(fd)),
-              (init, last) => RA.snoc(init.map(getFunctionDeclarationSignature), getFunctionDeclarationSignature(last))
+              (init, last) =>
+                pipe(init.map(getFunctionDeclarationSignature), RA.append(getFunctionDeclarationSignature(last)))
             )
           )
           return Function(
@@ -593,9 +598,9 @@ const parseMethod = (md: ast.MethodDeclaration): Parser<O.Option<Method>> =>
                 RA.foldRight(
                   () => RA.of(getMethodSignature(md)),
                   (init, last) =>
-                    RA.snoc(
+                    pipe(
                       init.map((md) => md.getText()),
-                      getMethodSignature(last)
+                      RA.append(getMethodSignature(last))
                     )
                 )
               )
@@ -745,7 +750,7 @@ export const parseModuleDocumentation: Parser<Documentable> = pipe(
     const name = getModuleName(env.path)
     // If any of the settings enforcing documentation are set to `true`, then
     // a module should have associated documentation
-    const isDocumentationRequired = M.concatAll(M.monoidAny)([
+    const isDocumentationRequired = M.concatAll(B.MonoidAny)([
       env.settings.enforceDescriptions,
       env.settings.enforceVersion
     ])
@@ -852,7 +857,9 @@ export const parseFiles = (
 ): RTE.ReaderTaskEither<Environment, string, ReadonlyArray<Module>> =>
   pipe(
     createProject(files),
-    RTE.flatMap((project) => pipe(files, RA.traverse(RTE.getReaderTaskValidation(semigroupError))(parseFile(project)))),
+    RTE.flatMap((project) =>
+      pipe(files, RA.traverse(RTE.getApplicativeReaderTaskValidation(T.ApplyPar, semigroupError))(parseFile(project)))
+    ),
     RTE.map(
       flow(
         RA.filter((module) => !module.deprecated),

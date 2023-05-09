@@ -162,7 +162,7 @@ const readSourcePaths: Program<ReadonlyArray<string>> = pipe(
     pipe(
       fileSystem.search(path.join(settings.srcDir, '**', '*.ts'), settings.exclude),
       TE.map(RA.map(path.normalize)),
-      TE.tap((paths) => pipe(logger.info(`Found ${paths.length} modules`)))
+      TE.tap((paths) => pipe(logger.info(`${paths.length} module(s) found`)))
     )
   )
 )

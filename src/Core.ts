@@ -372,7 +372,7 @@ const writeExamples = (examples: ReadonlyArray<File>): ProgramWithConfig<void> =
 
 const writeTsConfigJson: ProgramWithConfig<void> = pipe(
   RTE.ask<EnvironmentWithConfig, string>(),
-  RTE.tap(({ logger }) => RTE.fromTaskEither(logger.debug('Writing example tsconfig...'))),
+  RTE.tap(({ logger }) => RTE.fromTaskEither(logger.debug('Writing examples tsconfig...'))),
   RTE.flatMap((env) =>
     writeFile(
       File(

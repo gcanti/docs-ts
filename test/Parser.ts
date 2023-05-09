@@ -33,7 +33,8 @@ const config: Config.Config = {
   enforceExamples: false,
   enforceVersion: true,
   exclude: RA.empty,
-  compilerOptions: {}
+  parseCompilerOptions: {},
+  examplesCompilerOptions: {}
 }
 
 const getTestEnv = (sourceText: string): _.ParserEnv => ({

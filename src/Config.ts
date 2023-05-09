@@ -20,7 +20,8 @@ export interface Config {
   readonly enforceExamples: boolean
   readonly enforceVersion: boolean
   readonly exclude: ReadonlyArray<string>
-  readonly compilerOptions: Record<string, unknown>
+  readonly parseCompilerOptions: Record<string, unknown>
+  readonly examplesCompilerOptions: Record<string, unknown>
 }
 
 const ConfigDecoder = D.partial<Config>({
@@ -34,7 +35,8 @@ const ConfigDecoder = D.partial<Config>({
   enforceExamples: D.boolean,
   enforceVersion: D.boolean,
   exclude: D.array(D.string),
-  compilerOptions: D.UnknownRecord
+  parseCompilerOptions: D.UnknownRecord,
+  examplesCompilerOptions: D.UnknownRecord
 })
 
 /**

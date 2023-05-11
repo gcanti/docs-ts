@@ -16,7 +16,6 @@ Added in v0.6.0
   - [main](#main-1)
 - [model](#model)
   - [EnvironmentWithConfig (interface)](#environmentwithconfig-interface)
-  - [Program (interface)](#program-interface)
   - [ProgramWithConfig (interface)](#programwithconfig-interface)
 
 ---
@@ -28,7 +27,7 @@ Added in v0.6.0
 **Signature**
 
 ```ts
-export declare const main: Program<void>
+export declare const main: TaskEither.TaskEither<Error, void>
 ```
 
 Added in v0.6.0
@@ -43,16 +42,6 @@ Added in v0.6.0
 export interface EnvironmentWithConfig {
   readonly config: _.Config
 }
-```
-
-Added in v0.6.0
-
-## Program (interface)
-
-**Signature**
-
-```ts
-export interface Program<A> extends RTE.ReaderTaskEither<void, Error, A> {}
 ```
 
 Added in v0.6.0

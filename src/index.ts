@@ -23,4 +23,4 @@ const handleResult: (program: TaskEither.TaskEither<Error, void>) => Task.Task<v
  * @category main
  * @since 0.6.0
  */
-export const main: Task.Task<void> = handleResult(Core.main(undefined))
+export const main: Task.Task<void> = handleResult(Core.main)

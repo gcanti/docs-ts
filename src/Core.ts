@@ -18,10 +18,10 @@ import * as Parser from './Parser'
  * @category main
  * @since 0.6.0
  */
-export const main: Program<void> = pipe(
-  RTE.Do,
-  RTE.bind('config', () => _.toReaderTaskEither(_.getConfig)),
-  RTE.chainTaskEitherK(({ config }) => {
+export const main: TaskEither.TaskEither<Error, void> = pipe(
+  TaskEither.Do,
+  TaskEither.bind('config', () => _.toTaskEither(_.getConfig)),
+  TaskEither.flatMap(({ config }) => {
     const program = pipe(
       readSourceFiles,
       RTE.flatMap(parseFiles),
@@ -41,12 +41,6 @@ export const main: Program<void> = pipe(
  * @category model
  * @since 0.6.0
  */
-export interface Program<A> extends RTE.ReaderTaskEither<void, Error, A> {}
-
-/**
- * @category model
- * @since 0.6.0
- */
 export interface EnvironmentWithConfig {
   readonly config: _.Config
 }
@@ -61,41 +55,36 @@ export interface ProgramWithConfig<A> extends RTE.ReaderTaskEither<EnvironmentWi
 // filesystem APIs
 // -------------------------------------------------------------------------------------
 
-const readFile = (path: string): Program<_.File> =>
+const readFile = (path: string): TaskEither.TaskEither<Error, _.File> =>
   pipe(
-    RTE.fromTaskEither(_.toTaskEither(_.readFile(path))),
-    RTE.map((content) => _.createFile(path, content, false))
+    _.toTaskEither(_.readFile(path)),
+    TaskEither.map((content) => _.createFile(path, content, false))
   )
 
-const readFiles: (paths: ReadonlyArray<string>) => Program<ReadonlyArray<_.File>> = ReadonlyArray.traverse(
-  RTE.ApplicativePar
-)(readFile)
+const readFiles: (paths: ReadonlyArray<string>) => TaskEither.TaskEither<Error, ReadonlyArray<_.File>> =
+  ReadonlyArray.traverse(TaskEither.ApplicativePar)(readFile)
 
-const writeFile = (file: _.File): Program<void> => {
-  const overwrite: Program<void> = pipe(
-    RTE.fromTaskEither(
-      pipe(
-        _.toTaskEither(_.debug(`Overwriting file ${file.path}`)),
-        TaskEither.flatMap(() => _.toTaskEither(_.writeFile(file.path, file.content)))
-      )
-    )
+const writeFile = (file: _.File): TaskEither.TaskEither<Error, void> => {
+  const overwrite: TaskEither.TaskEither<Error, void> = pipe(
+    _.toTaskEither(_.debug(`Overwriting file ${file.path}`)),
+    TaskEither.flatMap(() => _.toTaskEither(_.writeFile(file.path, file.content)))
   )
 
-  const skip: Program<void> = pipe(
-    RTE.fromTaskEither(_.toTaskEither(_.debug(`File ${file.path} already exists, skipping creation`)))
+  const skip: TaskEither.TaskEither<Error, void> = _.toTaskEither(
+    _.debug(`File ${file.path} already exists, skipping creation`)
   )
 
-  const write: Program<void> = pipe(RTE.fromTaskEither(_.toTaskEither(_.writeFile(file.path, file.content))))
+  const write: TaskEither.TaskEither<Error, void> = _.toTaskEither(_.writeFile(file.path, file.content))
 
   return pipe(
-    RTE.fromTaskEither(_.toTaskEither(_.exists(file.path))),
-    RTE.flatMap((exists) => (exists ? (file.overwrite ? overwrite : skip) : write))
+    _.toTaskEither(_.exists(file.path)),
+    TaskEither.flatMap((exists) => (exists ? (file.overwrite ? overwrite : skip) : write))
   )
 }
 
-const writeFiles: (files: ReadonlyArray<_.File>) => Program<void> = flow(
-  ReadonlyArray.traverse(RTE.ApplicativePar)(writeFile),
-  RTE.map(constVoid)
+const writeFiles: (files: ReadonlyArray<_.File>) => TaskEither.TaskEither<Error, void> = flow(
+  ReadonlyArray.traverse(TaskEither.ApplicativePar)(writeFile),
+  TaskEither.map(constVoid)
 )
 
 const readSourcePaths: ProgramWithConfig<ReadonlyArray<string>> = pipe(
@@ -114,7 +103,7 @@ const readSourceFiles: ProgramWithConfig<ReadonlyArray<_.File>> = pipe(
   RTE.flatMap(() =>
     pipe(
       readSourcePaths,
-      RTE.chainTaskEitherK((paths) => readFiles(paths)(undefined))
+      RTE.chainTaskEitherK((paths) => readFiles(paths))
     )
   )
 )
@@ -245,7 +234,7 @@ const writeExamples = (examples: ReadonlyArray<_.File>): ProgramWithConfig<void>
       pipe(
         getExampleIndex(examples),
         RTE.map((index) => pipe(examples, ReadonlyArray.prepend(index))),
-        RTE.chainTaskEitherK((files) => writeFiles(files)(undefined))
+        RTE.chainTaskEitherK((files) => writeFiles(files))
       )
     )
   )
@@ -266,7 +255,7 @@ const writeTsConfigJson: ProgramWithConfig<void> = pipe(
         ),
         true
       )
-    )(undefined)
+    )
   )
 )
 
@@ -418,7 +407,7 @@ const writeMarkdownFiles = (files: ReadonlyArray<_.File>): ProgramWithConfig<voi
     RTE.chainTaskEitherK(() =>
       pipe(
         _.toTaskEither(_.debug('Writing markdown files...')),
-        TaskEither.flatMap(() => writeFiles(files)(undefined))
+        TaskEither.flatMap(() => writeFiles(files))
       )
     )
   )

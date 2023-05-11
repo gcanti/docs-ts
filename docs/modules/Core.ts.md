@@ -27,7 +27,7 @@ Added in v0.6.0
 **Signature**
 
 ```ts
-export declare const main: TaskEither.TaskEither<Error, void>
+export declare const main: Effect.Effect<never, Error, void>
 ```
 
 Added in v0.6.0

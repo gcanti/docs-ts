@@ -1,6 +1,8 @@
 /**
  * @since 0.6.0
  */
+import * as Effect from '@effect/io/Effect'
+import * as E from 'fp-ts/Either'
 import { constVoid, flow, pipe } from 'fp-ts/function'
 import * as Monoid from 'fp-ts/Monoid'
 import * as RTE from 'fp-ts/ReaderTaskEither'
@@ -14,14 +16,18 @@ import { printModule } from './Markdown'
 import { Documentable, Module } from './Module'
 import * as Parser from './Parser'
 
+const effectFromEither = E.matchW(Effect.fail, Effect.succeed)
+
+const effectFromTaskEither = <E, A>(program: TaskEither.TaskEither<E, A>) =>
+  Effect.async<never, E, A>(async (resume) => pipe(await program(), effectFromEither, resume))
+
 /**
  * @category main
  * @since 0.6.0
  */
-export const main: TaskEither.TaskEither<Error, void> = pipe(
-  TaskEither.Do,
-  TaskEither.bind('config', () => _.toTaskEither(_.getConfig)),
-  TaskEither.flatMap(({ config }) => {
+export const main: Effect.Effect<never, Error, void> = pipe(
+  _.getConfig,
+  Effect.flatMap((config) => {
     const program = pipe(
       readSourceFiles,
       RTE.flatMap(parseFiles),
@@ -29,7 +35,7 @@ export const main: TaskEither.TaskEither<Error, void> = pipe(
       RTE.flatMap(getMarkdownFiles),
       RTE.flatMap(writeMarkdownFiles)
     )
-    return program({ config })
+    return effectFromTaskEither(program({ config }))
   })
 )
 
@@ -119,7 +125,7 @@ const parseFiles = (files: ReadonlyArray<_.File>): ProgramWithConfig<ReadonlyArr
     RTE.flatMap(() =>
       pipe(
         Parser.parseFiles(files),
-        RTE.mapLeft((s) => new Error(s))
+        RTE.mapLeft((error) => new Error(`[PARSE ERROR] ${error}`))
       )
     )
   )

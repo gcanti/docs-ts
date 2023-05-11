@@ -24,7 +24,7 @@ Added in v0.2.0
 **Signature**
 
 ```ts
-export declare const main: Task.Task<void>
+export declare const main: Effect.Effect<never, never, never>
 ```
 
 Added in v0.6.0

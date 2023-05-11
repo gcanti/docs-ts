@@ -1,26 +1,28 @@
 /**
  * @since 0.2.0
  */
+import { pipe } from '@effect/data/Function'
+import * as Effect from '@effect/io/Effect'
 import chalk from 'chalk'
-import * as Console from 'fp-ts/Console'
-import * as IO from 'fp-ts/IO'
-import * as Task from 'fp-ts/Task'
-import * as TaskEither from 'fp-ts/TaskEither'
 
 import * as Core from './Core'
-
-const exit =
-  (code: 0 | 1): IO.IO<void> =>
-  () =>
-    process.exit(code)
-
-const handleResult: (program: TaskEither.TaskEither<Error, void>) => Task.Task<void> = TaskEither.matchE(
-  (error) => Task.fromIO(IO.flatMap(Console.log(chalk.bold.red(error.message)), () => exit(1))),
-  () => Task.fromIO(IO.flatMap(Console.log(chalk.bold.green('Docs generation succeeded!')), () => exit(0)))
-)
 
 /**
  * @category main
  * @since 0.6.0
  */
-export const main: Task.Task<void> = handleResult(Core.main)
+export const main = pipe(
+  Core.main,
+  Effect.flatMap(() =>
+    Effect.sync(() => {
+      console.log(chalk.bold.green('[OK] docs generation succeeded'))
+      process.exit(0)
+    })
+  ),
+  Effect.catchAll((error) =>
+    Effect.sync(() => {
+      console.error(chalk.bold.red(error.message))
+      process.exit(1)
+    })
+  )
+)

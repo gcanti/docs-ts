@@ -6,12 +6,13 @@
  * @since 0.2.0
  */
 
+import * as Effect from '@effect/io/Effect'
 import chalk from 'chalk'
 
 import { main } from '.'
 
-main().catch((e) => {
-  console.log(chalk.bold.red('Unexpected Error'))
-  console.error(e)
+Effect.runPromise(main).catch((defect) => {
+  console.error(chalk.bold.red('Unexpected Error'))
+  console.error(defect)
   process.exit(1)
 })

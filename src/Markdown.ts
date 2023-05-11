@@ -1,5 +1,5 @@
 /**
- * @since 0.6.0
+ * @since 0.9.0
  */
 import { Endomorphism } from 'fp-ts/Endomorphism'
 import { intercalate } from 'fp-ts/Foldable'
@@ -25,19 +25,19 @@ const toc = require('markdown-toc')
 
 /**
  * @category model
- * @since 0.6.0
+ * @since 0.9.0
  */
 export type Printable = Class | Constant | Export | Function | Interface | TypeAlias
 
 /**
  * @category model
- * @since 0.6.0
+ * @since 0.9.0
  */
 export type Markdown = Bold | Fence | Header | Newline | Paragraph | PlainText | PlainTexts | Strikethrough
 
 /**
  * @category model
- * @since 0.6.0
+ * @since 0.9.0
  */
 export interface Bold {
   readonly _tag: 'Bold'
@@ -46,7 +46,7 @@ export interface Bold {
 
 /**
  * @category model
- * @since 0.6.0
+ * @since 0.9.0
  */
 export interface Fence {
   readonly _tag: 'Fence'
@@ -56,7 +56,7 @@ export interface Fence {
 
 /**
  * @category model
- * @since 0.6.0
+ * @since 0.9.0
  */
 export interface Header {
   readonly _tag: 'Header'
@@ -66,7 +66,7 @@ export interface Header {
 
 /**
  * @category model
- * @since 0.6.0
+ * @since 0.9.0
  */
 export interface Newline {
   readonly _tag: 'Newline'
@@ -74,7 +74,7 @@ export interface Newline {
 
 /**
  * @category model
- * @since 0.6.0
+ * @since 0.9.0
  */
 export interface Paragraph {
   readonly _tag: 'Paragraph'
@@ -83,7 +83,7 @@ export interface Paragraph {
 
 /**
  * @category model
- * @since 0.6.0
+ * @since 0.9.0
  */
 export interface PlainText {
   readonly _tag: 'PlainText'
@@ -92,7 +92,7 @@ export interface PlainText {
 
 /**
  * @category model
- * @since 0.6.0
+ * @since 0.9.0
  */
 export interface PlainTexts {
   readonly _tag: 'PlainTexts'
@@ -100,7 +100,7 @@ export interface PlainTexts {
 }
 /**
  * @category model
- * @since 0.6.0
+ * @since 0.9.0
  */
 export interface Strikethrough {
   readonly _tag: 'Strikethrough'
@@ -113,7 +113,7 @@ export interface Strikethrough {
 
 /**
  * @category constructors
- * @since 0.6.0
+ * @since 0.9.0
  */
 export const Bold = (content: Markdown): Markdown => ({
   _tag: 'Bold',
@@ -122,7 +122,7 @@ export const Bold = (content: Markdown): Markdown => ({
 
 /**
  * @category constructors
- * @since 0.6.0
+ * @since 0.9.0
  */
 export const Fence = (language: string, content: Markdown): Markdown => ({
   _tag: 'Fence',
@@ -132,7 +132,7 @@ export const Fence = (language: string, content: Markdown): Markdown => ({
 
 /**
  * @category constructors
- * @since 0.6.0
+ * @since 0.9.0
  */
 export const Header = (level: number, content: Markdown): Markdown => ({
   _tag: 'Header',
@@ -142,7 +142,7 @@ export const Header = (level: number, content: Markdown): Markdown => ({
 
 /**
  * @category constructors
- * @since 0.6.0
+ * @since 0.9.0
  */
 export const Newline: Markdown = {
   _tag: 'Newline'
@@ -150,7 +150,7 @@ export const Newline: Markdown = {
 
 /**
  * @category constructors
- * @since 0.6.0
+ * @since 0.9.0
  */
 export const Paragraph = (content: Markdown): Markdown => ({
   _tag: 'Paragraph',
@@ -159,7 +159,7 @@ export const Paragraph = (content: Markdown): Markdown => ({
 
 /**
  * @category constructors
- * @since 0.6.0
+ * @since 0.9.0
  */
 export const PlainText = (content: string): Markdown => ({
   _tag: 'PlainText',
@@ -168,7 +168,7 @@ export const PlainText = (content: string): Markdown => ({
 
 /**
  * @category constructors
- * @since 0.6.0
+ * @since 0.9.0
  */
 export const PlainTexts = (content: ReadonlyArray<Markdown>): Markdown => ({
   _tag: 'PlainTexts',
@@ -177,7 +177,7 @@ export const PlainTexts = (content: ReadonlyArray<Markdown>): Markdown => ({
 
 /**
  * @category constructors
- * @since 0.6.0
+ * @since 0.9.0
  */
 export const Strikethrough = (content: Markdown): Markdown => ({
   _tag: 'Strikethrough',
@@ -190,7 +190,7 @@ export const Strikethrough = (content: Markdown): Markdown => ({
 
 /**
  * @category destructors
- * @since 0.6.0
+ * @since 0.9.0
  */
 export const fold = <R>(patterns: {
   readonly Bold: (content: Markdown) => R
@@ -457,43 +457,43 @@ const getPrintables = (module: Module): O.Option<RNEA.ReadonlyNonEmptyArray<Prin
 
 /**
  * @category printers
- * @since 0.6.0
+ * @since 0.9.0
  */
 export const printClass = (c: Class): string => pipe(fromClass(c), showMarkdown.show)
 
 /**
  * @category printers
- * @since 0.6.0
+ * @since 0.9.0
  */
 export const printConstant = (c: Constant): string => pipe(fromConstant(c), showMarkdown.show)
 
 /**
  * @category printers
- * @since 0.6.0
+ * @since 0.9.0
  */
 export const printExport = (e: Export): string => pipe(fromExport(e), showMarkdown.show)
 
 /**
  * @category printers
- * @since 0.6.0
+ * @since 0.9.0
  */
 export const printFunction = (f: Function): string => pipe(fromFunction(f), showMarkdown.show)
 
 /**
  * @category printers
- * @since 0.6.0
+ * @since 0.9.0
  */
 export const printInterface = (i: Interface): string => pipe(fromInterface(i), showMarkdown.show)
 
 /**
  * @category printers
- * @since 0.6.0
+ * @since 0.9.0
  */
 export const printTypeAlias = (f: TypeAlias): string => pipe(fromTypeAlias(f), showMarkdown.show)
 
 /**
  * @category printers
- * @since 0.6.0
+ * @since 0.9.0
  */
 export const printModule = (module: Module, order: number): string => {
   const DEFAULT_CATEGORY = 'utils'
@@ -546,7 +546,7 @@ export const printModule = (module: Module, order: number): string => {
 
 /**
  * @category instances
- * @since 0.6.0
+ * @since 0.9.0
  */
 export const semigroupMarkdown: Semigroup<Markdown> = {
   concat: (x, y) => PlainTexts([x, y])
@@ -554,7 +554,7 @@ export const semigroupMarkdown: Semigroup<Markdown> = {
 
 /**
  * @category instances
- * @since 0.6.0
+ * @since 0.9.0
  */
 export const monoidMarkdown: M.Monoid<Markdown> = {
   ...semigroupMarkdown,
@@ -599,7 +599,7 @@ const markdownToString: (markdown: Markdown) => string = fold({
 
 /**
  * @category instances
- * @since 0.6.0
+ * @since 0.9.0
  */
 export const showMarkdown: Show<Markdown> = {
   show: flow(markdownToString, prettify)

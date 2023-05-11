@@ -6,7 +6,7 @@ parent: Modules
 
 ## Module overview
 
-Added in v0.6.0
+Added in v0.9.0
 
 ---
 
@@ -56,7 +56,7 @@ export declare const Class: (
 ) => Class
 ```
 
-Added in v0.6.0
+Added in v0.9.0
 
 ## Constant
 
@@ -66,7 +66,7 @@ Added in v0.6.0
 export declare const Constant: (documentable: Documentable, signature: string) => Constant
 ```
 
-Added in v0.6.0
+Added in v0.9.0
 
 ## Documentable
 
@@ -83,7 +83,7 @@ export declare const Documentable: (
 ) => Documentable
 ```
 
-Added in v0.6.0
+Added in v0.9.0
 
 ## Export
 
@@ -93,7 +93,7 @@ Added in v0.6.0
 export declare const Export: (documentable: Documentable, signature: string) => Export
 ```
 
-Added in v0.6.0
+Added in v0.9.0
 
 ## Function
 
@@ -103,7 +103,7 @@ Added in v0.6.0
 export declare const Function: (documentable: Documentable, signatures: ReadonlyArray<string>) => Function
 ```
 
-Added in v0.6.0
+Added in v0.9.0
 
 ## Interface
 
@@ -113,7 +113,7 @@ Added in v0.6.0
 export declare const Interface: (documentable: Documentable, signature: string) => Interface
 ```
 
-Added in v0.6.0
+Added in v0.9.0
 
 ## Method
 
@@ -123,7 +123,7 @@ Added in v0.6.0
 export declare const Method: (documentable: Documentable, signatures: ReadonlyArray<string>) => Method
 ```
 
-Added in v0.6.0
+Added in v0.9.0
 
 ## Module
 
@@ -142,7 +142,7 @@ export declare const Module: (
 ) => Module
 ```
 
-Added in v0.6.0
+Added in v0.9.0
 
 ## Property
 
@@ -152,7 +152,7 @@ Added in v0.6.0
 export declare const Property: (documentable: Documentable, signature: string) => Property
 ```
 
-Added in v0.6.0
+Added in v0.9.0
 
 ## TypeAlias
 
@@ -162,7 +162,7 @@ Added in v0.6.0
 export declare const TypeAlias: (documentable: Documentable, signature: string) => TypeAlias
 ```
 
-Added in v0.6.0
+Added in v0.9.0
 
 # instances
 
@@ -174,7 +174,7 @@ Added in v0.6.0
 export declare const ordModule: Ord.Ord<Module>
 ```
 
-Added in v0.6.0
+Added in v0.9.0
 
 # model
 
@@ -192,7 +192,7 @@ export interface Class extends Documentable {
 }
 ```
 
-Added in v0.6.0
+Added in v0.9.0
 
 ## Constant (interface)
 
@@ -205,7 +205,7 @@ export interface Constant extends Documentable {
 }
 ```
 
-Added in v0.6.0
+Added in v0.9.0
 
 ## Documentable (interface)
 
@@ -222,7 +222,7 @@ export interface Documentable {
 }
 ```
 
-Added in v0.6.0
+Added in v0.9.0
 
 ## Example (type alias)
 
@@ -232,7 +232,7 @@ Added in v0.6.0
 export type Example = string
 ```
 
-Added in v0.6.0
+Added in v0.9.0
 
 ## Export (interface)
 
@@ -245,7 +245,7 @@ export interface Export extends Documentable {
 }
 ```
 
-Added in v0.6.0
+Added in v0.9.0
 
 ## Function (interface)
 
@@ -258,7 +258,7 @@ export interface Function extends Documentable {
 }
 ```
 
-Added in v0.6.0
+Added in v0.9.0
 
 ## Interface (interface)
 
@@ -271,7 +271,7 @@ export interface Interface extends Documentable {
 }
 ```
 
-Added in v0.6.0
+Added in v0.9.0
 
 ## Method (interface)
 
@@ -283,7 +283,7 @@ export interface Method extends Documentable {
 }
 ```
 
-Added in v0.6.0
+Added in v0.9.0
 
 ## Module (interface)
 
@@ -301,7 +301,7 @@ export interface Module extends Documentable {
 }
 ```
 
-Added in v0.6.0
+Added in v0.9.0
 
 ## Property (interface)
 
@@ -313,7 +313,7 @@ export interface Property extends Documentable {
 }
 ```
 
-Added in v0.6.0
+Added in v0.9.0
 
 ## TypeAlias (interface)
 
@@ -326,4 +326,4 @@ export interface TypeAlias extends Documentable {
 }
 ```
 
-Added in v0.6.0
+Added in v0.9.0

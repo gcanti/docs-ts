@@ -1,5 +1,5 @@
 /**
- * @since 0.6.0
+ * @since 0.9.0
  */
 import { pipe } from 'fp-ts/function'
 import * as O from 'fp-ts/Option'
@@ -12,7 +12,7 @@ import * as S from 'fp-ts/string'
 
 /**
  * @category model
- * @since 0.6.0
+ * @since 0.9.0
  */
 export interface Module extends Documentable {
   readonly path: ReadonlyArray<string>
@@ -26,7 +26,7 @@ export interface Module extends Documentable {
 
 /**
  * @category model
- * @since 0.6.0
+ * @since 0.9.0
  */
 export interface Documentable {
   readonly name: string
@@ -39,7 +39,7 @@ export interface Documentable {
 
 /**
  * @category model
- * @since 0.6.0
+ * @since 0.9.0
  */
 export interface Class extends Documentable {
   readonly _tag: 'Class'
@@ -51,7 +51,7 @@ export interface Class extends Documentable {
 
 /**
  * @category model
- * @since 0.6.0
+ * @since 0.9.0
  */
 export interface Method extends Documentable {
   readonly signatures: ReadonlyArray<string>
@@ -59,7 +59,7 @@ export interface Method extends Documentable {
 
 /**
  * @category model
- * @since 0.6.0
+ * @since 0.9.0
  */
 export interface Property extends Documentable {
   readonly signature: string
@@ -67,7 +67,7 @@ export interface Property extends Documentable {
 
 /**
  * @category model
- * @since 0.6.0
+ * @since 0.9.0
  */
 export interface Interface extends Documentable {
   readonly _tag: 'Interface'
@@ -76,7 +76,7 @@ export interface Interface extends Documentable {
 
 /**
  * @category model
- * @since 0.6.0
+ * @since 0.9.0
  */
 export interface Function extends Documentable {
   readonly _tag: 'Function'
@@ -85,7 +85,7 @@ export interface Function extends Documentable {
 
 /**
  * @category model
- * @since 0.6.0
+ * @since 0.9.0
  */
 export interface TypeAlias extends Documentable {
   readonly _tag: 'TypeAlias'
@@ -94,7 +94,7 @@ export interface TypeAlias extends Documentable {
 
 /**
  * @category model
- * @since 0.6.0
+ * @since 0.9.0
  */
 export interface Constant extends Documentable {
   readonly _tag: 'Constant'
@@ -103,7 +103,7 @@ export interface Constant extends Documentable {
 
 /**
  * @category model
- * @since 0.6.0
+ * @since 0.9.0
  */
 export interface Export extends Documentable {
   readonly _tag: 'Export'
@@ -112,7 +112,7 @@ export interface Export extends Documentable {
 
 /**
  * @category model
- * @since 0.6.0
+ * @since 0.9.0
  */
 export type Example = string
 
@@ -122,7 +122,7 @@ export type Example = string
 
 /**
  * @category constructors
- * @since 0.6.0
+ * @since 0.9.0
  */
 export const Documentable = (
   name: string,
@@ -135,7 +135,7 @@ export const Documentable = (
 
 /**
  * @category constructors
- * @since 0.6.0
+ * @since 0.9.0
  */
 export const Module = (
   documentable: Documentable,
@@ -159,7 +159,7 @@ export const Module = (
 
 /**
  * @category constructors
- * @since 0.6.0
+ * @since 0.9.0
  */
 export const Class = (
   documentable: Documentable,
@@ -178,7 +178,7 @@ export const Class = (
 
 /**
  * @category constructors
- * @since 0.6.0
+ * @since 0.9.0
  */
 export const Constant = (documentable: Documentable, signature: string): Constant => ({
   _tag: 'Constant',
@@ -188,7 +188,7 @@ export const Constant = (documentable: Documentable, signature: string): Constan
 
 /**
  * @category constructors
- * @since 0.6.0
+ * @since 0.9.0
  */
 export const Method = (documentable: Documentable, signatures: ReadonlyArray<string>): Method => ({
   ...documentable,
@@ -197,7 +197,7 @@ export const Method = (documentable: Documentable, signatures: ReadonlyArray<str
 
 /**
  * @category constructors
- * @since 0.6.0
+ * @since 0.9.0
  */
 export const Property = (documentable: Documentable, signature: string): Property => ({
   ...documentable,
@@ -206,7 +206,7 @@ export const Property = (documentable: Documentable, signature: string): Propert
 
 /**
  * @category constructors
- * @since 0.6.0
+ * @since 0.9.0
  */
 export const Interface = (documentable: Documentable, signature: string): Interface => ({
   _tag: 'Interface',
@@ -216,7 +216,7 @@ export const Interface = (documentable: Documentable, signature: string): Interf
 
 /**
  * @category constructors
- * @since 0.6.0
+ * @since 0.9.0
  */
 export const Function = (documentable: Documentable, signatures: ReadonlyArray<string>): Function => ({
   _tag: 'Function',
@@ -226,7 +226,7 @@ export const Function = (documentable: Documentable, signatures: ReadonlyArray<s
 
 /**
  * @category constructors
- * @since 0.6.0
+ * @since 0.9.0
  */
 export const TypeAlias = (documentable: Documentable, signature: string): TypeAlias => ({
   _tag: 'TypeAlias',
@@ -236,7 +236,7 @@ export const TypeAlias = (documentable: Documentable, signature: string): TypeAl
 
 /**
  * @category constructors
- * @since 0.6.0
+ * @since 0.9.0
  */
 export const Export = (documentable: Documentable, signature: string): Export => ({
   _tag: 'Export',
@@ -250,7 +250,7 @@ export const Export = (documentable: Documentable, signature: string): Export =>
 
 /**
  * @category instances
- * @since 0.6.0
+ * @since 0.9.0
  */
 export const ordModule: Ord.Ord<Module> = pipe(
   S.Ord,

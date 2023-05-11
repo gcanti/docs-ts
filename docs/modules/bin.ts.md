@@ -8,7 +8,7 @@ parent: Modules
 
 CLI
 
-Added in v0.2.0
+Added in v0.9.0
 
 ---
 

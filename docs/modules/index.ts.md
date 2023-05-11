@@ -6,7 +6,7 @@ parent: Modules
 
 ## index overview
 
-Added in v0.2.0
+Added in v0.9.0
 
 ---
 
@@ -27,4 +27,4 @@ Added in v0.2.0
 export declare const main: Effect.Effect<never, never, never>
 ```
 
-Added in v0.6.0
+Added in v0.9.0

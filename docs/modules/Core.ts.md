@@ -6,7 +6,7 @@ parent: Modules
 
 ## Core overview
 
-Added in v0.6.0
+Added in v0.9.0
 
 ---
 
@@ -15,7 +15,7 @@ Added in v0.6.0
 - [main](#main)
   - [main](#main-1)
 - [model](#model)
-  - [ProgramWithConfig (interface)](#programwithconfig-interface)
+  - [Program (interface)](#program-interface)
 
 ---
 
@@ -29,16 +29,16 @@ Added in v0.6.0
 export declare const main: Effect.Effect<never, Error, void>
 ```
 
-Added in v0.6.0
+Added in v0.9.0
 
 # model
 
-## ProgramWithConfig (interface)
+## Program (interface)
 
 **Signature**
 
 ```ts
-export interface ProgramWithConfig<A> extends RTE.ReaderTaskEither<_.Config, Error, A> {}
+export interface Program<A> extends RTE.ReaderTaskEither<_.Config, Error, A> {}
 ```
 
-Added in v0.6.0
+Added in v0.9.0

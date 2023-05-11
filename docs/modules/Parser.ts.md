@@ -6,7 +6,7 @@ parent: Modules
 
 ## Parser overview
 
-Added in v0.6.0
+Added in v0.9.0
 
 ---
 
@@ -37,7 +37,7 @@ Added in v0.6.0
 export interface Parser<A> extends RE.ReaderEither<ParserEnv, string, A> {}
 ```
 
-Added in v0.6.0
+Added in v0.9.0
 
 ## ParserEnv (interface)
 
@@ -51,7 +51,7 @@ export interface ParserEnv {
 }
 ```
 
-Added in v0.6.0
+Added in v0.9.0
 
 # parsers
 
@@ -63,7 +63,7 @@ Added in v0.6.0
 export declare const parseClasses: Parser<readonly Class[]>
 ```
 
-Added in v0.6.0
+Added in v0.9.0
 
 ## parseConstants
 
@@ -73,7 +73,7 @@ Added in v0.6.0
 export declare const parseConstants: Parser<readonly Constant[]>
 ```
 
-Added in v0.6.0
+Added in v0.9.0
 
 ## parseExports
 
@@ -83,7 +83,7 @@ Added in v0.6.0
 export declare const parseExports: Parser<readonly Export[]>
 ```
 
-Added in v0.6.0
+Added in v0.9.0
 
 ## parseFiles
 
@@ -95,7 +95,7 @@ export declare const parseFiles: (
 ) => RTE.ReaderTaskEither<_.Config, string, ReadonlyArray<Module>>
 ```
 
-Added in v0.6.0
+Added in v0.9.0
 
 ## parseFunctions
 
@@ -105,7 +105,7 @@ Added in v0.6.0
 export declare const parseFunctions: Parser<readonly Function[]>
 ```
 
-Added in v0.6.0
+Added in v0.9.0
 
 ## parseInterfaces
 
@@ -115,7 +115,7 @@ Added in v0.6.0
 export declare const parseInterfaces: Parser<readonly Interface[]>
 ```
 
-Added in v0.6.0
+Added in v0.9.0
 
 ## parseModule
 
@@ -125,7 +125,7 @@ Added in v0.6.0
 export declare const parseModule: Parser<Module>
 ```
 
-Added in v0.6.0
+Added in v0.9.0
 
 ## parseTypeAliases
 
@@ -135,4 +135,4 @@ Added in v0.6.0
 export declare const parseTypeAliases: Parser<readonly TypeAlias[]>
 ```
 
-Added in v0.6.0
+Added in v0.9.0

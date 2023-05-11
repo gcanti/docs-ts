@@ -3,7 +3,7 @@
 /**
  * CLI
  *
- * @since 0.2.0
+ * @since 0.9.0
  */
 
 import * as Effect from '@effect/io/Effect'

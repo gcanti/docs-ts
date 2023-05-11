@@ -1,5 +1,5 @@
 /**
- * @since 0.2.0
+ * @since 0.9.0
  */
 import { pipe } from '@effect/data/Function'
 import * as Effect from '@effect/io/Effect'
@@ -9,7 +9,7 @@ import * as Core from './Core'
 
 /**
  * @category main
- * @since 0.6.0
+ * @since 0.9.0
  */
 export const main = pipe(
   Core.main,

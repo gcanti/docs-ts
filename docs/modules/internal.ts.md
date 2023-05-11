@@ -6,7 +6,7 @@ parent: Modules
 
 ## internal overview
 
-Added in v0.8.1
+Added in v0.9.0
 
 ---
 
@@ -33,7 +33,7 @@ export interface Config extends Schema.To<typeof ConfigSchema> {
 }
 ```
 
-Added in v0.8.1
+Added in v0.9.0
 
 # constructors
 
@@ -47,7 +47,7 @@ By default files are readonly (`overwrite = false`).
 export declare const createFile: (path: string, content: string, overwrite?: boolean) => File
 ```
 
-Added in v0.6.0
+Added in v0.9.0
 
 # model
 
@@ -65,4 +65,4 @@ export interface File {
 }
 ```
 
-Added in v0.6.0
+Added in v0.9.0

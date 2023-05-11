@@ -1,5 +1,5 @@
 /**
- * @since 0.8.1
+ * @since 0.9.0
  */
 import * as NodeChildProcess from 'node:child_process'
 import * as NodePath from 'node:path'
@@ -77,7 +77,7 @@ export const info = (message: string): Effect.Effect<never, never, void> =>
  * Represents a file which can be optionally overwriteable.
  *
  * @category model
- * @since 0.6.0
+ * @since 0.9.0
  */
 export interface File {
   readonly path: string
@@ -89,7 +89,7 @@ export interface File {
  * By default files are readonly (`overwrite = false`).
  *
  * @category constructors
- * @since 0.6.0
+ * @since 0.9.0
  */
 export const createFile = (path: string, content: string, overwrite = false): File => ({
   path,
@@ -198,7 +198,7 @@ export const PartialConfigSchema = Schema.partial(ConfigSchema)
 
 /**
  * @category Config
- * @since 0.8.1
+ * @since 0.9.0
  */
 export interface Config extends Schema.To<typeof ConfigSchema> {
   readonly projectName: string

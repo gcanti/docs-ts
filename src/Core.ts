@@ -1,5 +1,5 @@
 /**
- * @since 0.6.0
+ * @since 0.9.0
  */
 import * as Effect from '@effect/io/Effect'
 import * as E from 'fp-ts/Either'
@@ -9,7 +9,7 @@ import * as RTE from 'fp-ts/ReaderTaskEither'
 import * as ReadonlyArray from 'fp-ts/ReadonlyArray'
 import * as S from 'fp-ts/string'
 import * as TaskEither from 'fp-ts/TaskEither'
-import * as path from 'path'
+import * as NodePath from 'path'
 
 import * as _ from './internal'
 import { printModule } from './Markdown'
@@ -23,7 +23,7 @@ const effectFromTaskEither = <E, A>(program: TaskEither.TaskEither<E, A>) =>
 
 /**
  * @category main
- * @since 0.6.0
+ * @since 0.9.0
  */
 export const main: Effect.Effect<never, Error, void> = pipe(
   _.getConfig,
@@ -41,7 +41,7 @@ export const main: Effect.Effect<never, Error, void> = pipe(
 
 /**
  * @category model
- * @since 0.6.0
+ * @since 0.9.0
  */
 export interface Program<A> extends RTE.ReaderTaskEither<_.Config, Error, A> {}
 
@@ -81,25 +81,16 @@ const writeFiles: (files: ReadonlyArray<_.File>) => TaskEither.TaskEither<Error,
   TaskEither.map(constVoid)
 )
 
-const readSourcePaths: Program<ReadonlyArray<string>> = pipe(
-  RTE.ask<_.Config, Error>(),
-  RTE.chainTaskEitherK((config) =>
-    pipe(
-      _.toTaskEither(_.search(path.join(config.srcDir, '**', '*.ts'), config.exclude)),
-      TaskEither.map(ReadonlyArray.map(path.normalize)),
-      TaskEither.tap((paths) => _.toTaskEither(_.info(`${paths.length} module(s) found`)))
-    )
+const readSourcePaths: Program<ReadonlyArray<string>> = (config) =>
+  pipe(
+    _.toTaskEither(_.search(NodePath.join(config.srcDir, '**', '*.ts'), config.exclude)),
+    TaskEither.map(ReadonlyArray.map(NodePath.normalize)),
+    TaskEither.tap((paths) => _.toTaskEither(_.info(`${paths.length} module(s) found`)))
   )
-)
 
 const readSourceFiles: Program<ReadonlyArray<_.File>> = pipe(
-  RTE.ask<_.Config, Error>(),
-  RTE.flatMap(() =>
-    pipe(
-      readSourcePaths,
-      RTE.chainTaskEitherK((paths) => readFiles(paths))
-    )
-  )
+  readSourcePaths,
+  RTE.chainTaskEitherK((paths) => readFiles(paths))
 )
 
 // -------------------------------------------------------------------------------------
@@ -108,8 +99,7 @@ const readSourceFiles: Program<ReadonlyArray<_.File>> = pipe(
 
 const parseFiles = (files: ReadonlyArray<_.File>): Program<ReadonlyArray<Module>> =>
   pipe(
-    RTE.ask<_.Config, Error>(),
-    RTE.tap(() => _.toReaderTaskEither(_.debug('Parsing files...'))),
+    _.toReaderTaskEither(_.debug('Parsing files...')),
     RTE.flatMap(() =>
       pipe(
         Parser.parseFiles(files),
@@ -124,10 +114,10 @@ const parseFiles = (files: ReadonlyArray<_.File>): Program<ReadonlyArray<Module>
 
 const concatAllFiles = Monoid.concatAll(ReadonlyArray.getMonoid<_.File>())
 
-const getExampleFiles = (modules: ReadonlyArray<Module>): Program<ReadonlyArray<_.File>> =>
-  pipe(
-    RTE.ask<_.Config, Error>(),
-    RTE.map((config) =>
+const getExampleFiles =
+  (modules: ReadonlyArray<Module>): Program<ReadonlyArray<_.File>> =>
+  (config) =>
+    TaskEither.of(
       pipe(
         modules,
         ReadonlyArray.flatMap((module) => {
@@ -140,7 +130,7 @@ const getExampleFiles = (modules: ReadonlyArray<Module>): Program<ReadonlyArray<
                 documentable.examples,
                 ReadonlyArray.mapWithIndex((i, content) =>
                   _.createFile(
-                    path.join(config.outDir, 'examples', `${prefix}-${id}-${documentable.name}-${i}.ts`),
+                    NodePath.join(config.outDir, 'examples', `${prefix}-${id}-${documentable.name}-${i}.ts`),
                     `${content}\n`,
                     true
                   )
@@ -166,24 +156,23 @@ const getExampleFiles = (modules: ReadonlyArray<Module>): Program<ReadonlyArray<
         })
       )
     )
-  )
 
 const addAssertImport = (code: string): string =>
   code.indexOf('assert.') !== -1 ? `import * as assert from 'assert'\n${code}` : code
 
-const replaceProjectName = (source: string): Program<string> =>
-  pipe(
-    RTE.ask<_.Config>(),
-    RTE.map((config) => {
-      const importRegex = (projectName: string) =>
-        new RegExp(`from (?<quote>['"])${projectName}(?:/lib)?(?:/(?<path>.*))?\\k<quote>`, 'g')
+const replaceProjectName =
+  (source: string): Program<string> =>
+  (config) => {
+    const importRegex = (projectName: string) =>
+      new RegExp(`from (?<quote>['"])${projectName}(?:/lib)?(?:/(?<path>.*))?\\k<quote>`, 'g')
 
-      return source.replace(importRegex(config.projectName), (...args) => {
-        const groups: { path?: string } = args[args.length - 1]
-        return `from '../../src${groups.path ? `/${groups.path}` : ''}'`
-      })
+    const out = source.replace(importRegex(config.projectName), (...args) => {
+      const groups: { path?: string } = args[args.length - 1]
+      return `from '../../src${groups.path ? `/${groups.path}` : ''}'`
     })
-  )
+
+    return TaskEither.of(out)
+  }
 
 const handleImports: (files: ReadonlyArray<_.File>) => Program<ReadonlyArray<_.File>> = ReadonlyArray.traverse(
   RTE.ApplicativePar
@@ -198,33 +187,26 @@ const handleImports: (files: ReadonlyArray<_.File>) => Program<ReadonlyArray<_.F
 const getExampleIndex = (examples: ReadonlyArray<_.File>): Program<_.File> => {
   const content = pipe(
     examples,
-    ReadonlyArray.foldMap(S.Monoid)((example) => `import './${path.basename(example.path, '.ts')}'\n`)
+    ReadonlyArray.foldMap(S.Monoid)((example) => `import './${NodePath.basename(example.path, '.ts')}'\n`)
   )
-  return pipe(
-    RTE.ask<_.Config, Error>(),
-    RTE.map((config) => _.createFile(path.join(config.outDir, 'examples', 'index.ts'), `${content}\n`, true))
-  )
+  return (config) =>
+    TaskEither.of(_.createFile(NodePath.join(config.outDir, 'examples', 'index.ts'), `${content}\n`, true))
 }
 
-const cleanExamples: Program<void> = pipe(
-  RTE.ask<_.Config, Error>(),
-  RTE.chainTaskEitherK((config) => _.toTaskEither(_.remove(path.join(config.outDir, 'examples'))))
-)
+const cleanExamples: Program<void> = (config) => _.toTaskEither(_.remove(NodePath.join(config.outDir, 'examples')))
 
 const spawnTsNode: Program<void> = pipe(
-  RTE.ask<_.Config, Error>(),
-  RTE.tap(() => _.toReaderTaskEither(_.debug('Type checking examples...'))),
-  RTE.chainEitherK((config) => {
+  _.toReaderTaskEither(_.debug('Type checking examples...')),
+  RTE.flatMap(() => (config: _.Config) => {
     const command = process.platform === 'win32' ? 'ts-node.cmd' : 'ts-node'
-    const executable = path.join(process.cwd(), config.outDir, 'examples', 'index.ts')
-    return _.spawn(command, executable)
+    const executable = NodePath.join(process.cwd(), config.outDir, 'examples', 'index.ts')
+    return TaskEither.fromEither(_.spawn(command, executable))
   })
 )
 
 const writeExamples = (examples: ReadonlyArray<_.File>): Program<void> =>
   pipe(
-    RTE.ask<_.Config, Error>(),
-    RTE.tap(() => _.toReaderTaskEither(_.debug('Writing examples...'))),
+    _.toReaderTaskEither(_.debug('Writing examples...')),
     RTE.flatMap(() =>
       pipe(
         getExampleIndex(examples),
@@ -235,22 +217,22 @@ const writeExamples = (examples: ReadonlyArray<_.File>): Program<void> =>
   )
 
 const writeTsConfigJson: Program<void> = pipe(
-  RTE.ask<_.Config, Error>(),
-  RTE.tap(() => _.toReaderTaskEither(_.debug('Writing examples tsconfig...'))),
-  RTE.chainTaskEitherK((config) =>
-    writeFile(
-      _.createFile(
-        path.join(process.cwd(), config.outDir, 'examples', 'tsconfig.json'),
-        JSON.stringify(
-          {
-            compilerOptions: config.examplesCompilerOptions
-          },
-          null,
-          2
-        ),
-        true
+  _.toReaderTaskEither(_.debug('Writing examples tsconfig...')),
+  RTE.flatMap(
+    () => (config: _.Config) =>
+      writeFile(
+        _.createFile(
+          NodePath.join(process.cwd(), config.outDir, 'examples', 'tsconfig.json'),
+          JSON.stringify(
+            {
+              compilerOptions: config.examplesCompilerOptions
+            },
+            null,
+            2
+          ),
+          true
+        )
       )
-    )
   )
 )
 
@@ -274,11 +256,10 @@ const typeCheckExamples = (modules: ReadonlyArray<Module>): Program<void> =>
 // markdown
 // -------------------------------------------------------------------------------------
 
-const getHome: Program<_.File> = pipe(
-  RTE.ask<_.Config, Error>(),
-  RTE.map((config) =>
+const getHome: Program<_.File> = (config) =>
+  TaskEither.of(
     _.createFile(
-      path.join(process.cwd(), config.outDir, 'index.md'),
+      NodePath.join(process.cwd(), config.outDir, 'index.md'),
       `---
 title: Home
 nav_order: 1
@@ -287,13 +268,11 @@ nav_order: 1
       false
     )
   )
-)
 
-const getModulesIndex: Program<_.File> = pipe(
-  RTE.ask<_.Config, Error>(),
-  RTE.map((config) =>
+const getModulesIndex: Program<_.File> = (config) =>
+  TaskEither.of(
     _.createFile(
-      path.join(process.cwd(), config.outDir, 'modules', 'index.md'),
+      NodePath.join(process.cwd(), config.outDir, 'modules', 'index.md'),
       `---
 title: Modules
 has_children: true
@@ -303,7 +282,6 @@ nav_order: 2
       false
     )
   )
-)
 
 const replace =
   (searchValue: string | RegExp, replaceValue: string): ((s: string) => string) =>
@@ -326,43 +304,39 @@ const getHomepageNavigationHeader = (config: _.Config): string => {
   return isGitHub ? config.projectName + ' on GitHub' : 'Homepage'
 }
 
-const getConfigYML: Program<_.File> = pipe(
-  RTE.ask<_.Config, Error>(),
-  RTE.chainTaskEitherK((config) => {
-    const filePath = path.join(process.cwd(), config.outDir, '_config.yml')
-    return pipe(
-      _.toTaskEither(_.exists(filePath)),
-      TaskEither.flatMap((exists) =>
-        exists
-          ? pipe(
-              _.toTaskEither(_.readFile(filePath)),
-              TaskEither.map((content) => _.createFile(filePath, resolveConfigYML(content, config), true))
-            )
-          : TaskEither.of(
-              _.createFile(
-                filePath,
-                `remote_theme: ${config.theme}
+const getConfigYML: Program<_.File> = (config) => {
+  const filePath = NodePath.join(process.cwd(), config.outDir, '_config.yml')
+  return pipe(
+    _.toTaskEither(_.exists(filePath)),
+    TaskEither.flatMap((exists) =>
+      exists
+        ? pipe(
+            _.toTaskEither(_.readFile(filePath)),
+            TaskEither.map((content) => _.createFile(filePath, resolveConfigYML(content, config), true))
+          )
+        : TaskEither.of(
+            _.createFile(
+              filePath,
+              `remote_theme: ${config.theme}
 
 # Enable or disable the site search
 search_enabled: ${config.enableSearch}
 
 # Aux links for the upper right navigation
 aux_links:
-  '${getHomepageNavigationHeader(config)}':
-    - '${config.projectHomepage}'`,
-                false
-              )
+'${getHomepageNavigationHeader(config)}':
+  - '${config.projectHomepage}'`,
+              false
             )
-      )
+          )
     )
-  })
-)
-
-const getMarkdownOutputPath = (module: Module): Program<string> =>
-  pipe(
-    RTE.ask<_.Config, Error>(),
-    RTE.map((config) => path.join(config.outDir, 'modules', `${module.path.slice(1).join(path.sep)}.md`))
   )
+}
+
+const getMarkdownOutputPath =
+  (module: Module): Program<string> =>
+  (config) =>
+    TaskEither.of(NodePath.join(config.outDir, 'modules', `${module.path.slice(1).join(NodePath.sep)}.md`))
 
 const getModuleMarkdownFiles = (modules: ReadonlyArray<Module>): Program<ReadonlyArray<_.File>> =>
   pipe(
@@ -390,15 +364,15 @@ const getMarkdownFiles = (modules: ReadonlyArray<Module>): Program<ReadonlyArray
 
 const writeMarkdownFiles = (files: ReadonlyArray<_.File>): Program<void> =>
   pipe(
-    RTE.ask<_.Config, Error>(),
-    RTE.chainFirst<_.Config, Error, _.Config, void>((config) => {
-      const outPattern = path.join(config.outDir, '**/*.ts.md')
-      return pipe(
-        _.toTaskEither(_.debug(`Cleaning up docs folder: deleting ${outPattern}`)),
-        TaskEither.flatMap(() => _.toTaskEither(_.remove(outPattern))),
-        RTE.fromTaskEither
+    (config: _.Config) => {
+      const outPattern = NodePath.join(config.outDir, '**/*.ts.md')
+      return _.toTaskEither(
+        pipe(
+          _.debug(`Cleaning up docs folder: deleting ${outPattern}`),
+          Effect.flatMap(() => _.remove(outPattern))
+        )
       )
-    }),
+    },
     RTE.chainTaskEitherK(() =>
       pipe(
         _.toTaskEither(_.debug('Writing markdown files...')),

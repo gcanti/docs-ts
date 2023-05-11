@@ -6,7 +6,7 @@ parent: Modules
 
 ## Markdown overview
 
-Added in v0.6.0
+Added in v0.9.0
 
 ---
 
@@ -59,7 +59,7 @@ Added in v0.6.0
 export declare const Bold: (content: Markdown) => Markdown
 ```
 
-Added in v0.6.0
+Added in v0.9.0
 
 ## Fence
 
@@ -69,7 +69,7 @@ Added in v0.6.0
 export declare const Fence: (language: string, content: Markdown) => Markdown
 ```
 
-Added in v0.6.0
+Added in v0.9.0
 
 ## Header
 
@@ -79,7 +79,7 @@ Added in v0.6.0
 export declare const Header: (level: number, content: Markdown) => Markdown
 ```
 
-Added in v0.6.0
+Added in v0.9.0
 
 ## Newline
 
@@ -89,7 +89,7 @@ Added in v0.6.0
 export declare const Newline: Markdown
 ```
 
-Added in v0.6.0
+Added in v0.9.0
 
 ## Paragraph
 
@@ -99,7 +99,7 @@ Added in v0.6.0
 export declare const Paragraph: (content: Markdown) => Markdown
 ```
 
-Added in v0.6.0
+Added in v0.9.0
 
 ## PlainText
 
@@ -109,7 +109,7 @@ Added in v0.6.0
 export declare const PlainText: (content: string) => Markdown
 ```
 
-Added in v0.6.0
+Added in v0.9.0
 
 ## PlainTexts
 
@@ -119,7 +119,7 @@ Added in v0.6.0
 export declare const PlainTexts: (content: ReadonlyArray<Markdown>) => Markdown
 ```
 
-Added in v0.6.0
+Added in v0.9.0
 
 ## Strikethrough
 
@@ -129,7 +129,7 @@ Added in v0.6.0
 export declare const Strikethrough: (content: Markdown) => Markdown
 ```
 
-Added in v0.6.0
+Added in v0.9.0
 
 # destructors
 
@@ -150,7 +150,7 @@ export declare const fold: <R>(patterns: {
 }) => (markdown: Markdown) => R
 ```
 
-Added in v0.6.0
+Added in v0.9.0
 
 # instances
 
@@ -162,7 +162,7 @@ Added in v0.6.0
 export declare const monoidMarkdown: M.Monoid<Markdown>
 ```
 
-Added in v0.6.0
+Added in v0.9.0
 
 ## semigroupMarkdown
 
@@ -172,7 +172,7 @@ Added in v0.6.0
 export declare const semigroupMarkdown: Semigroup<Markdown>
 ```
 
-Added in v0.6.0
+Added in v0.9.0
 
 ## showMarkdown
 
@@ -182,7 +182,7 @@ Added in v0.6.0
 export declare const showMarkdown: Show<Markdown>
 ```
 
-Added in v0.6.0
+Added in v0.9.0
 
 # model
 
@@ -197,7 +197,7 @@ export interface Bold {
 }
 ```
 
-Added in v0.6.0
+Added in v0.9.0
 
 ## Fence (interface)
 
@@ -211,7 +211,7 @@ export interface Fence {
 }
 ```
 
-Added in v0.6.0
+Added in v0.9.0
 
 ## Header (interface)
 
@@ -225,7 +225,7 @@ export interface Header {
 }
 ```
 
-Added in v0.6.0
+Added in v0.9.0
 
 ## Markdown (type alias)
 
@@ -235,7 +235,7 @@ Added in v0.6.0
 export type Markdown = Bold | Fence | Header | Newline | Paragraph | PlainText | PlainTexts | Strikethrough
 ```
 
-Added in v0.6.0
+Added in v0.9.0
 
 ## Newline (interface)
 
@@ -247,7 +247,7 @@ export interface Newline {
 }
 ```
 
-Added in v0.6.0
+Added in v0.9.0
 
 ## Paragraph (interface)
 
@@ -260,7 +260,7 @@ export interface Paragraph {
 }
 ```
 
-Added in v0.6.0
+Added in v0.9.0
 
 ## PlainText (interface)
 
@@ -273,7 +273,7 @@ export interface PlainText {
 }
 ```
 
-Added in v0.6.0
+Added in v0.9.0
 
 ## PlainTexts (interface)
 
@@ -286,7 +286,7 @@ export interface PlainTexts {
 }
 ```
 
-Added in v0.6.0
+Added in v0.9.0
 
 ## Printable (type alias)
 
@@ -296,7 +296,7 @@ Added in v0.6.0
 export type Printable = Class | Constant | Export | Function | Interface | TypeAlias
 ```
 
-Added in v0.6.0
+Added in v0.9.0
 
 ## Strikethrough (interface)
 
@@ -309,7 +309,7 @@ export interface Strikethrough {
 }
 ```
 
-Added in v0.6.0
+Added in v0.9.0
 
 # printers
 
@@ -321,7 +321,7 @@ Added in v0.6.0
 export declare const printClass: (c: Class) => string
 ```
 
-Added in v0.6.0
+Added in v0.9.0
 
 ## printConstant
 
@@ -331,7 +331,7 @@ Added in v0.6.0
 export declare const printConstant: (c: Constant) => string
 ```
 
-Added in v0.6.0
+Added in v0.9.0
 
 ## printExport
 
@@ -341,7 +341,7 @@ Added in v0.6.0
 export declare const printExport: (e: Export) => string
 ```
 
-Added in v0.6.0
+Added in v0.9.0
 
 ## printFunction
 
@@ -351,7 +351,7 @@ Added in v0.6.0
 export declare const printFunction: (f: Function) => string
 ```
 
-Added in v0.6.0
+Added in v0.9.0
 
 ## printInterface
 
@@ -361,7 +361,7 @@ Added in v0.6.0
 export declare const printInterface: (i: Interface) => string
 ```
 
-Added in v0.6.0
+Added in v0.9.0
 
 ## printModule
 
@@ -371,7 +371,7 @@ Added in v0.6.0
 export declare const printModule: (module: Module, order: number) => string
 ```
 
-Added in v0.6.0
+Added in v0.9.0
 
 ## printTypeAlias
 
@@ -381,4 +381,4 @@ Added in v0.6.0
 export declare const printTypeAlias: (f: TypeAlias) => string
 ```
 
-Added in v0.6.0
+Added in v0.9.0

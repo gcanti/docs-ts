@@ -1,5 +1,5 @@
 /**
- * @since 0.6.0
+ * @since 0.9.0
  */
 import * as doctrine from 'doctrine'
 import * as Apply from 'fp-ts/Apply'
@@ -44,7 +44,7 @@ import {
 
 /**
  * @category model
- * @since 0.6.0
+ * @since 0.9.0
  */
 export interface ParserEnv {
   readonly config: _.Config
@@ -54,7 +54,7 @@ export interface ParserEnv {
 
 /**
  * @category model
- * @since 0.6.0
+ * @since 0.9.0
  */
 export interface Parser<A> extends RE.ReaderEither<ParserEnv, string, A> {}
 
@@ -272,7 +272,7 @@ const parseInterfaceDeclaration = (id: ast.InterfaceDeclaration): Parser<Interfa
 
 /**
  * @category parsers
- * @since 0.6.0
+ * @since 0.9.0
  */
 export const parseInterfaces: Parser<ReadonlyArray<Interface>> = pipe(
   RE.asks<ParserEnv, ReadonlyArray<ast.InterfaceDeclaration>, string>((env) =>
@@ -407,7 +407,7 @@ const getFunctionDeclarations: RE.ReaderEither<
 
 /**
  * @category parsers
- * @since 0.6.0
+ * @since 0.9.0
  */
 export const parseFunctions: Parser<ReadonlyArray<Function>> = pipe(
   getFunctionDeclarations,
@@ -445,7 +445,7 @@ const parseTypeAliasDeclaration = (ta: ast.TypeAliasDeclaration): Parser<TypeAli
 
 /**
  * @category parsers
- * @since 0.6.0
+ * @since 0.9.0
  */
 export const parseTypeAliases: Parser<ReadonlyArray<TypeAlias>> = pipe(
   RE.asks((env: ParserEnv) =>
@@ -486,7 +486,7 @@ const parseConstantVariableDeclaration = (vd: ast.VariableDeclaration): Parser<C
 
 /**
  * @category parsers
- * @since 0.6.0
+ * @since 0.9.0
  */
 export const parseConstants: Parser<ReadonlyArray<Constant>> = pipe(
   RE.asks((env: ParserEnv) =>
@@ -552,7 +552,7 @@ const parseExportDeclaration = (ed: ast.ExportDeclaration): Parser<ReadonlyArray
 
 /**
  * @category parsers
- * @since 0.6.0
+ * @since 0.9.0
  */
 export const parseExports: Parser<ReadonlyArray<Export>> = pipe(
   RE.asks((env: ParserEnv) => env.sourceFile.getExportDeclarations()),
@@ -736,7 +736,7 @@ const getClasses: Parser<ReadonlyArray<ast.ClassDeclaration>> = RE.asks((env: Pa
 
 /**
  * @category parsers
- * @since 0.6.0
+ * @since 0.9.0
  */
 export const parseClasses: Parser<ReadonlyArray<Class>> = pipe(
   getClasses,
@@ -788,7 +788,7 @@ export const parseModuleDocumentation: Parser<Documentable> = pipe(
 
 /**
  * @category parsers
- * @since 0.6.0
+ * @since 0.9.0
  */
 export const parseModule: Parser<Module> = pipe(
   RE.ask<ParserEnv>(),
@@ -858,7 +858,7 @@ const createProject = (files: ReadonlyArray<File>): RTE.ReaderTaskEither<_.Confi
 
 /**
  * @category parsers
- * @since 0.6.0
+ * @since 0.9.0
  */
 export const parseFiles = (files: ReadonlyArray<File>): RTE.ReaderTaskEither<_.Config, string, ReadonlyArray<Module>> =>
   pipe(

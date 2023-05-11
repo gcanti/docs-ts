@@ -105,7 +105,7 @@ const writeFile = (file: _.File): Program<void> => {
 
   return pipe(
     RTE.ask<Capabilities>(),
-    RTE.flatMap(() => RTE.fromTaskEither(_.toTaskEither(_.exists(file.path)))),
+    RTE.flatMap(() => _.toReaderTaskEither(_.exists(file.path))),
     RTE.flatMap((exists) => (exists ? (file.overwrite ? overwrite : skip) : write))
   )
 }
@@ -143,7 +143,7 @@ const readSourceFiles: ProgramWithConfig<ReadonlyArray<_.File>> = pipe(
 const parseFiles = (files: ReadonlyArray<_.File>): ProgramWithConfig<ReadonlyArray<Module>> =>
   pipe(
     RTE.ask<EnvironmentWithConfig, Error>(),
-    RTE.tap(() => RTE.fromTaskEither(_.toTaskEither(_.debug('Parsing files...')))),
+    RTE.tap(() => _.toReaderTaskEither(_.debug('Parsing files...'))),
     RTE.flatMap(() =>
       pipe(
         Parser.parseFiles(files),
@@ -246,7 +246,7 @@ const cleanExamples: ProgramWithConfig<void> = pipe(
 
 const spawnTsNode: ProgramWithConfig<void> = pipe(
   RTE.ask<EnvironmentWithConfig, Error>(),
-  RTE.tap(() => RTE.fromTaskEither(_.toTaskEither(_.debug('Type checking examples...')))),
+  RTE.tap(() => _.toReaderTaskEither(_.debug('Type checking examples...'))),
   RTE.chainEitherK(({ config }) => {
     const command = process.platform === 'win32' ? 'ts-node.cmd' : 'ts-node'
     const executable = path.join(process.cwd(), config.outDir, 'examples', 'index.ts')
@@ -257,7 +257,7 @@ const spawnTsNode: ProgramWithConfig<void> = pipe(
 const writeExamples = (examples: ReadonlyArray<_.File>): ProgramWithConfig<void> =>
   pipe(
     RTE.ask<EnvironmentWithConfig, Error>(),
-    RTE.tap(() => RTE.fromTaskEither(_.toTaskEither(_.debug('Writing examples...')))),
+    RTE.tap(() => _.toReaderTaskEither(_.debug('Writing examples...'))),
     RTE.flatMap((C) =>
       pipe(
         getExampleIndex(examples),
@@ -269,7 +269,7 @@ const writeExamples = (examples: ReadonlyArray<_.File>): ProgramWithConfig<void>
 
 const writeTsConfigJson: ProgramWithConfig<void> = pipe(
   RTE.ask<EnvironmentWithConfig, Error>(),
-  RTE.tap(() => RTE.fromTaskEither(_.toTaskEither(_.debug('Writing examples tsconfig...')))),
+  RTE.tap(() => _.toReaderTaskEither(_.debug('Writing examples tsconfig...'))),
   RTE.flatMap((env) =>
     writeFile(
       _.createFile(

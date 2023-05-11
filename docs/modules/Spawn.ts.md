@@ -1,12 +1,12 @@
 ---
 title: Spawn.ts
-nav_order: 11
+nav_order: 12
 parent: Modules
 ---
 
 ## Spawn overview
 
-Added in v0.6.0
+Added in v0.8.0
 
 ---
 

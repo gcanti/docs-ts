@@ -7,6 +7,7 @@ import * as fs from 'fs-extra'
 import * as glob from 'glob'
 import * as rimraf from 'rimraf'
 
+import { readFile, toTaskEither } from './Effect'
 import { toErrorMsg } from './Logger'
 
 /**
@@ -57,13 +58,6 @@ export const File = (path: string, content: string, overwrite = false): File => 
   overwrite
 })
 
-const readFile: (path: string, encoding: string) => TE.TaskEither<Error, string> = TE.taskify<
-  string,
-  string,
-  Error,
-  string
->(fs.readFile)
-
 const writeFile: (
   path: string,
   data: string,
@@ -95,7 +89,7 @@ const search: (pattern: string, options: glob.IOptions) => TE.TaskEither<Error, 
  * @since 0.6.0
  */
 export const FileSystem: FileSystem = {
-  readFile: (path) => pipe(readFile(path, 'utf8'), TE.mapLeft(toErrorMsg)),
+  readFile: (path) => pipe(toTaskEither(readFile(path)), TE.mapLeft(toErrorMsg)),
   writeFile: (path, content) => pipe(writeFile(path, content, { encoding: 'utf8' }), TE.mapLeft(toErrorMsg)),
   exists: flow(exists, TE.mapLeft(toErrorMsg)),
   remove: (pattern) => pipe(remove(pattern, {}), TE.mapLeft(toErrorMsg)),

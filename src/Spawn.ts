@@ -1,5 +1,5 @@
 /**
- * @since 0.6.0
+ * @since 0.8.0
  */
 import { spawnSync } from 'child_process'
 import * as E from 'fp-ts/Either'

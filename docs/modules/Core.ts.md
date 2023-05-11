@@ -15,7 +15,6 @@ Added in v0.6.0
 - [main](#main)
   - [main](#main-1)
 - [model](#model)
-  - [EnvironmentWithConfig (interface)](#environmentwithconfig-interface)
   - [ProgramWithConfig (interface)](#programwithconfig-interface)
 
 ---
@@ -34,24 +33,12 @@ Added in v0.6.0
 
 # model
 
-## EnvironmentWithConfig (interface)
-
-**Signature**
-
-```ts
-export interface EnvironmentWithConfig {
-  readonly config: _.Config
-}
-```
-
-Added in v0.6.0
-
 ## ProgramWithConfig (interface)
 
 **Signature**
 
 ```ts
-export interface ProgramWithConfig<A> extends RTE.ReaderTaskEither<EnvironmentWithConfig, Error, A> {}
+export interface ProgramWithConfig<A> extends RTE.ReaderTaskEither<_.Config, Error, A> {}
 ```
 
 Added in v0.6.0

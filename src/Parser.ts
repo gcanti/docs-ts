@@ -21,7 +21,7 @@ import * as T from 'fp-ts/Task'
 import * as Path from 'path'
 import * as ast from 'ts-morph'
 
-import { EnvironmentWithConfig } from './Core'
+import * as _ from './internal'
 import { File } from './internal'
 import {
   Class,
@@ -46,16 +46,17 @@ import {
  * @category model
  * @since 0.6.0
  */
-export interface Parser<A> extends RE.ReaderEither<ParserEnv, string, A> {}
+export interface ParserEnv {
+  readonly config: _.Config
+  readonly path: RNEA.ReadonlyNonEmptyArray<string>
+  readonly sourceFile: ast.SourceFile
+}
 
 /**
  * @category model
  * @since 0.6.0
  */
-export interface ParserEnv extends EnvironmentWithConfig {
-  readonly path: RNEA.ReadonlyNonEmptyArray<string>
-  readonly sourceFile: ast.SourceFile
-}
+export interface Parser<A> extends RE.ReaderEither<ParserEnv, string, A> {}
 
 interface Comment {
   readonly description: O.Option<string>
@@ -817,36 +818,34 @@ export const parseModule: Parser<Module> = pipe(
  */
 export const parseFile =
   (project: ast.Project) =>
-  (file: File): RTE.ReaderTaskEither<EnvironmentWithConfig, string, Module> =>
+  (file: File): RTE.ReaderTaskEither<_.Config, string, Module> =>
     pipe(
-      RTE.ask<EnvironmentWithConfig>(),
-      RTE.flatMap((env) =>
+      RTE.ask<_.Config>(),
+      RTE.flatMap((config) =>
         pipe(
-          RTE.right<EnvironmentWithConfig, string, RNEA.ReadonlyNonEmptyArray<string>>(
-            file.path.split(Path.sep) as any
-          ),
+          RTE.right<_.Config, string, RNEA.ReadonlyNonEmptyArray<string>>(file.path.split(Path.sep) as any),
           RTE.bindTo('path'),
           RTE.bind(
             'sourceFile',
-            (): RTE.ReaderTaskEither<EnvironmentWithConfig, string, ast.SourceFile> =>
+            (): RTE.ReaderTaskEither<_.Config, string, ast.SourceFile> =>
               pipe(
                 O.fromNullable(project.getSourceFile(file.path)),
                 RTE.fromOption(() => `Unable to locate file: ${file.path}`)
               )
           ),
-          RTE.chainEitherK((menv) => parseModule({ ...env, ...menv }))
+          RTE.chainEitherK((menv) => parseModule({ config, ...menv }))
         )
       )
     )
 
-const createProject = (files: ReadonlyArray<File>): RTE.ReaderTaskEither<EnvironmentWithConfig, string, ast.Project> =>
+const createProject = (files: ReadonlyArray<File>): RTE.ReaderTaskEither<_.Config, string, ast.Project> =>
   pipe(
-    RTE.ask<EnvironmentWithConfig>(),
-    RTE.flatMap((env) => {
+    RTE.ask<_.Config>(),
+    RTE.flatMap((config) => {
       const options: ast.ProjectOptions = {
         compilerOptions: {
           strict: true,
-          ...env.config.parseCompilerOptions
+          ...config.parseCompilerOptions
         }
       }
       const project = new ast.Project(options)
@@ -861,9 +860,7 @@ const createProject = (files: ReadonlyArray<File>): RTE.ReaderTaskEither<Environ
  * @category parsers
  * @since 0.6.0
  */
-export const parseFiles = (
-  files: ReadonlyArray<File>
-): RTE.ReaderTaskEither<EnvironmentWithConfig, string, ReadonlyArray<Module>> =>
+export const parseFiles = (files: ReadonlyArray<File>): RTE.ReaderTaskEither<_.Config, string, ReadonlyArray<Module>> =>
   pipe(
     createProject(files),
     RTE.flatMap((project) =>

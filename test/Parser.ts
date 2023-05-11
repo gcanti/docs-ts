@@ -501,7 +501,7 @@ describe.concurrent('Parser', () => {
         const env = getTestEnv(`export class MyClass {}`)
 
         assertLeft(pipe(env, Parser.parseClasses), (error) =>
-          assert.strictEqual(error, 'Missing @since tag in test#MyClass documentation')
+          assert.strictEqual(error, 'Missing "@since" tag in test#MyClass documentation')
         )
       })
 
@@ -516,7 +516,7 @@ describe.concurrent('Parser', () => {
         )
 
         assertLeft(pipe(env, Parser.parseClasses), (error) =>
-          assert.strictEqual(error, 'Missing @since tag in test#MyClass#_A documentation')
+          assert.strictEqual(error, 'Missing "@since" tag in test#MyClass#_A documentation')
         )
       })
 
@@ -1071,14 +1071,8 @@ export const foo = 'foo'`)
         const file = _.createFile('non-existent.ts', '')
         const project = new ast.Project({ useInMemoryFileSystem: true })
 
-        assertLeft(
-          await pipe(
-            {
-              config
-            },
-            Parser.parseFile(project)(file)
-          )(),
-          (error) => assert.strictEqual(error, 'Unable to locate file: non-existent.ts')
+        assertLeft(await pipe(config, Parser.parseFile(project)(file))(), (error) =>
+          assert.strictEqual(error, 'Unable to locate file: non-existent.ts')
         )
       })
     })

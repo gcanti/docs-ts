@@ -28,37 +28,25 @@ const effectFromTaskEither = <E, A>(program: TaskEither.TaskEither<E, A>) =>
 export const main: Effect.Effect<never, Error, void> = pipe(
   _.getConfig,
   Effect.flatMap((config) => {
-    const program = pipe(
+    const program: Program<void> = pipe(
       readSourceFiles,
       RTE.flatMap(parseFiles),
       RTE.tap(typeCheckExamples),
       RTE.flatMap(getMarkdownFiles),
       RTE.flatMap(writeMarkdownFiles)
     )
-    return effectFromTaskEither(program({ config }))
+    return effectFromTaskEither(program(config))
   })
 )
 
-// -------------------------------------------------------------------------------------
-// config
-// -------------------------------------------------------------------------------------
-
 /**
  * @category model
  * @since 0.6.0
  */
-export interface EnvironmentWithConfig {
-  readonly config: _.Config
-}
-
-/**
- * @category model
- * @since 0.6.0
- */
-export interface ProgramWithConfig<A> extends RTE.ReaderTaskEither<EnvironmentWithConfig, Error, A> {}
+export interface Program<A> extends RTE.ReaderTaskEither<_.Config, Error, A> {}
 
 // -------------------------------------------------------------------------------------
-// filesystem APIs
+// filesystem
 // -------------------------------------------------------------------------------------
 
 const readFile = (path: string): TaskEither.TaskEither<Error, _.File> =>
@@ -93,9 +81,9 @@ const writeFiles: (files: ReadonlyArray<_.File>) => TaskEither.TaskEither<Error,
   TaskEither.map(constVoid)
 )
 
-const readSourcePaths: ProgramWithConfig<ReadonlyArray<string>> = pipe(
-  RTE.ask<EnvironmentWithConfig, Error>(),
-  RTE.chainTaskEitherK(({ config }) =>
+const readSourcePaths: Program<ReadonlyArray<string>> = pipe(
+  RTE.ask<_.Config, Error>(),
+  RTE.chainTaskEitherK((config) =>
     pipe(
       _.toTaskEither(_.search(path.join(config.srcDir, '**', '*.ts'), config.exclude)),
       TaskEither.map(ReadonlyArray.map(path.normalize)),
@@ -104,8 +92,8 @@ const readSourcePaths: ProgramWithConfig<ReadonlyArray<string>> = pipe(
   )
 )
 
-const readSourceFiles: ProgramWithConfig<ReadonlyArray<_.File>> = pipe(
-  RTE.ask<EnvironmentWithConfig, Error>(),
+const readSourceFiles: Program<ReadonlyArray<_.File>> = pipe(
+  RTE.ask<_.Config, Error>(),
   RTE.flatMap(() =>
     pipe(
       readSourcePaths,
@@ -118,9 +106,9 @@ const readSourceFiles: ProgramWithConfig<ReadonlyArray<_.File>> = pipe(
 // parsers
 // -------------------------------------------------------------------------------------
 
-const parseFiles = (files: ReadonlyArray<_.File>): ProgramWithConfig<ReadonlyArray<Module>> =>
+const parseFiles = (files: ReadonlyArray<_.File>): Program<ReadonlyArray<Module>> =>
   pipe(
-    RTE.ask<EnvironmentWithConfig, Error>(),
+    RTE.ask<_.Config, Error>(),
     RTE.tap(() => _.toReaderTaskEither(_.debug('Parsing files...'))),
     RTE.flatMap(() =>
       pipe(
@@ -134,12 +122,12 @@ const parseFiles = (files: ReadonlyArray<_.File>): ProgramWithConfig<ReadonlyArr
 // examples
 // -------------------------------------------------------------------------------------
 
-const foldFiles = Monoid.concatAll(ReadonlyArray.getMonoid<_.File>())
+const concatAllFiles = Monoid.concatAll(ReadonlyArray.getMonoid<_.File>())
 
-const getExampleFiles = (modules: ReadonlyArray<Module>): ProgramWithConfig<ReadonlyArray<_.File>> =>
+const getExampleFiles = (modules: ReadonlyArray<Module>): Program<ReadonlyArray<_.File>> =>
   pipe(
-    RTE.ask<EnvironmentWithConfig, Error>(),
-    RTE.map((env) =>
+    RTE.ask<_.Config, Error>(),
+    RTE.map((config) =>
       pipe(
         modules,
         ReadonlyArray.flatMap((module) => {
@@ -152,7 +140,7 @@ const getExampleFiles = (modules: ReadonlyArray<Module>): ProgramWithConfig<Read
                 documentable.examples,
                 ReadonlyArray.mapWithIndex((i, content) =>
                   _.createFile(
-                    path.join(env.config.outDir, 'examples', `${prefix}-${id}-${documentable.name}-${i}.ts`),
+                    path.join(config.outDir, 'examples', `${prefix}-${id}-${documentable.name}-${i}.ts`),
                     `${content}\n`,
                     true
                   )
@@ -163,7 +151,7 @@ const getExampleFiles = (modules: ReadonlyArray<Module>): ProgramWithConfig<Read
           const methods = pipe(
             module.classes,
             ReadonlyArray.flatMap((c) =>
-              foldFiles([
+              concatAllFiles([
                 pipe(c.methods, ReadonlyArray.flatMap(getDocumentableExamples(`${c.name}-method`))),
                 pipe(c.staticMethods, ReadonlyArray.flatMap(getDocumentableExamples(`${c.name}-staticmethod`)))
               ])
@@ -174,7 +162,7 @@ const getExampleFiles = (modules: ReadonlyArray<Module>): ProgramWithConfig<Read
           const constants = pipe(module.constants, ReadonlyArray.flatMap(getDocumentableExamples('constant')))
           const functions = pipe(module.functions, ReadonlyArray.flatMap(getDocumentableExamples('function')))
 
-          return foldFiles([moduleExamples, methods, interfaces, typeAliases, constants, functions])
+          return concatAllFiles([moduleExamples, methods, interfaces, typeAliases, constants, functions])
         })
       )
     )
@@ -183,10 +171,10 @@ const getExampleFiles = (modules: ReadonlyArray<Module>): ProgramWithConfig<Read
 const addAssertImport = (code: string): string =>
   code.indexOf('assert.') !== -1 ? `import * as assert from 'assert'\n${code}` : code
 
-const replaceProjectName = (source: string): ProgramWithConfig<string> =>
+const replaceProjectName = (source: string): Program<string> =>
   pipe(
-    RTE.ask<EnvironmentWithConfig>(),
-    RTE.map(({ config }) => {
+    RTE.ask<_.Config>(),
+    RTE.map((config) => {
       const importRegex = (projectName: string) =>
         new RegExp(`from (?<quote>['"])${projectName}(?:/lib)?(?:/(?<path>.*))?\\k<quote>`, 'g')
 
@@ -197,44 +185,45 @@ const replaceProjectName = (source: string): ProgramWithConfig<string> =>
     })
   )
 
-const handleImports: (files: ReadonlyArray<_.File>) => ProgramWithConfig<ReadonlyArray<_.File>> =
-  ReadonlyArray.traverse(RTE.ApplicativePar)((file) =>
-    pipe(
-      replaceProjectName(file.content),
-      RTE.map(addAssertImport),
-      RTE.map((content) => _.createFile(file.path, content, file.overwrite))
-    )
+const handleImports: (files: ReadonlyArray<_.File>) => Program<ReadonlyArray<_.File>> = ReadonlyArray.traverse(
+  RTE.ApplicativePar
+)((file) =>
+  pipe(
+    replaceProjectName(file.content),
+    RTE.map(addAssertImport),
+    RTE.map((content) => _.createFile(file.path, content, file.overwrite))
   )
+)
 
-const getExampleIndex = (examples: ReadonlyArray<_.File>): ProgramWithConfig<_.File> => {
+const getExampleIndex = (examples: ReadonlyArray<_.File>): Program<_.File> => {
   const content = pipe(
     examples,
     ReadonlyArray.foldMap(S.Monoid)((example) => `import './${path.basename(example.path, '.ts')}'\n`)
   )
   return pipe(
-    RTE.ask<EnvironmentWithConfig, Error>(),
-    RTE.map((env) => _.createFile(path.join(env.config.outDir, 'examples', 'index.ts'), `${content}\n`, true))
+    RTE.ask<_.Config, Error>(),
+    RTE.map((config) => _.createFile(path.join(config.outDir, 'examples', 'index.ts'), `${content}\n`, true))
   )
 }
 
-const cleanExamples: ProgramWithConfig<void> = pipe(
-  RTE.ask<EnvironmentWithConfig, Error>(),
-  RTE.chainTaskEitherK(({ config }) => _.toTaskEither(_.remove(path.join(config.outDir, 'examples'))))
+const cleanExamples: Program<void> = pipe(
+  RTE.ask<_.Config, Error>(),
+  RTE.chainTaskEitherK((config) => _.toTaskEither(_.remove(path.join(config.outDir, 'examples'))))
 )
 
-const spawnTsNode: ProgramWithConfig<void> = pipe(
-  RTE.ask<EnvironmentWithConfig, Error>(),
+const spawnTsNode: Program<void> = pipe(
+  RTE.ask<_.Config, Error>(),
   RTE.tap(() => _.toReaderTaskEither(_.debug('Type checking examples...'))),
-  RTE.chainEitherK(({ config }) => {
+  RTE.chainEitherK((config) => {
     const command = process.platform === 'win32' ? 'ts-node.cmd' : 'ts-node'
     const executable = path.join(process.cwd(), config.outDir, 'examples', 'index.ts')
     return _.spawn(command, executable)
   })
 )
 
-const writeExamples = (examples: ReadonlyArray<_.File>): ProgramWithConfig<void> =>
+const writeExamples = (examples: ReadonlyArray<_.File>): Program<void> =>
   pipe(
-    RTE.ask<EnvironmentWithConfig, Error>(),
+    RTE.ask<_.Config, Error>(),
     RTE.tap(() => _.toReaderTaskEither(_.debug('Writing examples...'))),
     RTE.flatMap(() =>
       pipe(
@@ -245,16 +234,16 @@ const writeExamples = (examples: ReadonlyArray<_.File>): ProgramWithConfig<void>
     )
   )
 
-const writeTsConfigJson: ProgramWithConfig<void> = pipe(
-  RTE.ask<EnvironmentWithConfig, Error>(),
+const writeTsConfigJson: Program<void> = pipe(
+  RTE.ask<_.Config, Error>(),
   RTE.tap(() => _.toReaderTaskEither(_.debug('Writing examples tsconfig...'))),
-  RTE.chainTaskEitherK((env) =>
+  RTE.chainTaskEitherK((config) =>
     writeFile(
       _.createFile(
-        path.join(process.cwd(), env.config.outDir, 'examples', 'tsconfig.json'),
+        path.join(process.cwd(), config.outDir, 'examples', 'tsconfig.json'),
         JSON.stringify(
           {
-            compilerOptions: env.config.examplesCompilerOptions
+            compilerOptions: config.examplesCompilerOptions
           },
           null,
           2
@@ -265,7 +254,7 @@ const writeTsConfigJson: ProgramWithConfig<void> = pipe(
   )
 )
 
-const typeCheckExamples = (modules: ReadonlyArray<Module>): ProgramWithConfig<void> =>
+const typeCheckExamples = (modules: ReadonlyArray<Module>): Program<void> =>
   pipe(
     getExampleFiles(modules),
     RTE.flatMap(handleImports),
@@ -285,9 +274,9 @@ const typeCheckExamples = (modules: ReadonlyArray<Module>): ProgramWithConfig<vo
 // markdown
 // -------------------------------------------------------------------------------------
 
-const getHome: ProgramWithConfig<_.File> = pipe(
-  RTE.ask<EnvironmentWithConfig, Error>(),
-  RTE.map(({ config }) =>
+const getHome: Program<_.File> = pipe(
+  RTE.ask<_.Config, Error>(),
+  RTE.map((config) =>
     _.createFile(
       path.join(process.cwd(), config.outDir, 'index.md'),
       `---
@@ -300,9 +289,9 @@ nav_order: 1
   )
 )
 
-const getModulesIndex: ProgramWithConfig<_.File> = pipe(
-  RTE.ask<EnvironmentWithConfig, Error>(),
-  RTE.map(({ config }) =>
+const getModulesIndex: Program<_.File> = pipe(
+  RTE.ask<_.Config, Error>(),
+  RTE.map((config) =>
     _.createFile(
       path.join(process.cwd(), config.outDir, 'modules', 'index.md'),
       `---
@@ -337,9 +326,9 @@ const getHomepageNavigationHeader = (config: _.Config): string => {
   return isGitHub ? config.projectName + ' on GitHub' : 'Homepage'
 }
 
-const getConfigYML: ProgramWithConfig<_.File> = pipe(
-  RTE.ask<EnvironmentWithConfig, Error>(),
-  RTE.chainTaskEitherK(({ config }) => {
+const getConfigYML: Program<_.File> = pipe(
+  RTE.ask<_.Config, Error>(),
+  RTE.chainTaskEitherK((config) => {
     const filePath = path.join(process.cwd(), config.outDir, '_config.yml')
     return pipe(
       _.toTaskEither(_.exists(filePath)),
@@ -369,13 +358,13 @@ aux_links:
   })
 )
 
-const getMarkdownOutputPath = (module: Module): ProgramWithConfig<string> =>
+const getMarkdownOutputPath = (module: Module): Program<string> =>
   pipe(
-    RTE.ask<EnvironmentWithConfig, Error>(),
-    RTE.map(({ config }) => path.join(config.outDir, 'modules', `${module.path.slice(1).join(path.sep)}.md`))
+    RTE.ask<_.Config, Error>(),
+    RTE.map((config) => path.join(config.outDir, 'modules', `${module.path.slice(1).join(path.sep)}.md`))
   )
 
-const getModuleMarkdownFiles = (modules: ReadonlyArray<Module>): ProgramWithConfig<ReadonlyArray<_.File>> =>
+const getModuleMarkdownFiles = (modules: ReadonlyArray<Module>): Program<ReadonlyArray<_.File>> =>
   pipe(
     modules,
     RTE.traverseArrayWithIndex((order, module) =>
@@ -388,7 +377,7 @@ const getModuleMarkdownFiles = (modules: ReadonlyArray<Module>): ProgramWithConf
     )
   )
 
-const getMarkdownFiles = (modules: ReadonlyArray<Module>): ProgramWithConfig<ReadonlyArray<_.File>> =>
+const getMarkdownFiles = (modules: ReadonlyArray<Module>): Program<ReadonlyArray<_.File>> =>
   pipe(
     RTE.sequenceArray([getHome, getModulesIndex, getConfigYML]),
     RTE.flatMap((meta) =>
@@ -399,10 +388,10 @@ const getMarkdownFiles = (modules: ReadonlyArray<Module>): ProgramWithConfig<Rea
     )
   )
 
-const writeMarkdownFiles = (files: ReadonlyArray<_.File>): ProgramWithConfig<void> =>
+const writeMarkdownFiles = (files: ReadonlyArray<_.File>): Program<void> =>
   pipe(
-    RTE.ask<EnvironmentWithConfig, Error>(),
-    RTE.chainFirst<EnvironmentWithConfig, Error, EnvironmentWithConfig, void>(({ config }) => {
+    RTE.ask<_.Config, Error>(),
+    RTE.chainFirst<_.Config, Error, _.Config, void>((config) => {
       const outPattern = path.join(config.outDir, '**/*.ts.md')
       return pipe(
         _.toTaskEither(_.debug(`Cleaning up docs folder: deleting ${outPattern}`)),

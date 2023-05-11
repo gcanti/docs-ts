@@ -52,8 +52,7 @@ export interface Capabilities {
    * where `command = ts-node` and `executable = examples/index.ts`
    */
   readonly spawn: (command: string, executable: string) => TaskEither.TaskEither<Error, void>
-  readonly fileSystem: FileSystem
-  readonly addFile: (file: File) => (project: ast.Project) => void
+  readonly addFile: (file: _.File) => (project: ast.Project) => void
 }
 ````
 

@@ -22,7 +22,7 @@ import * as Path from 'path'
 import * as ast from 'ts-morph'
 
 import { EnvironmentWithConfig } from './Core'
-import { File } from './FileSystem'
+import { File } from './internal'
 import {
   Class,
   Constant,

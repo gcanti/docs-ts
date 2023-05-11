@@ -2,7 +2,6 @@
  * @since 0.8.0
  */
 import * as Core from './Core'
-import { FileSystem } from './FileSystem'
 import { spawn } from './Spawn'
 
 /**
@@ -11,6 +10,5 @@ import { spawn } from './Spawn'
  */
 export const capabilities: Core.Capabilities = {
   spawn: spawn,
-  fileSystem: FileSystem,
   addFile: (file) => (project) => project.addSourceFileAtPath(file.path)
 }

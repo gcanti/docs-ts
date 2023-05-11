@@ -5,7 +5,6 @@ import * as O from 'fp-ts/lib/Option'
 import * as RA from 'fp-ts/ReadonlyArray'
 import * as ast from 'ts-morph'
 
-import * as FS from '../src/FileSystem'
 import * as _ from '../src/internal'
 import * as Parser from '../src/Parser'
 import { spawn } from '../src/Spawn'
@@ -18,7 +17,7 @@ const project = new ast.Project({
   useInMemoryFileSystem: true
 })
 
-const addFileToProject = (file: FS.File) => (project: ast.Project) =>
+const addFileToProject = (file: _.File) => (project: ast.Project) =>
   project.createSourceFile(file.path, file.content, { overwrite: file.overwrite })
 
 const config: _.Config = {
@@ -40,7 +39,6 @@ const getTestEnv = (sourceText: string): Parser.ParserEnv => ({
   path: ['test'],
   sourceFile: project.createSourceFile(`test-${testCounter++}.ts`, sourceText),
   spawn: spawn,
-  fileSystem: FS.FileSystem,
   config,
   addFile: addFileToProject
 })
@@ -993,7 +991,6 @@ describe.concurrent('Parser', () => {
               path: ['test'],
               sourceFile,
               spawn: spawn,
-              fileSystem: FS.FileSystem,
               config,
               addFile: addFileToProject
             },
@@ -1079,14 +1076,13 @@ export const foo = 'foo'`)
 
     describe.concurrent('parseFile', () => {
       it('should not parse a non-existent file', async () => {
-        const file = FS.File('non-existent.ts', '')
+        const file = _.createFile('non-existent.ts', '')
         const project = new ast.Project({ useInMemoryFileSystem: true })
 
         assertLeft(
           await pipe(
             {
               spawn,
-              fileSystem: FS.FileSystem,
               config,
               addFile: addFileToProject
             },
@@ -1100,7 +1096,7 @@ export const foo = 'foo'`)
     describe.concurrent('parseFiles', () => {
       it('should parse an array of files', async () => {
         const files = [
-          FS.File(
+          _.createFile(
             'test/fixtures/test1.ts',
             `
 /**
@@ -1113,7 +1109,7 @@ export function f(a: number, b: number): { [key: string]: number } {
 }
 `
           ),
-          FS.File(
+          _.createFile(
             'test/fixtures/test2.ts',
             `
 /**
@@ -1133,7 +1129,6 @@ export function f(a: number, b: number): { [key: string]: number } {
           await pipe(
             {
               spawn,
-              fileSystem: FS.FileSystem,
               config,
               addFile: addFileToProject
             },

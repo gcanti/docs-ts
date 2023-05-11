@@ -6,7 +6,7 @@ import * as fs from 'fs-extra'
 import * as glob from 'glob'
 import * as rimraf from 'rimraf'
 
-import { readFile, toTaskEither } from './internal'
+import * as _ from './internal'
 
 /**
  * Represents operations that can be performed on a file system.
@@ -66,8 +66,6 @@ const writeFile: (
   }
 ) => TE.TaskEither<Error, void> = TE.taskify<string, string, fs.WriteFileOptions, Error, void>(fs.outputFile)
 
-const exists: (path: string) => TE.TaskEither<Error, boolean> = TE.taskify<string, Error, boolean>(fs.pathExists)
-
 const remove: (path: string, options: rimraf.Options) => TE.TaskEither<Error, void> = TE.taskify<
   string,
   rimraf.Options,
@@ -87,9 +85,9 @@ const search: (pattern: string, options: glob.IOptions) => TE.TaskEither<Error, 
  * @since 0.6.0
  */
 export const FileSystem: FileSystem = {
-  readFile: (path) => toTaskEither(readFile(path)),
+  readFile: (path) => _.toTaskEither(_.readFile(path)),
   writeFile: (path, content) => writeFile(path, content, { encoding: 'utf8' }),
-  exists,
+  exists: (path) => _.toTaskEither(_.exists(path)),
   remove: (pattern) => remove(pattern, {}),
   search: (pattern, exclude) => search(pattern, { ignore: exclude })
 }

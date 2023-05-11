@@ -53,7 +53,6 @@ export interface Capabilities {
    */
   readonly spawn: (command: string, executable: string) => TaskEither.TaskEither<Error, void>
   readonly fileSystem: FileSystem
-  readonly logger: Logger
   readonly addFile: (file: File) => (project: ast.Project) => void
 }
 ````

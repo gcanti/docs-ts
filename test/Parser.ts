@@ -7,7 +7,6 @@ import * as ast from 'ts-morph'
 
 import * as FS from '../src/FileSystem'
 import * as _ from '../src/internal'
-import * as Logger from '../src/Logger'
 import * as Parser from '../src/Parser'
 import { spawn } from '../src/Spawn'
 import { assertLeft, assertRight } from './util'
@@ -42,7 +41,6 @@ const getTestEnv = (sourceText: string): Parser.ParserEnv => ({
   sourceFile: project.createSourceFile(`test-${testCounter++}.ts`, sourceText),
   spawn: spawn,
   fileSystem: FS.FileSystem,
-  logger: Logger.Logger,
   config,
   addFile: addFileToProject
 })
@@ -996,7 +994,6 @@ describe.concurrent('Parser', () => {
               sourceFile,
               spawn: spawn,
               fileSystem: FS.FileSystem,
-              logger: Logger.Logger,
               config,
               addFile: addFileToProject
             },
@@ -1090,7 +1087,6 @@ export const foo = 'foo'`)
             {
               spawn,
               fileSystem: FS.FileSystem,
-              logger: Logger.Logger,
               config,
               addFile: addFileToProject
             },
@@ -1138,7 +1134,6 @@ export function f(a: number, b: number): { [key: string]: number } {
             {
               spawn,
               fileSystem: FS.FileSystem,
-              logger: Logger.Logger,
               config,
               addFile: addFileToProject
             },

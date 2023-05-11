@@ -1,21 +1,17 @@
 /**
  * @since 0.6.0
  */
-import * as Either from 'fp-ts/Either'
 import { constVoid, flow, pipe } from 'fp-ts/function'
-import * as Json from 'fp-ts/Json'
 import * as Monoid from 'fp-ts/Monoid'
 import * as RTE from 'fp-ts/ReaderTaskEither'
 import * as ReadonlyArray from 'fp-ts/ReadonlyArray'
 import * as S from 'fp-ts/string'
 import * as TaskEither from 'fp-ts/TaskEither'
-import * as Decoder from 'io-ts/Decoder'
 import * as path from 'path'
 import * as ast from 'ts-morph'
 
 import { File, FileSystem } from './FileSystem'
 import * as _ from './internal'
-import { Logger } from './Logger'
 import { printModule } from './Markdown'
 import { Documentable, Module } from './Module'
 import * as Parser from './Parser'
@@ -27,8 +23,7 @@ import * as Parser from './Parser'
 export const main: Program<void> = pipe(
   RTE.Do,
   RTE.bind('capabilities', () => RTE.ask<Capabilities>()),
-  RTE.bind('pkg', () => parsePackageJSON),
-  RTE.bind('config', ({ pkg }) => getConfig(pkg.name, pkg.homepage)),
+  RTE.bind('config', () => _.toReaderTaskEither(_.getConfig)),
   RTE.chainTaskEitherK(({ config, capabilities }) => {
     const program = pipe(
       readSourceFiles,
@@ -42,88 +37,8 @@ export const main: Program<void> = pipe(
 )
 
 // -------------------------------------------------------------------------------------
-// PackageJSON
-// -------------------------------------------------------------------------------------
-
-interface PackageJSON {
-  readonly name: string
-  readonly homepage: string
-}
-
-const PackageJSONDecoder = pipe(
-  Decoder.struct({
-    name: Decoder.string,
-    homepage: Decoder.string
-  })
-)
-
-const parsePackageJSON: Program<PackageJSON> = ({ fileSystem }) => {
-  const read = pipe(
-    fileSystem.readFile(path.join(process.cwd(), 'package.json')),
-    TaskEither.mapLeft(() => new Error(`Unable to read package.json in "${process.cwd()}"`))
-  )
-  const parse = (packageJsonSource: string) =>
-    pipe(Json.parse(packageJsonSource), Either.mapLeft(Either.toError), TaskEither.fromEither)
-  const decode = (json: Json.Json) =>
-    pipe(
-      PackageJSONDecoder.decode(json),
-      Either.mapLeft((decodeError) => new Error(`Unable to decode package.json:\n${Decoder.draw(decodeError)}`)),
-      TaskEither.fromEither
-    )
-  return pipe(read, TaskEither.flatMap(parse), TaskEither.flatMap(decode))
-}
-
-// -------------------------------------------------------------------------------------
 // config
 // -------------------------------------------------------------------------------------
-
-const CONFIG_FILE_NAME = 'docs-ts.json'
-
-const getConfig =
-  (projectName: string, projectHomepage: string): Program<_.Config> =>
-  (capabilities) => {
-    const configPath = path.join(process.cwd(), CONFIG_FILE_NAME)
-    const defaultConfig = getDefaultConfig(projectName, projectHomepage)
-    return pipe(
-      capabilities.fileSystem.exists(configPath),
-      TaskEither.flatMap((exists) =>
-        exists
-          ? pipe(
-              capabilities.fileSystem.readFile(configPath),
-              TaskEither.flatMap((content) =>
-                TaskEither.fromEither(pipe(Json.parse(content), Either.mapLeft(Either.toError)))
-              ),
-              TaskEither.tap(() => capabilities.logger.info(`Configuration file found`)),
-              TaskEither.flatMap((json) => TaskEither.fromEither(_.parseConfig(json))),
-              TaskEither.bimap(
-                (decodeError) => new Error(`Invalid configuration file detected:\n${decodeError.message}`),
-                (config) => ({ ...defaultConfig, ...config })
-              )
-            )
-          : pipe(
-              capabilities.logger.info('No configuration file detected, using default configuration'),
-              TaskEither.map(() => defaultConfig)
-            )
-      )
-    )
-  }
-
-const getDefaultConfig = (projectName: string, projectHomepage: string): _.Config => {
-  return {
-    projectName,
-    projectHomepage,
-    srcDir: 'src',
-    outDir: 'docs',
-    theme: 'pmarsceill/just-the-docs',
-    enableSearch: true,
-    enforceDescriptions: false,
-    enforceExamples: false,
-    enforceVersion: true,
-    exclude: [],
-    parseCompilerOptions: {},
-    examplesCompilerOptions: {}
-  }
-}
 
 /**
  * @category model
@@ -141,7 +56,6 @@ export interface Capabilities {
    */
   readonly spawn: (command: string, executable: string) => TaskEither.TaskEither<Error, void>
   readonly fileSystem: FileSystem
-  readonly logger: Logger
   readonly addFile: (file: File) => (project: ast.Project) => void
 }
 
@@ -183,9 +97,9 @@ const readFiles: (paths: ReadonlyArray<string>) => Program<ReadonlyArray<File>> 
 const writeFile = (file: File): Program<void> => {
   const overwrite: Program<void> = pipe(
     RTE.ask<Capabilities>(),
-    RTE.chainTaskEitherK(({ fileSystem, logger }) =>
+    RTE.chainTaskEitherK(({ fileSystem }) =>
       pipe(
-        logger.debug(`Overwriting file ${file.path}`),
+        _.toTaskEither(_.debug(`Overwriting file ${file.path}`)),
         TaskEither.flatMap(() => fileSystem.writeFile(file.path, file.content))
       )
     )
@@ -193,7 +107,7 @@ const writeFile = (file: File): Program<void> => {
 
   const skip: Program<void> = pipe(
     RTE.ask<Capabilities>(),
-    RTE.chainTaskEitherK(({ logger }) => logger.debug(`File ${file.path} already exists, skipping creation`))
+    RTE.chainTaskEitherK(() => _.toTaskEither(_.debug(`File ${file.path} already exists, skipping creation`)))
   )
 
   const write: Program<void> = pipe(
@@ -215,11 +129,11 @@ const writeFiles: (files: ReadonlyArray<File>) => Program<void> = flow(
 
 const readSourcePaths: ProgramWithConfig<ReadonlyArray<string>> = pipe(
   RTE.ask<EnvironmentWithConfig, Error>(),
-  RTE.chainTaskEitherK(({ fileSystem, logger, config }) =>
+  RTE.chainTaskEitherK(({ fileSystem, config }) =>
     pipe(
       fileSystem.search(path.join(config.srcDir, '**', '*.ts'), config.exclude),
       TaskEither.map(ReadonlyArray.map(path.normalize)),
-      TaskEither.tap((paths) => pipe(logger.info(`${paths.length} module(s) found`)))
+      TaskEither.tap((paths) => _.toTaskEither(_.info(`${paths.length} module(s) found`)))
     )
   )
 )
@@ -241,7 +155,7 @@ const readSourceFiles: ProgramWithConfig<ReadonlyArray<File>> = pipe(
 const parseFiles = (files: ReadonlyArray<File>): ProgramWithConfig<ReadonlyArray<Module>> =>
   pipe(
     RTE.ask<EnvironmentWithConfig, Error>(),
-    RTE.tap(({ logger }) => RTE.fromTaskEither(logger.debug('Parsing files...'))),
+    RTE.tap(() => RTE.fromTaskEither(_.toTaskEither(_.debug('Parsing files...')))),
     RTE.flatMap(() =>
       pipe(
         Parser.parseFiles(files),
@@ -345,7 +259,7 @@ const cleanExamples: ProgramWithConfig<void> = pipe(
 
 const spawnTsNode: ProgramWithConfig<void> = pipe(
   RTE.ask<EnvironmentWithConfig, Error>(),
-  RTE.tap(({ logger }) => RTE.fromTaskEither(logger.debug('Type checking examples...'))),
+  RTE.tap(() => RTE.fromTaskEither(_.toTaskEither(_.debug('Type checking examples...')))),
   RTE.chainTaskEitherK(({ spawn, config }) => {
     const command = process.platform === 'win32' ? 'ts-node.cmd' : 'ts-node'
     const executable = path.join(process.cwd(), config.outDir, 'examples', 'index.ts')
@@ -356,7 +270,7 @@ const spawnTsNode: ProgramWithConfig<void> = pipe(
 const writeExamples = (examples: ReadonlyArray<File>): ProgramWithConfig<void> =>
   pipe(
     RTE.ask<EnvironmentWithConfig, Error>(),
-    RTE.tap(({ logger }) => RTE.fromTaskEither(logger.debug('Writing examples...'))),
+    RTE.tap(() => RTE.fromTaskEither(_.toTaskEither(_.debug('Writing examples...')))),
     RTE.flatMap((C) =>
       pipe(
         getExampleIndex(examples),
@@ -368,7 +282,7 @@ const writeExamples = (examples: ReadonlyArray<File>): ProgramWithConfig<void> =
 
 const writeTsConfigJson: ProgramWithConfig<void> = pipe(
   RTE.ask<EnvironmentWithConfig, Error>(),
-  RTE.tap(({ logger }) => RTE.fromTaskEither(logger.debug('Writing examples tsconfig...'))),
+  RTE.tap(() => RTE.fromTaskEither(_.toTaskEither(_.debug('Writing examples tsconfig...')))),
   RTE.flatMap((env) =>
     writeFile(
       File(
@@ -523,17 +437,17 @@ const getMarkdownFiles = (modules: ReadonlyArray<Module>): ProgramWithConfig<Rea
 const writeMarkdownFiles = (files: ReadonlyArray<File>): ProgramWithConfig<void> =>
   pipe(
     RTE.ask<EnvironmentWithConfig, Error>(),
-    RTE.chainFirst<EnvironmentWithConfig, Error, EnvironmentWithConfig, void>(({ fileSystem, logger, config }) => {
+    RTE.chainFirst<EnvironmentWithConfig, Error, EnvironmentWithConfig, void>(({ fileSystem, config }) => {
       const outPattern = path.join(config.outDir, '**/*.ts.md')
       return pipe(
-        logger.debug(`Cleaning up docs folder: deleting ${outPattern}`),
+        _.toTaskEither(_.debug(`Cleaning up docs folder: deleting ${outPattern}`)),
         TaskEither.flatMap(() => fileSystem.remove(outPattern)),
         RTE.fromTaskEither
       )
     }),
     RTE.chainTaskEitherK((C) =>
       pipe(
-        C.logger.debug('Writing markdown files...'),
+        _.toTaskEither(_.debug('Writing markdown files...')),
         TaskEither.flatMap(() => pipe(C, writeFiles(files)))
       )
     )

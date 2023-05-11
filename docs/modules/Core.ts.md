@@ -1,6 +1,6 @@
 ---
 title: Core.ts
-nav_order: 3
+nav_order: 2
 parent: Modules
 ---
 
@@ -66,7 +66,7 @@ Added in v0.6.0
 
 ```ts
 export interface EnvironmentWithConfig extends Capabilities {
-  readonly config: Config.Config
+  readonly config: _.Config
 }
 ```
 

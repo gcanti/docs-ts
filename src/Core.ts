@@ -13,8 +13,8 @@ import * as Decoder from 'io-ts/Decoder'
 import * as path from 'path'
 import * as ast from 'ts-morph'
 
-import * as Config from './Config'
 import { File, FileSystem } from './FileSystem'
+import * as _ from './internal'
 import { Logger } from './Logger'
 import { printModule } from './Markdown'
 import { Documentable, Module } from './Module'
@@ -84,7 +84,7 @@ const parsePackageJSON: Program<PackageJSON> = ({ fileSystem }) => {
 const CONFIG_FILE_NAME = 'docs-ts.json'
 
 const getConfig =
-  (projectName: string, projectHomepage: string): Program<Config.Config> =>
+  (projectName: string, projectHomepage: string): Program<_.Config> =>
   (capabilities) => {
     const configPath = path.join(process.cwd(), CONFIG_FILE_NAME)
     const defaultConfig = getDefaultConfig(projectName, projectHomepage)
@@ -103,7 +103,7 @@ const getConfig =
                 )
               ),
               TaskEither.tap(() => capabilities.logger.info(`Configuration file found`)),
-              TaskEither.flatMap((json) => TaskEither.fromEither(Config.decode(json))),
+              TaskEither.flatMap((json) => TaskEither.fromEither(_.parseConfig(json))),
               TaskEither.bimap(
                 (decodeError) => `Invalid configuration file detected:\n${decodeError}`,
                 (config) => ({ ...defaultConfig, ...config })
@@ -117,7 +117,7 @@ const getConfig =
     )
   }
 
-const getDefaultConfig = (projectName: string, projectHomepage: string): Config.Config => {
+const getDefaultConfig = (projectName: string, projectHomepage: string): _.Config => {
   return {
     projectName,
     projectHomepage,
@@ -165,7 +165,7 @@ export interface Program<A> extends RTE.ReaderTaskEither<Capabilities, string, A
  * @since 0.6.0
  */
 export interface EnvironmentWithConfig extends Capabilities {
-  readonly config: Config.Config
+  readonly config: _.Config
 }
 
 /**
@@ -446,7 +446,7 @@ const replace =
   (s) =>
     s.replace(searchValue, replaceValue)
 
-const resolveConfigYML = (previousContent: string, config: Config.Config): string =>
+const resolveConfigYML = (previousContent: string, config: _.Config): string =>
   pipe(
     previousContent,
     replace(/^remote_theme:.*$/m, `remote_theme: ${config.theme}`),
@@ -457,7 +457,7 @@ const resolveConfigYML = (previousContent: string, config: Config.Config): strin
     )
   )
 
-const getHomepageNavigationHeader = (config: Config.Config): string => {
+const getHomepageNavigationHeader = (config: _.Config): string => {
   const isGitHub = config.projectHomepage.toLowerCase().includes('github')
   return isGitHub ? config.projectName + ' on GitHub' : 'Homepage'
 }

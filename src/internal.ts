@@ -1,8 +1,11 @@
 /**
  * @since 0.8.1
  */
+import * as Either from '@effect/data/Either'
+import { pipe } from '@effect/data/Function'
 import * as Effect from '@effect/io/Effect'
 import * as Schema from '@effect/schema/Schema'
+import * as TreeFormatter from '@effect/schema/TreeFormatter'
 import * as TaskEither from 'fp-ts/TaskEither'
 import * as fs from 'fs-extra'
 
@@ -10,9 +13,7 @@ import * as fs from 'fs-extra'
 // adapters
 // -------------------------------------------------------------------------------------
 
-/**
- * @since 0.8.1
- */
+/** @internal */
 export const toTaskEither =
   <E, A>(eff: Effect.Effect<never, E, A>): TaskEither.TaskEither<E, A> =>
   () =>
@@ -22,9 +23,7 @@ export const toTaskEither =
 // FileSystem
 // -------------------------------------------------------------------------------------
 
-/**
- * @since 0.8.1
- */
+/** @internal */
 export const readFile = (path: string): Effect.Effect<never, Error, string> =>
   Effect.async((resume) =>
     fs.readFile(path, 'utf8', (error, data) => {
@@ -40,29 +39,40 @@ export const readFile = (path: string): Effect.Effect<never, Error, string> =>
 // Config
 // -------------------------------------------------------------------------------------
 
-const UnknownRecordSchema = Schema.record(Schema.string, Schema.unknown)
+const CompilerOptions = Schema.record(Schema.string, Schema.unknown)
 
-/**
- * Represents the content of the configuration file `docs-ts.json`
- * @since 0.8.1
- */
-export const ConfigSchema = Schema.struct({
-  projectName: Schema.string,
+const Path = Schema.string
+
+const Pattern = Schema.string
+
+const ConfigSchema = Schema.struct({
   projectHomepage: Schema.string,
-  srcDir: Schema.string,
-  outDir: Schema.string,
+  srcDir: Path,
+  outDir: Path,
   theme: Schema.string,
   enableSearch: Schema.boolean,
   enforceDescriptions: Schema.boolean,
   enforceExamples: Schema.boolean,
   enforceVersion: Schema.boolean,
-  exclude: Schema.array(Schema.string),
-  parseCompilerOptions: UnknownRecordSchema,
-  examplesCompilerOptions: UnknownRecordSchema
+  exclude: Schema.array(Pattern),
+  parseCompilerOptions: CompilerOptions,
+  examplesCompilerOptions: CompilerOptions
 })
 
+/** @internal */
+export const PartialConfigSchema = Schema.partial(ConfigSchema)
+
 /**
- * Represents the content of the configuration file `docs-ts.json`
+ * @category Config
  * @since 0.8.1
  */
-export interface Config extends Schema.To<typeof ConfigSchema> {}
+export interface Config extends Schema.To<typeof ConfigSchema> {
+  readonly projectName: string
+}
+
+/** @internal */
+export const parseConfig = (input: unknown): Either.Either<string, Partial<Config>> =>
+  pipe(
+    Schema.parseEither(PartialConfigSchema)(input),
+    Either.mapLeft((e) => TreeFormatter.formatErrors(e.errors))
+  )

@@ -15,7 +15,7 @@
     "coverage": "vitest run --coverage",
     "prettier": "prettier --parser typescript --list-different \"{src,test}/**/*.ts\"",
     "fix-prettier": "prettier --parser typescript --write \"{src,test}/**/*.ts\"",
-    "test": "npm run prettier && npm run vitest && npm run docs",
+    "test": "npm run prettier && npm run coverage && npm run docs",
     "clean": "rimraf rm -rf lib/*",
     "build": "npm run clean && tsc -p tsconfig.build.json",
     "prepublish": "npm run build",

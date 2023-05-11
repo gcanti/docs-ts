@@ -7,7 +7,7 @@ import * as fs from 'fs-extra'
 import * as glob from 'glob'
 import * as rimraf from 'rimraf'
 
-import { readFile, toTaskEither } from './Effect'
+import { readFile, toTaskEither } from './internal'
 import { toErrorMsg } from './Logger'
 
 /**

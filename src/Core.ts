@@ -44,16 +44,6 @@ export const main: Program<void> = pipe(
  * @since 0.6.0
  */
 export interface Capabilities {
-  /**
-   * Executes a command like:
-   *
-   * ```sh
-   * ts-node examples/index.ts
-   * ```
-   *
-   * where `command = ts-node` and `executable = examples/index.ts`
-   */
-  readonly spawn: (command: string, executable: string) => TaskEither.TaskEither<Error, void>
   readonly addFile: (file: _.File) => (project: ast.Project) => void
 }
 
@@ -257,10 +247,10 @@ const cleanExamples: ProgramWithConfig<void> = pipe(
 const spawnTsNode: ProgramWithConfig<void> = pipe(
   RTE.ask<EnvironmentWithConfig, Error>(),
   RTE.tap(() => RTE.fromTaskEither(_.toTaskEither(_.debug('Type checking examples...')))),
-  RTE.chainTaskEitherK(({ spawn, config }) => {
+  RTE.chainEitherK(({ config }) => {
     const command = process.platform === 'win32' ? 'ts-node.cmd' : 'ts-node'
     const executable = path.join(process.cwd(), config.outDir, 'examples', 'index.ts')
-    return spawn(command, executable)
+    return _.spawn(command, executable)
   })
 )
 

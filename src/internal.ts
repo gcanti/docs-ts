@@ -1,10 +1,11 @@
 /**
  * @since 0.8.1
  */
+import * as NodeChildProcess from 'node:child_process'
 import * as NodePath from 'node:path'
 
 import * as Either from '@effect/data/Either'
-import { pipe } from '@effect/data/Function'
+import { flow, pipe } from '@effect/data/Function'
 import * as Option from '@effect/data/Option'
 import * as Effect from '@effect/io/Effect'
 import * as Schema from '@effect/schema/Schema'
@@ -31,6 +32,30 @@ export const toReaderTaskEither =
   <R, E, A>(eff: Effect.Effect<never, E, A>): ReaderTaskEither.ReaderTaskEither<R, E, A> =>
   () =>
     toTaskEither(eff)
+
+// -------------------------------------------------------------------------------------
+// spawn
+// -------------------------------------------------------------------------------------
+
+/**
+ * Executes a command like:
+ *
+ * ```sh
+ * ts-node examples/index.ts
+ * ```
+ *
+ * where `command = ts-node` and `executable = examples/index.ts`
+ *
+ * @internal
+ */
+export const spawn: (command: string, executable: string) => Either.Either<Error, void> = flow(
+  Either.liftThrowable(
+    (command: string, executable: string) =>
+      NodeChildProcess.spawnSync(command, [executable], { stdio: 'pipe', encoding: 'utf8' }),
+    (e) => (e instanceof Error ? e : new Error(String(e)))
+  ),
+  Either.flatMap(({ status, stderr }) => (status === 0 ? Either.right(undefined) : Either.left(new Error(stderr))))
+)
 
 // -------------------------------------------------------------------------------------
 // Logger

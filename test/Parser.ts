@@ -7,7 +7,6 @@ import * as ast from 'ts-morph'
 
 import * as _ from '../src/internal'
 import * as Parser from '../src/Parser'
-import { spawn } from '../src/Spawn'
 import { assertLeft, assertRight } from './util'
 
 let testCounter = 0
@@ -38,7 +37,6 @@ const config: _.Config = {
 const getTestEnv = (sourceText: string): Parser.ParserEnv => ({
   path: ['test'],
   sourceFile: project.createSourceFile(`test-${testCounter++}.ts`, sourceText),
-  spawn: spawn,
   config,
   addFile: addFileToProject
 })
@@ -990,7 +988,6 @@ describe.concurrent('Parser', () => {
             {
               path: ['test'],
               sourceFile,
-              spawn: spawn,
               config,
               addFile: addFileToProject
             },
@@ -1082,7 +1079,6 @@ export const foo = 'foo'`)
         assertLeft(
           await pipe(
             {
-              spawn,
               config,
               addFile: addFileToProject
             },
@@ -1128,7 +1124,6 @@ export function f(a: number, b: number): { [key: string]: number } {
         assertRight(
           await pipe(
             {
-              spawn,
               config,
               addFile: addFileToProject
             },

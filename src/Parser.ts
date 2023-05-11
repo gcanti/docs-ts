@@ -850,10 +850,9 @@ const createProject = (files: ReadonlyArray<File>): RTE.ReaderTaskEither<Environ
         }
       }
       const project = new ast.Project(options)
-      pipe(
-        files,
-        RA.map((file) => env.addFile(file)(project))
-      )
+      for (const file of files) {
+        project.addSourceFileAtPath(file.path)
+      }
       return RTE.of(project)
     })
   )

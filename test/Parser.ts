@@ -16,9 +16,6 @@ const project = new ast.Project({
   useInMemoryFileSystem: true
 })
 
-const addFileToProject = (file: _.File) => (project: ast.Project) =>
-  project.createSourceFile(file.path, file.content, { overwrite: file.overwrite })
-
 const config: _.Config = {
   projectName: 'docs-ts',
   projectHomepage: 'https://github.com/gcanti/docs-ts',
@@ -37,8 +34,7 @@ const config: _.Config = {
 const getTestEnv = (sourceText: string): Parser.ParserEnv => ({
   path: ['test'],
   sourceFile: project.createSourceFile(`test-${testCounter++}.ts`, sourceText),
-  config,
-  addFile: addFileToProject
+  config
 })
 
 describe.concurrent('Parser', () => {
@@ -988,8 +984,7 @@ describe.concurrent('Parser', () => {
             {
               path: ['test'],
               sourceFile,
-              config,
-              addFile: addFileToProject
+              config
             },
             Parser.parseExports
           ),
@@ -1079,85 +1074,11 @@ export const foo = 'foo'`)
         assertLeft(
           await pipe(
             {
-              config,
-              addFile: addFileToProject
+              config
             },
             Parser.parseFile(project)(file)
           )(),
           (error) => assert.strictEqual(error, 'Unable to locate file: non-existent.ts')
-        )
-      })
-    })
-
-    describe.concurrent('parseFiles', () => {
-      it('should parse an array of files', async () => {
-        const files = [
-          _.createFile(
-            'test/fixtures/test1.ts',
-            `
-/**
- * a description...
- *
- * @since 1.0.0
- */
-export function f(a: number, b: number): { [key: string]: number } {
-  return { a, b }
-}
-`
-          ),
-          _.createFile(
-            'test/fixtures/test2.ts',
-            `
-/**
- * a description...
- *
- * @deprecated
- * @since 1.0.0
- */
-export function f(a: number, b: number): { [key: string]: number } {
-  return { a, b }
-}
-`
-          )
-        ]
-
-        assertRight(
-          await pipe(
-            {
-              config,
-              addFile: addFileToProject
-            },
-            Parser.parseFiles(files)
-          )(),
-          (actual) =>
-            assert.deepStrictEqual(actual, [
-              {
-                name: 'test1',
-                path: ['test', 'fixtures', 'test1.ts'],
-                description: O.some('a description...'),
-                since: O.some('1.0.0'),
-                deprecated: false,
-                category: O.none,
-                examples: RA.empty,
-                classes: RA.empty,
-                constants: RA.empty,
-                exports: RA.empty,
-                interfaces: RA.empty,
-                typeAliases: RA.empty,
-                functions: [
-                  {
-                    _tag: 'Function',
-                    name: 'f',
-                    description: O.some('a description...'),
-                    since: O.some('1.0.0'),
-                    deprecated: false,
-                    category: O.none,
-                    examples: RA.empty,
-                    signatures: ['export declare function f(a: number, b: number): { [key: string]: number }']
-                  }
-                ]
-              }
-            ])
         )
       })
     })

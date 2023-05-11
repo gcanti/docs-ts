@@ -15,7 +15,6 @@ Added in v0.6.0
 - [main](#main)
   - [main](#main-1)
 - [model](#model)
-  - [Capabilities (interface)](#capabilities-interface)
   - [EnvironmentWithConfig (interface)](#environmentwithconfig-interface)
   - [Program (interface)](#program-interface)
   - [ProgramWithConfig (interface)](#programwithconfig-interface)
@@ -36,24 +35,12 @@ Added in v0.6.0
 
 # model
 
-## Capabilities (interface)
-
-**Signature**
-
-```ts
-export interface Capabilities {
-  readonly addFile: (file: _.File) => (project: ast.Project) => void
-}
-```
-
-Added in v0.6.0
-
 ## EnvironmentWithConfig (interface)
 
 **Signature**
 
 ```ts
-export interface EnvironmentWithConfig extends Capabilities {
+export interface EnvironmentWithConfig {
   readonly config: _.Config
 }
 ```
@@ -65,7 +52,7 @@ Added in v0.6.0
 **Signature**
 
 ```ts
-export interface Program<A> extends RTE.ReaderTaskEither<Capabilities, Error, A> {}
+export interface Program<A> extends RTE.ReaderTaskEither<void, Error, A> {}
 ```
 
 Added in v0.6.0

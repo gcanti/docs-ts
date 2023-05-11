@@ -8,7 +8,6 @@ import * as Task from 'fp-ts/Task'
 import * as TaskEither from 'fp-ts/TaskEither'
 
 import * as Core from './Core'
-import { capabilities } from './Production'
 
 const exit =
   (code: 0 | 1): IO.IO<void> =>
@@ -24,4 +23,4 @@ const handleResult: (program: TaskEither.TaskEither<Error, void>) => Task.Task<v
  * @category main
  * @since 0.6.0
  */
-export const main: Task.Task<void> = handleResult(Core.main(capabilities))
+export const main: Task.Task<void> = handleResult(Core.main(undefined))

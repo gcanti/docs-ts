@@ -76,12 +76,6 @@ describe.concurrent('Logger', () => {
 
       console.log = log_
     })
-
-    it('toErrorMsg', () => {
-      const msg = _.toErrorMsg(new Error('test'))
-
-      assert.strictEqual(msg, 'test')
-    })
   })
 
   describe.concurrent('instances', () => {

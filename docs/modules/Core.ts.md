@@ -51,7 +51,7 @@ export interface Capabilities {
    *
    * where `command = ts-node` and `executable = examples/index.ts`
    */
-  readonly spawn: (command: string, executable: string) => TaskEither.TaskEither<string, void>
+  readonly spawn: (command: string, executable: string) => TaskEither.TaskEither<Error, void>
   readonly fileSystem: FileSystem
   readonly logger: Logger
   readonly addFile: (file: File) => (project: ast.Project) => void
@@ -77,7 +77,7 @@ Added in v0.6.0
 **Signature**
 
 ```ts
-export interface Program<A> extends RTE.ReaderTaskEither<Capabilities, string, A> {}
+export interface Program<A> extends RTE.ReaderTaskEither<Capabilities, Error, A> {}
 ```
 
 Added in v0.6.0
@@ -87,7 +87,7 @@ Added in v0.6.0
 **Signature**
 
 ```ts
-export interface ProgramWithConfig<A> extends RTE.ReaderTaskEither<EnvironmentWithConfig, string, A> {}
+export interface ProgramWithConfig<A> extends RTE.ReaderTaskEither<EnvironmentWithConfig, Error, A> {}
 ```
 
 Added in v0.6.0

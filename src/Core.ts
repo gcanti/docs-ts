@@ -60,18 +60,14 @@ const PackageJSONDecoder = pipe(
 const parsePackageJSON: Program<PackageJSON> = ({ fileSystem }) => {
   const read = pipe(
     fileSystem.readFile(path.join(process.cwd(), 'package.json')),
-    TaskEither.mapLeft(() => `Unable to read package.json in "${process.cwd()}"`)
+    TaskEither.mapLeft(() => new Error(`Unable to read package.json in "${process.cwd()}"`))
   )
   const parse = (packageJsonSource: string) =>
-    pipe(
-      Json.parse(packageJsonSource),
-      Either.mapLeft((u) => Either.toError(u).message),
-      TaskEither.fromEither
-    )
+    pipe(Json.parse(packageJsonSource), Either.mapLeft(Either.toError), TaskEither.fromEither)
   const decode = (json: Json.Json) =>
     pipe(
       PackageJSONDecoder.decode(json),
-      Either.mapLeft((decodeError) => `Unable to decode package.json:\n${Decoder.draw(decodeError)}`),
+      Either.mapLeft((decodeError) => new Error(`Unable to decode package.json:\n${Decoder.draw(decodeError)}`)),
       TaskEither.fromEither
     )
   return pipe(read, TaskEither.flatMap(parse), TaskEither.flatMap(decode))
@@ -95,17 +91,12 @@ const getConfig =
           ? pipe(
               capabilities.fileSystem.readFile(configPath),
               TaskEither.flatMap((content) =>
-                TaskEither.fromEither(
-                  pipe(
-                    Json.parse(content),
-                    Either.mapLeft((u) => Either.toError(u).message)
-                  )
-                )
+                TaskEither.fromEither(pipe(Json.parse(content), Either.mapLeft(Either.toError)))
               ),
               TaskEither.tap(() => capabilities.logger.info(`Configuration file found`)),
               TaskEither.flatMap((json) => TaskEither.fromEither(_.parseConfig(json))),
               TaskEither.bimap(
-                (decodeError) => `Invalid configuration file detected:\n${decodeError}`,
+                (decodeError) => new Error(`Invalid configuration file detected:\n${decodeError.message}`),
                 (config) => ({ ...defaultConfig, ...config })
               )
             )
@@ -148,7 +139,7 @@ export interface Capabilities {
    *
    * where `command = ts-node` and `executable = examples/index.ts`
    */
-  readonly spawn: (command: string, executable: string) => TaskEither.TaskEither<string, void>
+  readonly spawn: (command: string, executable: string) => TaskEither.TaskEither<Error, void>
   readonly fileSystem: FileSystem
   readonly logger: Logger
   readonly addFile: (file: File) => (project: ast.Project) => void
@@ -158,7 +149,7 @@ export interface Capabilities {
  * @category model
  * @since 0.6.0
  */
-export interface Program<A> extends RTE.ReaderTaskEither<Capabilities, string, A> {}
+export interface Program<A> extends RTE.ReaderTaskEither<Capabilities, Error, A> {}
 
 /**
  * @category model
@@ -172,7 +163,7 @@ export interface EnvironmentWithConfig extends Capabilities {
  * @category model
  * @since 0.6.0
  */
-export interface ProgramWithConfig<A> extends RTE.ReaderTaskEither<EnvironmentWithConfig, string, A> {}
+export interface ProgramWithConfig<A> extends RTE.ReaderTaskEither<EnvironmentWithConfig, Error, A> {}
 
 // -------------------------------------------------------------------------------------
 // filesystem APIs
@@ -223,7 +214,7 @@ const writeFiles: (files: ReadonlyArray<File>) => Program<void> = flow(
 )
 
 const readSourcePaths: ProgramWithConfig<ReadonlyArray<string>> = pipe(
-  RTE.ask<EnvironmentWithConfig, string>(),
+  RTE.ask<EnvironmentWithConfig, Error>(),
   RTE.chainTaskEitherK(({ fileSystem, logger, config }) =>
     pipe(
       fileSystem.search(path.join(config.srcDir, '**', '*.ts'), config.exclude),
@@ -234,7 +225,7 @@ const readSourcePaths: ProgramWithConfig<ReadonlyArray<string>> = pipe(
 )
 
 const readSourceFiles: ProgramWithConfig<ReadonlyArray<File>> = pipe(
-  RTE.ask<EnvironmentWithConfig, string>(),
+  RTE.ask<EnvironmentWithConfig, Error>(),
   RTE.flatMap((C) =>
     pipe(
       readSourcePaths,
@@ -249,9 +240,14 @@ const readSourceFiles: ProgramWithConfig<ReadonlyArray<File>> = pipe(
 
 const parseFiles = (files: ReadonlyArray<File>): ProgramWithConfig<ReadonlyArray<Module>> =>
   pipe(
-    RTE.ask<EnvironmentWithConfig, string>(),
+    RTE.ask<EnvironmentWithConfig, Error>(),
     RTE.tap(({ logger }) => RTE.fromTaskEither(logger.debug('Parsing files...'))),
-    RTE.flatMap(() => Parser.parseFiles(files))
+    RTE.flatMap(() =>
+      pipe(
+        Parser.parseFiles(files),
+        RTE.mapLeft((s) => new Error(s))
+      )
+    )
   )
 
 // -------------------------------------------------------------------------------------
@@ -262,7 +258,7 @@ const foldFiles = Monoid.concatAll(ReadonlyArray.getMonoid<File>())
 
 const getExampleFiles = (modules: ReadonlyArray<Module>): ProgramWithConfig<ReadonlyArray<File>> =>
   pipe(
-    RTE.ask<EnvironmentWithConfig, string>(),
+    RTE.ask<EnvironmentWithConfig, Error>(),
     RTE.map((env) =>
       pipe(
         modules,
@@ -337,18 +333,18 @@ const getExampleIndex = (examples: ReadonlyArray<File>): ProgramWithConfig<File>
     ReadonlyArray.foldMap(S.Monoid)((example) => `import './${path.basename(example.path, '.ts')}'\n`)
   )
   return pipe(
-    RTE.ask<EnvironmentWithConfig, string>(),
+    RTE.ask<EnvironmentWithConfig, Error>(),
     RTE.map((env) => File(path.join(env.config.outDir, 'examples', 'index.ts'), `${content}\n`, true))
   )
 }
 
 const cleanExamples: ProgramWithConfig<void> = pipe(
-  RTE.ask<EnvironmentWithConfig, string>(),
+  RTE.ask<EnvironmentWithConfig, Error>(),
   RTE.chainTaskEitherK(({ fileSystem, config }) => fileSystem.remove(path.join(config.outDir, 'examples')))
 )
 
 const spawnTsNode: ProgramWithConfig<void> = pipe(
-  RTE.ask<EnvironmentWithConfig, string>(),
+  RTE.ask<EnvironmentWithConfig, Error>(),
   RTE.tap(({ logger }) => RTE.fromTaskEither(logger.debug('Type checking examples...'))),
   RTE.chainTaskEitherK(({ spawn, config }) => {
     const command = process.platform === 'win32' ? 'ts-node.cmd' : 'ts-node'
@@ -359,7 +355,7 @@ const spawnTsNode: ProgramWithConfig<void> = pipe(
 
 const writeExamples = (examples: ReadonlyArray<File>): ProgramWithConfig<void> =>
   pipe(
-    RTE.ask<EnvironmentWithConfig, string>(),
+    RTE.ask<EnvironmentWithConfig, Error>(),
     RTE.tap(({ logger }) => RTE.fromTaskEither(logger.debug('Writing examples...'))),
     RTE.flatMap((C) =>
       pipe(
@@ -371,7 +367,7 @@ const writeExamples = (examples: ReadonlyArray<File>): ProgramWithConfig<void> =
   )
 
 const writeTsConfigJson: ProgramWithConfig<void> = pipe(
-  RTE.ask<EnvironmentWithConfig, string>(),
+  RTE.ask<EnvironmentWithConfig, Error>(),
   RTE.tap(({ logger }) => RTE.fromTaskEither(logger.debug('Writing examples tsconfig...'))),
   RTE.flatMap((env) =>
     writeFile(
@@ -411,7 +407,7 @@ const typeCheckExamples = (modules: ReadonlyArray<Module>): ProgramWithConfig<vo
 // -------------------------------------------------------------------------------------
 
 const getHome: ProgramWithConfig<File> = pipe(
-  RTE.ask<EnvironmentWithConfig, string>(),
+  RTE.ask<EnvironmentWithConfig, Error>(),
   RTE.map(({ config }) =>
     File(
       path.join(process.cwd(), config.outDir, 'index.md'),
@@ -426,7 +422,7 @@ nav_order: 1
 )
 
 const getModulesIndex: ProgramWithConfig<File> = pipe(
-  RTE.ask<EnvironmentWithConfig, string>(),
+  RTE.ask<EnvironmentWithConfig, Error>(),
   RTE.map(({ config }) =>
     File(
       path.join(process.cwd(), config.outDir, 'modules', 'index.md'),
@@ -463,7 +459,7 @@ const getHomepageNavigationHeader = (config: _.Config): string => {
 }
 
 const getConfigYML: ProgramWithConfig<File> = pipe(
-  RTE.ask<EnvironmentWithConfig, string>(),
+  RTE.ask<EnvironmentWithConfig, Error>(),
   RTE.chainTaskEitherK(({ fileSystem, config }) => {
     const filePath = path.join(process.cwd(), config.outDir, '_config.yml')
     return pipe(
@@ -496,7 +492,7 @@ aux_links:
 
 const getMarkdownOutputPath = (module: Module): ProgramWithConfig<string> =>
   pipe(
-    RTE.ask<EnvironmentWithConfig, string>(),
+    RTE.ask<EnvironmentWithConfig, Error>(),
     RTE.map(({ config }) => path.join(config.outDir, 'modules', `${module.path.slice(1).join(path.sep)}.md`))
   )
 
@@ -526,8 +522,8 @@ const getMarkdownFiles = (modules: ReadonlyArray<Module>): ProgramWithConfig<Rea
 
 const writeMarkdownFiles = (files: ReadonlyArray<File>): ProgramWithConfig<void> =>
   pipe(
-    RTE.ask<EnvironmentWithConfig, string>(),
-    RTE.chainFirst<EnvironmentWithConfig, string, EnvironmentWithConfig, void>(({ fileSystem, logger, config }) => {
+    RTE.ask<EnvironmentWithConfig, Error>(),
+    RTE.chainFirst<EnvironmentWithConfig, Error, EnvironmentWithConfig, void>(({ fileSystem, logger, config }) => {
       const outPattern = path.join(config.outDir, '**/*.ts.md')
       return pipe(
         logger.debug(`Cleaning up docs folder: deleting ${outPattern}`),

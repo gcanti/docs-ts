@@ -32,7 +32,7 @@ where `command = ts-node` and `executable = examples/index.ts`
 **Signature**
 
 ```ts
-export declare const spawn: (command: string, executable: string) => TE.TaskEither<string, void>
+export declare const spawn: (command: string, executable: string) => TE.TaskEither<Error, void>
 ```
 
 Added in v0.6.0

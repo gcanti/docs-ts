@@ -94,9 +94,9 @@ Added in v0.6.0
 
 ```ts
 export interface Logger {
-  readonly debug: (message: string) => TE.TaskEither<string, void>
-  readonly error: (message: string) => TE.TaskEither<string, void>
-  readonly info: (message: string) => TE.TaskEither<string, void>
+  readonly debug: (message: string) => TE.TaskEither<Error, void>
+  readonly error: (message: string) => TE.TaskEither<Error, void>
+  readonly info: (message: string) => TE.TaskEither<Error, void>
 }
 ```
 

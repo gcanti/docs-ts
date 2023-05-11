@@ -74,21 +74,21 @@ Represents operations that can be performed on a file system.
 
 ```ts
 export interface FileSystem {
-  readonly readFile: (path: string) => TE.TaskEither<string, string>
+  readonly readFile: (path: string) => TE.TaskEither<Error, string>
   /**
    * If the parent directory does not exist, it's created.
    */
-  readonly writeFile: (path: string, content: string) => TE.TaskEither<string, void>
-  readonly exists: (path: string) => TE.TaskEither<string, boolean>
+  readonly writeFile: (path: string, content: string) => TE.TaskEither<Error, void>
+  readonly exists: (path: string) => TE.TaskEither<Error, boolean>
   /**
    * Removes a file or directory based upon the specified pattern. The directory can have contents.
    * If the path does not exist, silently does nothing.
    */
-  readonly remove: (pattern: string) => TE.TaskEither<string, void>
+  readonly remove: (pattern: string) => TE.TaskEither<Error, void>
   /**
    * Searches for files matching the specified glob pattern.
    */
-  readonly search: (pattern: string, exclude: ReadonlyArray<string>) => TE.TaskEither<string, ReadonlyArray<string>>
+  readonly search: (pattern: string, exclude: ReadonlyArray<string>) => TE.TaskEither<Error, ReadonlyArray<string>>
 }
 ```
 

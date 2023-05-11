@@ -15,8 +15,8 @@ const exit =
   () =>
     process.exit(code)
 
-const handleResult: (program: TaskEither.TaskEither<string, void>) => Task.Task<void> = TaskEither.matchE(
-  (error) => Task.fromIO(IO.flatMap(Console.log(chalk.bold.red(error)), () => exit(1))),
+const handleResult: (program: TaskEither.TaskEither<Error, void>) => Task.Task<void> = TaskEither.matchE(
+  (error) => Task.fromIO(IO.flatMap(Console.log(chalk.bold.red(error.message)), () => exit(1))),
   () => Task.fromIO(IO.flatMap(Console.log(chalk.bold.green('Docs generation succeeded!')), () => exit(0)))
 )
 

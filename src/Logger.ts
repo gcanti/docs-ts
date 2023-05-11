@@ -20,9 +20,9 @@ import * as L from 'logging-ts/lib/Task'
  * @since 0.6.0
  */
 export interface Logger {
-  readonly debug: (message: string) => TE.TaskEither<string, void>
-  readonly error: (message: string) => TE.TaskEither<string, void>
-  readonly info: (message: string) => TE.TaskEither<string, void>
+  readonly debug: (message: string) => TE.TaskEither<Error, void>
+  readonly error: (message: string) => TE.TaskEither<Error, void>
+  readonly info: (message: string) => TE.TaskEither<Error, void>
 }
 
 /**
@@ -115,16 +115,11 @@ export const showEntry: S.Show<LogEntry> = {
 }
 
 /**
- * @internal
- */
-export const toErrorMsg = (err: Error): string => String(err.message)
-
-/**
  * @category instances
  * @since 0.6.0
  */
 export const Logger: Logger = {
-  debug: (message) => pipe(TE.fromTask(debug(message)), TE.mapLeft(toErrorMsg)),
-  error: (message) => pipe(TE.fromTask(error(message)), TE.mapLeft(toErrorMsg)),
-  info: (message) => pipe(TE.fromTask(info(message)), TE.mapLeft(toErrorMsg))
+  debug: (message) => TE.fromTask(debug(message)),
+  error: (message) => TE.fromTask(error(message)),
+  info: (message) => TE.fromTask(info(message))
 }

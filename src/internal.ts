@@ -71,8 +71,8 @@ export interface Config extends Schema.To<typeof ConfigSchema> {
 }
 
 /** @internal */
-export const parseConfig = (input: unknown): Either.Either<string, Partial<Config>> =>
+export const parseConfig = (input: unknown): Either.Either<Error, Partial<Config>> =>
   pipe(
     Schema.parseEither(PartialConfigSchema)(input),
-    Either.mapLeft((e) => TreeFormatter.formatErrors(e.errors))
+    Either.mapLeft((e) => new Error(TreeFormatter.formatErrors(e.errors)))
   )

@@ -14,8 +14,6 @@ Added in v0.9.0
 
 - [main](#main)
   - [main](#main-1)
-- [model](#model)
-  - [Program (interface)](#program-interface)
 - [service](#service)
   - [Config](#config)
   - [Config (interface)](#config-interface)
@@ -30,18 +28,6 @@ Added in v0.9.0
 
 ```ts
 export declare const main: Effect.Effect<never, Error, void>
-```
-
-Added in v0.9.0
-
-# model
-
-## Program (interface)
-
-**Signature**
-
-```ts
-export interface Program<A> extends Effect.Effect<Config, Error, A> {}
 ```
 
 Added in v0.9.0

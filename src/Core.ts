@@ -25,7 +25,7 @@ const effectFromTaskEither = <E, A>(program: TaskEither.TaskEither<E, A>) =>
  * @category main
  * @since 0.9.0
  */
-export const main: Effect.Effect<never, Error, void> = pipe(
+export const main = pipe(
   _.getConfig,
   Effect.flatMap((config) =>
     pipe(
@@ -53,19 +53,13 @@ export interface Config {
  */
 export const Config = Context.Tag<Config>()
 
-/**
- * @category model
- * @since 0.9.0
- */
-export interface Program<A> extends Effect.Effect<Config, Error, A> {}
-
 // -------------------------------------------------------------------------------------
 // readFiles
 // -------------------------------------------------------------------------------------
 
 const join = (...paths: Array<string>): string => NodePath.normalize(NodePath.join(...paths))
 
-const readFiles: Program<Array<_.File>> = pipe(
+const readFiles = pipe(
   Config,
   Effect.flatMap(({ config }) => _.glob(join(config.srcDir, '**', '*.ts'), config.exclude)),
   Effect.tap((paths) => _.info(`${paths.length} module(s) found`)),
@@ -84,17 +78,14 @@ const writeFile = (file: _.File): Effect.Effect<never, Error, void> => {
 
   const write = _.writeFile(file.path, file.content)
 
-  return pipe(
-    _.exists(file.path),
-    Effect.flatMap((exists) => (exists ? (file.overwrite ? overwrite : skip) : write))
-  )
+  return Effect.ifEffect(_.exists(file.path), file.overwrite ? overwrite : skip, write)
 }
 
 // -------------------------------------------------------------------------------------
 // parse
 // -------------------------------------------------------------------------------------
 
-const getModules = (files: ReadonlyArray<_.File>): Program<ReadonlyArray<Module>> =>
+const getModules = (files: ReadonlyArray<_.File>) =>
   pipe(
     _.debug('Parsing files...'),
     Effect.flatMap(() => Config),
@@ -110,7 +101,7 @@ const getModules = (files: ReadonlyArray<_.File>): Program<ReadonlyArray<Module>
 // typeCheckExamples
 // -------------------------------------------------------------------------------------
 
-const typeCheckExamples = (modules: ReadonlyArray<Module>): Program<void> =>
+const typeCheckExamples = (modules: ReadonlyArray<Module>) =>
   pipe(
     getExampleFiles(modules),
     Effect.flatMap(handleImports),
@@ -128,7 +119,7 @@ const typeCheckExamples = (modules: ReadonlyArray<Module>): Program<void> =>
 
 const concatAllFiles = Monoid.concatAll(ReadonlyArray.getMonoid<_.File>())
 
-const getExampleFiles = (modules: ReadonlyArray<Module>): Program<ReadonlyArray<_.File>> =>
+const getExampleFiles = (modules: ReadonlyArray<Module>) =>
   pipe(
     Config,
     Effect.map(({ config }) =>
@@ -175,7 +166,7 @@ const getExampleFiles = (modules: ReadonlyArray<Module>): Program<ReadonlyArray<
 const addAssertImport = (code: string): string =>
   code.indexOf('assert.') !== -1 ? `import * as assert from 'assert'\n${code}` : code
 
-const replaceProjectName = (source: string): Program<string> =>
+const replaceProjectName = (source: string) =>
   pipe(
     Config,
     Effect.map(({ config }) => {
@@ -191,7 +182,7 @@ const replaceProjectName = (source: string): Program<string> =>
     })
   )
 
-const handleImports = (files: ReadonlyArray<_.File>): Program<ReadonlyArray<_.File>> =>
+const handleImports = (files: ReadonlyArray<_.File>) =>
   Effect.forEach(files, (file) =>
     pipe(
       replaceProjectName(file.content),
@@ -200,7 +191,7 @@ const handleImports = (files: ReadonlyArray<_.File>): Program<ReadonlyArray<_.Fi
     )
   )
 
-const getExampleIndex = (examples: ReadonlyArray<_.File>): Program<_.File> => {
+const getExampleIndex = (examples: ReadonlyArray<_.File>) => {
   const content = pipe(
     examples,
     ReadonlyArray.foldMap(S.Monoid)((example) => `import './${NodePath.basename(example.path, '.ts')}'\n`)
@@ -211,12 +202,12 @@ const getExampleIndex = (examples: ReadonlyArray<_.File>): Program<_.File> => {
   )
 }
 
-const cleanExamples: Program<void> = pipe(
+const cleanExamples = pipe(
   Config,
   Effect.flatMap(({ config }) => _.remove(join(config.outDir, 'examples')))
 )
 
-const spawnTsNode: Program<void> = pipe(
+const spawnTsNode = pipe(
   _.debug('Type checking examples...'),
   Effect.flatMap(() => Config),
   Effect.flatMap(({ config }) => {
@@ -229,7 +220,7 @@ const spawnTsNode: Program<void> = pipe(
 const writeFiles = (files: ReadonlyArray<_.File>): Effect.Effect<never, Error, void> =>
   Effect.forEachDiscard(files, writeFile)
 
-const writeExamples = (examples: ReadonlyArray<_.File>): Program<void> =>
+const writeExamples = (examples: ReadonlyArray<_.File>) =>
   pipe(
     _.debug('Writing examples...'),
     Effect.flatMap(() => getExampleIndex(examples)),
@@ -237,7 +228,7 @@ const writeExamples = (examples: ReadonlyArray<_.File>): Program<void> =>
     Effect.flatMap(writeFiles)
   )
 
-const writeTsConfigJson: Program<void> = pipe(
+const writeTsConfigJson = pipe(
   _.debug('Writing examples tsconfig...'),
   Effect.flatMap(() => Config),
   Effect.flatMap(({ config }) =>
@@ -261,7 +252,7 @@ const writeTsConfigJson: Program<void> = pipe(
 // getMarkdown
 // -------------------------------------------------------------------------------------
 
-const getMarkdown = (modules: ReadonlyArray<Module>): Program<ReadonlyArray<_.File>> =>
+const getMarkdown = (modules: ReadonlyArray<Module>) =>
   pipe(
     Effect.Do(),
     Effect.bind('home', () => getHome),
@@ -275,7 +266,7 @@ const getMarkdown = (modules: ReadonlyArray<Module>): Program<ReadonlyArray<_.Fi
     )
   )
 
-const getHome: Program<_.File> = pipe(
+const getHome = pipe(
   Config,
   Effect.map(({ config }) =>
     _.createFile(
@@ -290,7 +281,7 @@ nav_order: 1
   )
 )
 
-const getModulesIndex: Program<_.File> = pipe(
+const getModulesIndex = pipe(
   Config,
   Effect.map(({ config }) =>
     _.createFile(
@@ -327,7 +318,7 @@ const getHomepageNavigationHeader = (config: _.Config): string => {
   return isGitHub ? config.projectName + ' on GitHub' : 'Homepage'
 }
 
-const getConfigYML: Program<_.File> = pipe(
+const getConfigYML = pipe(
   Config,
   Effect.flatMap(({ config }) => {
     const filePath = join(process.cwd(), config.outDir, '_config.yml')
@@ -359,13 +350,13 @@ const getConfigYML: Program<_.File> = pipe(
   })
 )
 
-const getMarkdownOutputPath = (module: Module): Program<string> =>
+const getMarkdownOutputPath = (module: Module) =>
   pipe(
     Config,
     Effect.map(({ config }) => join(config.outDir, 'modules', `${module.path.slice(1).join(NodePath.sep)}.md`))
   )
 
-const getModuleMarkdownFiles = (modules: ReadonlyArray<Module>): Program<ReadonlyArray<_.File>> =>
+const getModuleMarkdownFiles = (modules: ReadonlyArray<Module>) =>
   Effect.forEachWithIndex(modules, (module, order) =>
     pipe(
       Effect.Do(),
@@ -379,7 +370,7 @@ const getModuleMarkdownFiles = (modules: ReadonlyArray<Module>): Program<Readonl
 // writeMarkdown
 // -------------------------------------------------------------------------------------
 
-const writeMarkdown = (files: ReadonlyArray<_.File>): Program<void> =>
+const writeMarkdown = (files: ReadonlyArray<_.File>) =>
   pipe(
     Config,
     Effect.map(({ config }) => join(config.outDir, '**/*.ts.md')),

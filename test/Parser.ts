@@ -1,5 +1,6 @@
 import * as Either from '@effect/data/Either'
 import * as Option from '@effect/data/Option'
+import * as Effect from '@effect/io/Effect'
 import * as assert from 'assert'
 import * as E from 'fp-ts/Either'
 import { pipe } from 'fp-ts/function'
@@ -8,6 +9,7 @@ import * as ast from 'ts-morph'
 
 import * as _ from '../src/internal'
 import * as Parser from '../src/Parser'
+import { Config } from '../src/Service'
 import { assertLeft, assertRight } from './util'
 
 let testCounter = 0
@@ -1072,8 +1074,9 @@ export const foo = 'foo'`)
         const file = _.createFile('non-existent.ts', '')
         const project = new ast.Project({ useInMemoryFileSystem: true })
 
-        assertLeft(await pipe(config, Parser.parseFile(project)(file))(), (error) =>
-          assert.strictEqual(error, 'Unable to locate file: non-existent.ts')
+        assert.deepStrictEqual(
+          pipe(Parser.parseFile(project)(file), Effect.provideService(Config, { config }), Effect.runSyncEither),
+          Either.left('Unable to locate file: non-existent.ts')
         )
       })
     })

@@ -3,12 +3,11 @@
  */
 import * as NodePath from 'node:path'
 
-import * as Context from '@effect/data/Context'
 import * as Either from '@effect/data/Either'
 import { flow, pipe } from '@effect/data/Function'
 import * as Option from '@effect/data/Option'
 import * as ReadonlyRecord from '@effect/data/ReadonlyRecord'
-// import * as Effect from '@effect/io/Effect'
+import * as Effect from '@effect/io/Effect'
 import * as doctrine from 'doctrine'
 import * as Apply from 'fp-ts/Apply'
 import * as B from 'fp-ts/boolean'
@@ -16,13 +15,10 @@ import * as M from 'fp-ts/Monoid'
 import * as Ord from 'fp-ts/Ord'
 import { not, Predicate } from 'fp-ts/Predicate'
 import * as RE from 'fp-ts/ReaderEither'
-import * as RTE from 'fp-ts/ReaderTaskEither'
 import * as RA from 'fp-ts/ReadonlyArray'
 import * as RNEA from 'fp-ts/ReadonlyNonEmptyArray'
 import * as Semigroup from 'fp-ts/Semigroup'
 import * as S from 'fp-ts/string'
-import * as T from 'fp-ts/Task'
-import * as TaskEither from 'fp-ts/TaskEither'
 import * as ast from 'ts-morph'
 
 import * as _ from './internal'
@@ -41,21 +37,7 @@ import {
   Property,
   TypeAlias
 } from './Module'
-
-/**
- * @category service
- * @since 0.9.0
- */
-export interface Parser {
-  readonly path: RNEA.ReadonlyNonEmptyArray<string>
-  readonly sourceFile: ast.SourceFile
-}
-
-/**
- * @category service
- * @since 0.9.0
- */
-export const Parser = Context.Tag<Parser>()
+import { Config } from './Service'
 
 /**
  * @category model
@@ -851,54 +833,53 @@ export const parseModule: ParserEffect<Module> = pipe(
  */
 export const parseFile =
   (project: ast.Project) =>
-  (file: File): RTE.ReaderTaskEither<_.Config, string, Module> =>
+  (file: File): Effect.Effect<Config, string, Module> =>
     pipe(
-      RTE.ask<_.Config>(),
-      RTE.flatMap((config) =>
-        pipe(
-          RTE.right<_.Config, string, RNEA.ReadonlyNonEmptyArray<string>>(file.path.split(NodePath.sep) as any),
-          RTE.bindTo('path'),
-          RTE.bind(
-            'sourceFile',
-            (): RTE.ReaderTaskEither<_.Config, string, ast.SourceFile> =>
-              pipe(
-                Option.fromNullable(project.getSourceFile(file.path)),
-                RTE.fromOption(() => `Unable to locate file: ${file.path}`)
-              )
-          ),
-          RTE.chainEitherK((menv) => parseModule({ config, ...menv }))
-        )
-      )
+      Config,
+      Effect.flatMap(({ config }) => {
+        const path = file.path.split(NodePath.sep) as any as RNEA.ReadonlyNonEmptyArray<string>
+        const sourceFile = project.getSourceFile(file.path)
+        if (sourceFile !== undefined) {
+          const x = parseModule({ config, path, sourceFile })
+          // TODO
+          return x._tag === 'Left' ? Either.left(x.left) : Either.right(x.right)
+        }
+        return Either.left(`Unable to locate file: ${file.path}`)
+      })
     )
 
-const createProject =
-  (files: ReadonlyArray<File>): RTE.ReaderTaskEither<_.Config, string, ast.Project> =>
-  (config) => {
-    const options: ast.ProjectOptions = {
-      compilerOptions: {
-        strict: true,
-        ...config.parseCompilerOptions
+const createProject = (files: ReadonlyArray<File>): Effect.Effect<Config, ReadonlyArray<string>, ast.Project> =>
+  pipe(
+    Config,
+    Effect.map(({ config }) => {
+      const options: ast.ProjectOptions = {
+        compilerOptions: {
+          strict: true,
+          ...config.parseCompilerOptions
+        }
       }
-    }
-    const project = new ast.Project(options)
-    for (const file of files) {
-      project.addSourceFileAtPath(file.path)
-    }
-    return TaskEither.of(project)
-  }
+      const project = new ast.Project(options)
+      for (const file of files) {
+        project.addSourceFileAtPath(file.path)
+      }
+      return project
+    })
+  )
 
 /**
  * @category parsers
  * @since 0.9.0
  */
-export const parseFiles = (files: ReadonlyArray<File>): RTE.ReaderTaskEither<_.Config, string, ReadonlyArray<Module>> =>
+export const parseFiles = (
+  files: ReadonlyArray<File>
+): Effect.Effect<Config, ReadonlyArray<string>, ReadonlyArray<Module>> =>
   pipe(
     createProject(files),
-    RTE.flatMap((project) =>
+    Effect.flatMap((project) =>
       pipe(
         files,
-        RA.traverse(RTE.getApplicativeReaderTaskValidation(T.ApplyPar, semigroupError))(parseFile(project)),
-        RTE.map(
+        Effect.validateAll(parseFile(project)),
+        Effect.map(
           flow(
             RA.filter((module) => !module.deprecated),
             sortModules

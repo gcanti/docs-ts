@@ -24,9 +24,6 @@ Added in v0.9.0
   - [parseInterfaces](#parseinterfaces)
   - [parseModule](#parsemodule)
   - [parseTypeAliases](#parsetypealiases)
-- [service](#service)
-  - [Parser](#parser)
-  - [Parser (interface)](#parser-interface)
 
 ---
 
@@ -95,7 +92,7 @@ Added in v0.9.0
 ```ts
 export declare const parseFiles: (
   files: ReadonlyArray<File>
-) => RTE.ReaderTaskEither<_.Config, string, ReadonlyArray<Module>>
+) => Effect.Effect<Config, ReadonlyArray<string>, ReadonlyArray<Module>>
 ```
 
 Added in v0.9.0
@@ -136,31 +133,6 @@ Added in v0.9.0
 
 ```ts
 export declare const parseTypeAliases: ParserEffect<readonly TypeAlias[]>
-```
-
-Added in v0.9.0
-
-# service
-
-## Parser
-
-**Signature**
-
-```ts
-export declare const Parser: Context.Tag<Parser, Parser>
-```
-
-Added in v0.9.0
-
-## Parser (interface)
-
-**Signature**
-
-```ts
-export interface Parser {
-  readonly path: RNEA.ReadonlyNonEmptyArray<string>
-  readonly sourceFile: ast.SourceFile
-}
 ```
 
 Added in v0.9.0

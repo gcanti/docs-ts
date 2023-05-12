@@ -1,25 +1,19 @@
 /**
  * @since 0.9.0
  */
-import * as Context from '@effect/data/Context'
+
 import { pipe } from '@effect/data/Function'
 import * as Effect from '@effect/io/Effect'
-import * as E from 'fp-ts/Either'
 import * as Monoid from 'fp-ts/Monoid'
 import * as ReadonlyArray from 'fp-ts/ReadonlyArray'
 import * as S from 'fp-ts/string'
-import * as TaskEither from 'fp-ts/TaskEither'
 import * as NodePath from 'path'
 
 import * as _ from './internal'
 import { printModule } from './Markdown'
 import { Documentable, Module } from './Module'
 import * as Parser from './Parser'
-
-const effectFromEither = E.matchW(Effect.fail, Effect.succeed)
-
-const effectFromTaskEither = <E, A>(program: TaskEither.TaskEither<E, A>) =>
-  Effect.async<never, E, A>(async (resume) => pipe(await program(), effectFromEither, resume))
+import { Config } from './Service'
 
 /**
  * @category main
@@ -38,20 +32,6 @@ export const main = pipe(
     )
   )
 )
-
-/**
- * @category service
- * @since 0.9.0
- */
-export interface Config {
-  readonly config: _.Config
-}
-
-/**
- * @category service
- * @since 0.9.0
- */
-export const Config = Context.Tag<Config>()
 
 // -------------------------------------------------------------------------------------
 // readFiles
@@ -87,14 +67,8 @@ const writeFile = (file: _.File): Effect.Effect<never, Error, void> => {
 
 const getModules = (files: ReadonlyArray<_.File>) =>
   pipe(
-    _.debug('Parsing files...'),
-    Effect.flatMap(() => Config),
-    Effect.flatMap(({ config }) =>
-      pipe(
-        effectFromTaskEither(Parser.parseFiles(files)(config)),
-        Effect.mapError((error) => new Error(`[PARSE ERROR] ${error}`))
-      )
-    )
+    Parser.parseFiles(files),
+    Effect.mapError((errors) => new Error(`[PARSE ERROR] ${errors.join('\n')}`))
   )
 
 // -------------------------------------------------------------------------------------

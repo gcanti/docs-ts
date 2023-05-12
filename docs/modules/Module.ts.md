@@ -75,11 +75,11 @@ Added in v0.9.0
 ```ts
 export declare const Documentable: (
   name: string,
-  description: O.Option<string>,
-  since: O.Option<string>,
+  description: Option.Option<string>,
+  since: Option.Option<string>,
   deprecated: boolean,
   examples: ReadonlyArray<Example>,
-  category: O.Option<string>
+  category: Option.Option<string>
 ) => Documentable
 ```
 
@@ -214,11 +214,11 @@ Added in v0.9.0
 ```ts
 export interface Documentable {
   readonly name: string
-  readonly description: O.Option<string>
-  readonly since: O.Option<string>
+  readonly description: Option.Option<string>
+  readonly since: Option.Option<string>
   readonly deprecated: boolean
   readonly examples: ReadonlyArray<Example>
-  readonly category: O.Option<string>
+  readonly category: Option.Option<string>
 }
 ```
 

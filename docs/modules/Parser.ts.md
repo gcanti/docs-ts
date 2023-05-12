@@ -13,7 +13,7 @@ Added in v0.9.0
 <h2 class="text-delta">Table of contents</h2>
 
 - [model](#model)
-  - [Parser (interface)](#parser-interface)
+  - [ParserEffect (interface)](#parsereffect-interface)
   - [ParserEnv (interface)](#parserenv-interface)
 - [parsers](#parsers)
   - [parseClasses](#parseclasses)
@@ -24,17 +24,20 @@ Added in v0.9.0
   - [parseInterfaces](#parseinterfaces)
   - [parseModule](#parsemodule)
   - [parseTypeAliases](#parsetypealiases)
+- [service](#service)
+  - [Parser](#parser)
+  - [Parser (interface)](#parser-interface)
 
 ---
 
 # model
 
-## Parser (interface)
+## ParserEffect (interface)
 
 **Signature**
 
 ```ts
-export interface Parser<A> extends RE.ReaderEither<ParserEnv, string, A> {}
+export interface ParserEffect<A> extends RE.ReaderEither<ParserEnv, string, A> {}
 ```
 
 Added in v0.9.0
@@ -60,7 +63,7 @@ Added in v0.9.0
 **Signature**
 
 ```ts
-export declare const parseClasses: Parser<readonly Class[]>
+export declare const parseClasses: ParserEffect<readonly Class[]>
 ```
 
 Added in v0.9.0
@@ -70,7 +73,7 @@ Added in v0.9.0
 **Signature**
 
 ```ts
-export declare const parseConstants: Parser<readonly Constant[]>
+export declare const parseConstants: ParserEffect<readonly Constant[]>
 ```
 
 Added in v0.9.0
@@ -80,7 +83,7 @@ Added in v0.9.0
 **Signature**
 
 ```ts
-export declare const parseExports: Parser<readonly Export[]>
+export declare const parseExports: ParserEffect<readonly Export[]>
 ```
 
 Added in v0.9.0
@@ -102,7 +105,7 @@ Added in v0.9.0
 **Signature**
 
 ```ts
-export declare const parseFunctions: Parser<readonly Function[]>
+export declare const parseFunctions: ParserEffect<readonly Function[]>
 ```
 
 Added in v0.9.0
@@ -112,7 +115,7 @@ Added in v0.9.0
 **Signature**
 
 ```ts
-export declare const parseInterfaces: Parser<readonly Interface[]>
+export declare const parseInterfaces: ParserEffect<readonly Interface[]>
 ```
 
 Added in v0.9.0
@@ -122,7 +125,7 @@ Added in v0.9.0
 **Signature**
 
 ```ts
-export declare const parseModule: Parser<Module>
+export declare const parseModule: ParserEffect<Module>
 ```
 
 Added in v0.9.0
@@ -132,7 +135,32 @@ Added in v0.9.0
 **Signature**
 
 ```ts
-export declare const parseTypeAliases: Parser<readonly TypeAlias[]>
+export declare const parseTypeAliases: ParserEffect<readonly TypeAlias[]>
+```
+
+Added in v0.9.0
+
+# service
+
+## Parser
+
+**Signature**
+
+```ts
+export declare const Parser: Context.Tag<Parser, Parser>
+```
+
+Added in v0.9.0
+
+## Parser (interface)
+
+**Signature**
+
+```ts
+export interface Parser {
+  readonly path: RNEA.ReadonlyNonEmptyArray<string>
+  readonly sourceFile: ast.SourceFile
+}
 ```
 
 Added in v0.9.0

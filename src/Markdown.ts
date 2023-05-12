@@ -1,11 +1,11 @@
 /**
  * @since 0.9.0
  */
+import { absurd, flow, pipe } from '@effect/data/Function'
+import * as Option from '@effect/data/Option'
 import { Endomorphism } from 'fp-ts/Endomorphism'
 import { intercalate } from 'fp-ts/Foldable'
-import { absurd, flow, pipe } from 'fp-ts/function'
 import * as M from 'fp-ts/Monoid'
-import * as O from 'fp-ts/Option'
 import * as RA from 'fp-ts/ReadonlyArray'
 import * as RNEA from 'fp-ts/ReadonlyNonEmptyArray'
 import * as RR from 'fp-ts/ReadonlyRecord'
@@ -249,7 +249,7 @@ const h3 = (content: Markdown) => Header(3, content)
 
 const ts = (code: string) => Fence('ts', PlainText(code))
 
-const since: (v: O.Option<string>) => Markdown = O.fold(
+const since: (v: Option.Option<string>) => Markdown = Option.match(
   () => monoidMarkdown.empty,
   (v) => foldMarkdown([CRLF, PlainText(`Added in v${v}`)])
 )
@@ -258,16 +258,16 @@ const title = (s: string, deprecated: boolean, type?: string): Markdown => {
   const title = s.trim() === 'hasOwnProperty' ? `${s} (function)` : s
   const markdownTitle = deprecated ? Strikethrough(PlainText(title)) : PlainText(title)
   return pipe(
-    O.fromNullable(type),
-    O.fold(
+    Option.fromNullable(type),
+    Option.match(
       () => markdownTitle,
       (t) => foldMarkdown([markdownTitle, PlainText(` ${t}`)])
     )
   )
 }
 
-const description: (d: O.Option<string>) => Markdown = flow(
-  O.fold(() => monoidMarkdown.empty, PlainText),
+const description: (d: Option.Option<string>) => Markdown = flow(
+  Option.match(() => monoidMarkdown.empty, PlainText),
   Paragraph
 )
 
@@ -442,7 +442,7 @@ const fromPrintable = (p: Printable): Markdown => {
 // printers
 // -------------------------------------------------------------------------------------
 
-const getPrintables = (module: Module): O.Option<RNEA.ReadonlyNonEmptyArray<Printable>> =>
+const getPrintables = (module: Module): Option.Option<RNEA.ReadonlyNonEmptyArray<Printable>> =>
   pipe(
     M.concatAll(RA.getMonoid<Printable>())([
       module.classes,
@@ -452,7 +452,9 @@ const getPrintables = (module: Module): O.Option<RNEA.ReadonlyNonEmptyArray<Prin
       module.interfaces,
       module.typeAliases
     ]),
-    RNEA.fromReadonlyArray
+    RNEA.fromReadonlyArray,
+    // TODO
+    (o) => (o._tag === 'None' ? Option.none() : Option.some(o.value))
   )
 
 /**
@@ -504,12 +506,12 @@ export const printModule = (module: Module, order: number): string => {
 
   const content = pipe(
     getPrintables(module),
-    O.map(
+    Option.map(
       flow(
         RNEA.groupBy(({ category }) =>
           pipe(
             category,
-            O.getOrElse(() => DEFAULT_CATEGORY)
+            Option.getOrElse(() => DEFAULT_CATEGORY)
           )
         ),
         RR.collect(S.Ord)((category, printables) => {
@@ -526,7 +528,7 @@ export const printModule = (module: Module, order: number): string => {
         intercalateNewline
       )
     ),
-    O.getOrElse(() => '')
+    Option.getOrElse(() => '')
   )
 
   const tableOfContents = (c: string): string =>
@@ -574,14 +576,14 @@ const canonicalizeMarkdown: Endomorphism<ReadonlyArray<Markdown>> = RA.filterMap
   pipe(
     markdown,
     fold({
-      Bold: () => O.some(markdown),
-      Header: () => O.some(markdown),
-      Fence: () => O.some(markdown),
-      Newline: () => O.some(markdown),
-      Paragraph: () => O.some(markdown),
-      PlainText: (content) => (content.length > 0 ? O.some(markdown) : O.none),
-      PlainTexts: (content) => O.some(PlainTexts(canonicalizeMarkdown(content))),
-      Strikethrough: () => O.some(markdown)
+      Bold: () => Option.some(markdown),
+      Header: () => Option.some(markdown),
+      Fence: () => Option.some(markdown),
+      Newline: () => Option.some(markdown),
+      Paragraph: () => Option.some(markdown),
+      PlainText: (content) => (content.length > 0 ? Option.some(markdown) : Option.none()),
+      PlainTexts: (content) => Option.some(PlainTexts(canonicalizeMarkdown(content))),
+      Strikethrough: () => Option.some(markdown)
     })
   )
 )

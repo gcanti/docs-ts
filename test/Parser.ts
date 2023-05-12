@@ -1,7 +1,8 @@
+import * as Either from '@effect/data/Either'
+import * as Option from '@effect/data/Option'
 import * as assert from 'assert'
 import * as E from 'fp-ts/Either'
 import { pipe } from 'fp-ts/function'
-import * as O from 'fp-ts/lib/Option'
 import * as RA from 'fp-ts/ReadonlyArray'
 import * as ast from 'ts-morph'
 
@@ -67,12 +68,12 @@ describe.concurrent('Parser', () => {
             {
               _tag: 'Interface',
               deprecated: true,
-              description: O.some('a description...'),
+              description: Option.some('a description...'),
               name: 'A',
               signature: 'export interface A {}',
-              since: O.some('1.0.0'),
+              since: Option.some('1.0.0'),
               examples: RA.empty,
-              category: O.none
+              category: Option.none()
             }
           ])
         )
@@ -97,20 +98,20 @@ describe.concurrent('Parser', () => {
             {
               _tag: 'Interface',
               name: 'A',
-              description: O.none,
-              since: O.some('1.0.0'),
+              description: Option.none(),
+              since: Option.some('1.0.0'),
               deprecated: false,
-              category: O.none,
+              category: Option.none(),
               examples: RA.empty,
               signature: 'export interface A {}'
             },
             {
               _tag: 'Interface',
               name: 'B',
-              description: O.none,
-              since: O.some('1.0.0'),
+              description: Option.none(),
+              since: Option.some('1.0.0'),
               deprecated: false,
-              category: O.none,
+              category: Option.none(),
               examples: RA.empty,
               signature: 'export interface B {}'
             }
@@ -210,12 +211,12 @@ describe.concurrent('Parser', () => {
             {
               _tag: 'Function',
               deprecated: false,
-              description: O.none,
+              description: Option.none(),
               name: 'toNullable',
               signatures: ['export declare const toNullable: <A>(ma: A | null) => A | null'],
-              since: O.some('1.0.0'),
+              since: Option.some('1.0.0'),
               examples: [],
-              category: O.none
+              category: Option.none()
             }
           ])
         )
@@ -241,15 +242,15 @@ describe.concurrent('Parser', () => {
             {
               _tag: 'Function',
               deprecated: true,
-              description: O.some('a description...'),
+              description: Option.some('a description...'),
               name: 'f',
               signatures: ['export declare const f: (a: number, b: number) => { [key: string]: number; }'],
-              since: O.some('1.0.0'),
+              since: Option.some('1.0.0'),
               examples: [
                 'assert.deepStrictEqual(f(1, 2), { a: 1, b: 2 })',
                 'assert.deepStrictEqual(f(3, 4), { a: 3, b: 4 })'
               ],
-              category: O.none
+              category: Option.none()
             }
           ])
         )
@@ -269,12 +270,12 @@ describe.concurrent('Parser', () => {
             {
               _tag: 'Function',
               deprecated: false,
-              description: O.none,
+              description: Option.none(),
               name: 'f',
               signatures: ['export declare function f(a: number, b: number): { [key: string]: number }'],
-              since: O.some('1.0.0'),
+              since: Option.some('1.0.0'),
               examples: RA.empty,
-              category: O.none
+              category: Option.none()
             }
           ])
         )
@@ -296,12 +297,12 @@ describe.concurrent('Parser', () => {
             {
               _tag: 'Function',
               deprecated: true,
-              description: O.some('a description...'),
+              description: Option.some('a description...'),
               name: 'f',
               signatures: ['export declare function f(a: number, b: number): { [key: string]: number }'],
-              since: O.some('1.0.0'),
+              since: Option.some('1.0.0'),
               examples: RA.empty,
-              category: O.none
+              category: Option.none()
             }
           ])
         )
@@ -325,10 +326,10 @@ describe.concurrent('Parser', () => {
             {
               _tag: 'Function',
               name: 'f',
-              description: O.some('a description...'),
-              since: O.some('1.0.0'),
+              description: Option.some('a description...'),
+              since: Option.some('1.0.0'),
               deprecated: true,
-              category: O.none,
+              category: Option.none(),
               examples: RA.empty,
               signatures: [
                 'export declare function f(a: Int, b: Int): { [key: string]: number }',
@@ -356,10 +357,10 @@ describe.concurrent('Parser', () => {
             {
               _tag: 'TypeAlias',
               name: 'Option',
-              description: O.some('a description...'),
-              since: O.some('1.0.0'),
+              description: Option.some('a description...'),
+              since: Option.some('1.0.0'),
               deprecated: true,
-              category: O.none,
+              category: Option.none(),
               signature: 'export type Option<A> = None<A> | Some<A>',
               examples: RA.empty
             }
@@ -384,10 +385,10 @@ describe.concurrent('Parser', () => {
             {
               _tag: 'Constant',
               name: 's',
-              description: O.some('a description...'),
-              since: O.some('1.0.0'),
+              description: Option.some('a description...'),
+              since: Option.some('1.0.0'),
               deprecated: true,
-              category: O.none,
+              category: Option.none(),
               signature: 'export declare const s: string',
               examples: RA.empty
             }
@@ -408,10 +409,10 @@ describe.concurrent('Parser', () => {
             {
               _tag: 'Constant',
               name: 'left',
-              description: O.none,
-              since: O.some('1.0.0'),
+              description: Option.none(),
+              since: Option.some('1.0.0'),
               deprecated: false,
-              category: O.none,
+              category: Option.none(),
               signature: 'export declare const left: <E = never, A = never>(l: E) => string',
               examples: RA.empty
             }
@@ -434,10 +435,10 @@ describe.concurrent('Parser', () => {
             {
               _tag: 'Constant',
               name: 'empty',
-              description: O.none,
-              since: O.some('1.0.0'),
+              description: Option.none(),
+              since: Option.some('1.0.0'),
               deprecated: false,
-              category: O.none,
+              category: Option.none(),
               signature: 'export declare const empty: A',
               examples: RA.empty
             }
@@ -464,12 +465,12 @@ describe.concurrent('Parser', () => {
             {
               _tag: 'Constant',
               deprecated: false,
-              description: O.none,
+              description: Option.none(),
               name: 'taskSeq',
               signature: 'export declare const taskSeq: { a: number; }',
-              since: O.some('1.0.0'),
+              since: Option.some('1.0.0'),
               examples: RA.empty,
-              category: O.none
+              category: Option.none()
             }
           ])
         )
@@ -538,10 +539,10 @@ describe.concurrent('Parser', () => {
             {
               _tag: 'Class',
               name: 'MyClass',
-              description: O.none,
-              since: O.some('1.0.0'),
+              description: Option.none(),
+              since: Option.some('1.0.0'),
               deprecated: false,
-              category: O.none,
+              category: Option.none(),
               examples: RA.empty,
               signature: 'export declare class MyClass<A>',
               methods: RA.empty,
@@ -566,10 +567,10 @@ describe.concurrent('Parser', () => {
             {
               _tag: 'Class',
               name: 'C',
-              description: O.some('description'),
-              since: O.some('1.0.0'),
+              description: Option.some('description'),
+              since: Option.some('1.0.0'),
               deprecated: false,
-              category: O.none,
+              category: Option.none(),
               examples: RA.empty,
               signature: 'export declare class C { constructor() }',
               methods: RA.empty,
@@ -614,10 +615,10 @@ describe.concurrent('Parser', () => {
             {
               _tag: 'Class',
               name: 'C',
-              description: O.some('description'),
-              since: O.some('1.0.0'),
+              description: Option.some('description'),
+              since: Option.some('1.0.0'),
               deprecated: false,
-              category: O.none,
+              category: Option.none(),
               examples: RA.empty,
               signature: 'export declare class C',
               methods: RA.empty,
@@ -625,10 +626,10 @@ describe.concurrent('Parser', () => {
               properties: [
                 {
                   name: 'a',
-                  description: O.none,
-                  since: O.some('1.0.0'),
+                  description: Option.none(),
+                  since: Option.some('1.0.0'),
                   deprecated: false,
-                  category: O.none,
+                  category: Option.none(),
                   examples: RA.empty,
                   signature: 'a: string'
                 }
@@ -676,19 +677,19 @@ describe.concurrent('Parser', () => {
             {
               _tag: 'Class',
               name: 'Test',
-              description: O.some('a class description...'),
-              since: O.some('1.0.0'),
+              description: Option.some('a class description...'),
+              since: Option.some('1.0.0'),
               deprecated: true,
-              category: O.none,
+              category: Option.none(),
               examples: RA.empty,
               signature: 'export declare class Test { constructor(readonly value: string) }',
               methods: [
                 {
                   name: 'g',
-                  description: O.some('a method description...'),
-                  since: O.some('1.1.0'),
+                  description: Option.some('a method description...'),
+                  since: Option.some('1.1.0'),
                   deprecated: true,
-                  category: O.none,
+                  category: Option.none(),
                   examples: RA.empty,
                   signatures: ['g(a: number, b: number): { [key: string]: number }']
                 }
@@ -696,10 +697,10 @@ describe.concurrent('Parser', () => {
               staticMethods: [
                 {
                   name: 'f',
-                  description: O.some('a static method description...'),
-                  since: O.some('1.1.0'),
+                  description: Option.some('a static method description...'),
+                  since: Option.some('1.1.0'),
                   deprecated: true,
-                  category: O.none,
+                  category: Option.none(),
                   examples: RA.empty,
                   signatures: ['static f(): void']
                 }
@@ -707,10 +708,10 @@ describe.concurrent('Parser', () => {
               properties: [
                 {
                   name: 'a',
-                  description: O.some('a property...'),
-                  since: O.some('1.1.0'),
+                  description: Option.some('a property...'),
+                  since: Option.some('1.1.0'),
                   deprecated: true,
-                  category: O.none,
+                  category: Option.none(),
                   signature: 'readonly a: string',
                   examples: RA.empty
                 }
@@ -755,19 +756,19 @@ describe.concurrent('Parser', () => {
             {
               _tag: 'Class',
               name: 'Test',
-              description: O.some('a class description...'),
-              since: O.some('1.0.0'),
+              description: Option.some('a class description...'),
+              since: Option.some('1.0.0'),
               deprecated: true,
-              category: O.none,
+              category: Option.none(),
               examples: RA.empty,
               signature: 'export declare class Test<A> { constructor(readonly value: A) }',
               methods: [
                 {
                   name: 'map',
-                  description: O.some('a method description...'),
-                  since: O.some('1.1.0'),
+                  description: Option.some('a method description...'),
+                  since: Option.some('1.1.0'),
                   deprecated: true,
-                  category: O.none,
+                  category: Option.none(),
                   examples: RA.empty,
                   signatures: ['map(f: (a: number) => number): Test', 'map(f: (a: string) => string): Test']
                 }
@@ -775,10 +776,10 @@ describe.concurrent('Parser', () => {
               staticMethods: [
                 {
                   name: 'f',
-                  description: O.some('a static method description...'),
-                  since: O.some('1.1.0'),
+                  description: Option.some('a static method description...'),
+                  since: Option.some('1.1.0'),
                   deprecated: true,
-                  category: O.none,
+                  category: Option.none(),
                   examples: RA.empty,
                   signatures: ['static f(x: number): number', 'static f(x: string): string']
                 }
@@ -814,10 +815,10 @@ describe.concurrent('Parser', () => {
             {
               _tag: 'Class',
               name: 'Test',
-              description: O.some('a class description...'),
-              since: O.some('1.0.0'),
+              description: Option.some('a class description...'),
+              since: Option.some('1.0.0'),
               deprecated: false,
-              category: O.none,
+              category: Option.none(),
               examples: RA.empty,
               signature: 'export declare class Test<A>',
               methods: RA.empty,
@@ -846,10 +847,10 @@ describe.concurrent('Parser', () => {
         assertRight(pipe(env, Parser.parseModuleDocumentation), (actual) =>
           assert.deepStrictEqual(actual, {
             name: 'test',
-            description: O.some('Manages the configuration settings for the widget'),
-            since: O.some('1.0.0'),
+            description: Option.some('Manages the configuration settings for the widget'),
+            since: Option.some('1.0.0'),
             deprecated: true,
-            category: O.none,
+            category: Option.none(),
             examples: RA.empty
           })
         )
@@ -869,12 +870,12 @@ describe.concurrent('Parser', () => {
 
         assert.deepStrictEqual(
           pipe(env, Parser.parseModuleDocumentation),
-          E.right({
+          Either.right({
             name: 'test',
-            description: O.none,
-            since: O.none,
+            description: Option.none(),
+            since: Option.none(),
             deprecated: false,
-            category: O.none,
+            category: Option.none(),
             examples: RA.empty
           })
         )
@@ -904,10 +905,10 @@ describe.concurrent('Parser', () => {
             {
               _tag: 'Export',
               name: 'b',
-              description: O.none,
+              description: Option.none(),
               deprecated: false,
-              since: O.some('1.0.0'),
-              category: O.none,
+              since: Option.some('1.0.0'),
+              category: Option.none(),
               examples: RA.empty,
               signature: 'export declare const b: 1'
             }
@@ -936,20 +937,20 @@ describe.concurrent('Parser', () => {
             {
               _tag: 'Export',
               name: 'a',
-              description: O.some('description_of_a'),
-              since: O.some('1.0.0'),
+              description: Option.some('description_of_a'),
+              since: Option.some('1.0.0'),
               deprecated: false,
-              category: O.none,
+              category: Option.none(),
               signature: 'export declare const a: any',
               examples: RA.empty
             },
             {
               _tag: 'Export',
               name: 'b',
-              description: O.some('description_of_b'),
-              since: O.some('2.0.0'),
+              description: Option.some('description_of_b'),
+              since: Option.some('2.0.0'),
               deprecated: false,
-              category: O.none,
+              category: Option.none(),
               signature: 'export declare const b: any',
               examples: RA.empty
             }
@@ -993,11 +994,11 @@ describe.concurrent('Parser', () => {
               {
                 _tag: 'Export',
                 name: 'b',
-                description: O.none,
-                since: O.some('1.0.0'),
+                description: Option.none(),
+                since: Option.some('1.0.0'),
                 deprecated: false,
                 signature: 'export declare const b: 1',
-                category: O.none,
+                category: Option.none(),
                 examples: RA.empty
               }
             ])
@@ -1038,11 +1039,11 @@ export const foo = 'foo'`)
         assertRight(pipe({ ...env, config: { ...env.config, enforceExamples: true } }, Parser.parseModule), (actual) =>
           assert.deepStrictEqual(actual, {
             name: 'test',
-            description: O.some('This is the assert module.'),
-            since: O.some('1.0.0'),
+            description: Option.some('This is the assert module.'),
+            since: Option.some('1.0.0'),
             deprecated: false,
             examples: RA.empty,
-            category: O.none,
+            category: Option.none(),
             path: ['test'],
             classes: RA.empty,
             interfaces: RA.empty,
@@ -1052,11 +1053,11 @@ export const foo = 'foo'`)
               {
                 _tag: 'Constant',
                 name: 'foo',
-                description: O.some('This is the foo export.'),
-                since: O.some('1.0.0'),
+                description: Option.some('This is the foo export.'),
+                since: Option.some('1.0.0'),
                 deprecated: false,
                 examples: [`import { foo } from 'test'\n\nconsole.log(foo)`],
-                category: O.some('foo'),
+                category: Option.some('foo'),
                 signature: 'export declare const foo: "foo"'
               }
             ],
@@ -1091,9 +1092,9 @@ export const foo = 'foo'`)
 
         assertRight(pipe(env, Parser.getCommentInfo('name')(text)), (actual) =>
           assert.deepStrictEqual(actual, {
-            description: O.some('description'),
-            since: O.some('1.0.0'),
-            category: O.some('instances'),
+            description: Option.some('description'),
+            since: Option.some('1.0.0'),
+            category: Option.some('instances'),
             deprecated: false,
             examples: RA.empty
           })
@@ -1170,9 +1171,9 @@ export const foo = 'foo'`)
           pipe({ ...env, config: { ...env.config, enforceVersion: false } }, Parser.getCommentInfo('name')(text)),
           (actual) =>
             assert.deepStrictEqual(actual, {
-              description: O.some('description'),
-              since: O.none,
-              category: O.some('instances'),
+              description: Option.some('description'),
+              since: Option.none(),
+              category: Option.some('instances'),
               deprecated: false,
               examples: RA.empty
             })
@@ -1182,33 +1183,33 @@ export const foo = 'foo'`)
 
     it('parseComment', () => {
       assert.deepStrictEqual(Parser.parseComment(''), {
-        description: O.none,
+        description: Option.none(),
         tags: {}
       })
 
       assert.deepStrictEqual(Parser.parseComment('/** description */'), {
-        description: O.some('description'),
+        description: Option.some('description'),
         tags: {}
       })
 
       assert.deepStrictEqual(Parser.parseComment('/** description\n * @since 1.0.0\n */'), {
-        description: O.some('description'),
+        description: Option.some('description'),
         tags: {
-          since: [O.some('1.0.0')]
+          since: [Option.some('1.0.0')]
         }
       })
 
       assert.deepStrictEqual(Parser.parseComment('/** description\n * @deprecated\n */'), {
-        description: O.some('description'),
+        description: Option.some('description'),
         tags: {
-          deprecated: [O.none]
+          deprecated: [Option.none()]
         }
       })
 
       assert.deepStrictEqual(Parser.parseComment('/** description\n * @category instance\n */'), {
-        description: O.some('description'),
+        description: Option.some('description'),
         tags: {
-          category: [O.some('instance')]
+          category: [Option.some('instance')]
         }
       })
     })

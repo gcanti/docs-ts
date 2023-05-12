@@ -1,8 +1,8 @@
 /**
  * @since 0.9.0
  */
-import { pipe } from 'fp-ts/function'
-import * as O from 'fp-ts/Option'
+import { pipe } from '@effect/data/Function'
+import * as Option from '@effect/data/Option'
 import * as Ord from 'fp-ts/Ord'
 import * as S from 'fp-ts/string'
 
@@ -30,11 +30,11 @@ export interface Module extends Documentable {
  */
 export interface Documentable {
   readonly name: string
-  readonly description: O.Option<string>
-  readonly since: O.Option<string>
+  readonly description: Option.Option<string>
+  readonly since: Option.Option<string>
   readonly deprecated: boolean
   readonly examples: ReadonlyArray<Example>
-  readonly category: O.Option<string>
+  readonly category: Option.Option<string>
 }
 
 /**
@@ -126,11 +126,11 @@ export type Example = string
  */
 export const Documentable = (
   name: string,
-  description: O.Option<string>,
-  since: O.Option<string>,
+  description: Option.Option<string>,
+  since: Option.Option<string>,
   deprecated: boolean,
   examples: ReadonlyArray<Example>,
-  category: O.Option<string>
+  category: Option.Option<string>
 ): Documentable => ({ name, description, since, deprecated, examples, category })
 
 /**

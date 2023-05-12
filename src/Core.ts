@@ -2,9 +2,9 @@
  * @since 0.9.0
  */
 import * as Context from '@effect/data/Context'
+import { pipe } from '@effect/data/Function'
 import * as Effect from '@effect/io/Effect'
 import * as E from 'fp-ts/Either'
-import { pipe } from 'fp-ts/function'
 import * as Monoid from 'fp-ts/Monoid'
 import * as ReadonlyArray from 'fp-ts/ReadonlyArray'
 import * as S from 'fp-ts/string'

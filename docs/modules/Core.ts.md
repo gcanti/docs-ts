@@ -16,6 +16,9 @@ Added in v0.9.0
   - [main](#main-1)
 - [model](#model)
   - [Program (interface)](#program-interface)
+- [service](#service)
+  - [Config](#config)
+  - [Config (interface)](#config-interface)
 
 ---
 
@@ -38,7 +41,31 @@ Added in v0.9.0
 **Signature**
 
 ```ts
-export interface Program<A> extends RTE.ReaderTaskEither<_.Config, Error, A> {}
+export interface Program<A> extends Effect.Effect<Config, Error, A> {}
+```
+
+Added in v0.9.0
+
+# service
+
+## Config
+
+**Signature**
+
+```ts
+export declare const Config: Context.Tag<Config, Config>
+```
+
+Added in v0.9.0
+
+## Config (interface)
+
+**Signature**
+
+```ts
+export interface Config {
+  readonly config: _.Config
+}
 ```
 
 Added in v0.9.0

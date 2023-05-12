@@ -63,10 +63,11 @@ export interface Program<A> extends Effect.Effect<Config, Error, A> {}
 // readFiles
 // -------------------------------------------------------------------------------------
 
+const join = (...paths: Array<string>): string => NodePath.normalize(NodePath.join(...paths))
+
 const readFiles: Program<Array<_.File>> = pipe(
   Config,
-  Effect.flatMap(({ config }) => _.glob(NodePath.join(config.srcDir, '**', '*.ts'), config.exclude)),
-  Effect.map(ReadonlyArray.map(NodePath.normalize)),
+  Effect.flatMap(({ config }) => _.glob(join(config.srcDir, '**', '*.ts'), config.exclude)),
   Effect.tap((paths) => _.info(`${paths.length} module(s) found`)),
   Effect.flatMap(
     Effect.forEachPar((path) => Effect.map(_.readFile(path), (content) => _.createFile(path, content, false)))
@@ -143,7 +144,7 @@ const getExampleFiles = (modules: ReadonlyArray<Module>): Program<ReadonlyArray<
                 documentable.examples,
                 ReadonlyArray.mapWithIndex((i, content) =>
                   _.createFile(
-                    NodePath.join(config.outDir, 'examples', `${prefix}-${id}-${documentable.name}-${i}.ts`),
+                    join(config.outDir, 'examples', `${prefix}-${id}-${documentable.name}-${i}.ts`),
                     `${content}\n`,
                     true
                   )
@@ -206,13 +207,13 @@ const getExampleIndex = (examples: ReadonlyArray<_.File>): Program<_.File> => {
   )
   return pipe(
     Config,
-    Effect.map(({ config }) => _.createFile(NodePath.join(config.outDir, 'examples', 'index.ts'), `${content}\n`, true))
+    Effect.map(({ config }) => _.createFile(join(config.outDir, 'examples', 'index.ts'), `${content}\n`, true))
   )
 }
 
 const cleanExamples: Program<void> = pipe(
   Config,
-  Effect.flatMap(({ config }) => _.remove(NodePath.join(config.outDir, 'examples')))
+  Effect.flatMap(({ config }) => _.remove(join(config.outDir, 'examples')))
 )
 
 const spawnTsNode: Program<void> = pipe(
@@ -220,7 +221,7 @@ const spawnTsNode: Program<void> = pipe(
   Effect.flatMap(() => Config),
   Effect.flatMap(({ config }) => {
     const command = process.platform === 'win32' ? 'ts-node.cmd' : 'ts-node'
-    const executable = NodePath.join(process.cwd(), config.outDir, 'examples', 'index.ts')
+    const executable = join(process.cwd(), config.outDir, 'examples', 'index.ts')
     return _.spawn(command, executable)
   })
 )
@@ -242,7 +243,7 @@ const writeTsConfigJson: Program<void> = pipe(
   Effect.flatMap(({ config }) =>
     writeFile(
       _.createFile(
-        NodePath.join(process.cwd(), config.outDir, 'examples', 'tsconfig.json'),
+        join(process.cwd(), config.outDir, 'examples', 'tsconfig.json'),
         JSON.stringify(
           {
             compilerOptions: config.examplesCompilerOptions
@@ -278,7 +279,7 @@ const getHome: Program<_.File> = pipe(
   Config,
   Effect.map(({ config }) =>
     _.createFile(
-      NodePath.join(process.cwd(), config.outDir, 'index.md'),
+      join(process.cwd(), config.outDir, 'index.md'),
       `---
 title: Home
 nav_order: 1
@@ -293,7 +294,7 @@ const getModulesIndex: Program<_.File> = pipe(
   Config,
   Effect.map(({ config }) =>
     _.createFile(
-      NodePath.join(process.cwd(), config.outDir, 'modules', 'index.md'),
+      join(process.cwd(), config.outDir, 'modules', 'index.md'),
       `---
 title: Modules
 has_children: true
@@ -329,7 +330,7 @@ const getHomepageNavigationHeader = (config: _.Config): string => {
 const getConfigYML: Program<_.File> = pipe(
   Config,
   Effect.flatMap(({ config }) => {
-    const filePath = NodePath.join(process.cwd(), config.outDir, '_config.yml')
+    const filePath = join(process.cwd(), config.outDir, '_config.yml')
     return pipe(
       _.exists(filePath),
       Effect.flatMap((exists) =>
@@ -361,7 +362,7 @@ const getConfigYML: Program<_.File> = pipe(
 const getMarkdownOutputPath = (module: Module): Program<string> =>
   pipe(
     Config,
-    Effect.map(({ config }) => NodePath.join(config.outDir, 'modules', `${module.path.slice(1).join(NodePath.sep)}.md`))
+    Effect.map(({ config }) => join(config.outDir, 'modules', `${module.path.slice(1).join(NodePath.sep)}.md`))
   )
 
 const getModuleMarkdownFiles = (modules: ReadonlyArray<Module>): Program<ReadonlyArray<_.File>> =>
@@ -381,7 +382,7 @@ const getModuleMarkdownFiles = (modules: ReadonlyArray<Module>): Program<Readonl
 const writeMarkdown = (files: ReadonlyArray<_.File>): Program<void> =>
   pipe(
     Config,
-    Effect.map(({ config }) => NodePath.join(config.outDir, '**/*.ts.md')),
+    Effect.map(({ config }) => join(config.outDir, '**/*.ts.md')),
     Effect.tap((outPattern) => _.debug(`Cleaning up docs folder: deleting ${outPattern}`)),
     Effect.flatMap((outPattern) => _.remove(outPattern)),
     Effect.tap(() => _.debug('Writing markdown files...')),

@@ -23,10 +23,15 @@ export const main = pipe(
   _.getConfig,
   Effect.flatMap((config) =>
     pipe(
-      readFiles,
+      _.info('reading modules...'),
+      Effect.flatMap(() => readFiles),
+      Effect.tap(() => _.info('parsing modules...')),
       Effect.flatMap(getModules),
+      Effect.tap(() => _.info('typechecking examples...')),
       Effect.tap(typeCheckExamples),
+      Effect.tap(() => _.info('creating markdown files...')),
       Effect.flatMap(getMarkdown),
+      Effect.tap(() => _.info('writing markdown files...')),
       Effect.flatMap(writeMarkdown),
       Effect.provideService(Config, { config })
     )

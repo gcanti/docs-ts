@@ -3,17 +3,15 @@
  */
 import * as NodePath from 'node:path'
 
+import * as Boolean from '@effect/data/Boolean'
 import * as Either from '@effect/data/Either'
 import { flow, pipe } from '@effect/data/Function'
 import * as Option from '@effect/data/Option'
+import { not, Predicate } from '@effect/data/Predicate'
 import * as ReadonlyRecord from '@effect/data/ReadonlyRecord'
 import * as Effect from '@effect/io/Effect'
 import * as doctrine from 'doctrine'
-import * as Apply from 'fp-ts/Apply'
-import * as B from 'fp-ts/boolean'
-import * as M from 'fp-ts/Monoid'
 import * as Ord from 'fp-ts/Ord'
-import { not, Predicate } from 'fp-ts/Predicate'
 import * as RE from 'fp-ts/ReaderEither'
 import * as RA from 'fp-ts/ReadonlyArray'
 import * as RNEA from 'fp-ts/ReadonlyNonEmptyArray'
@@ -86,19 +84,9 @@ const CommentInfo = (
   category
 })
 
-// -------------------------------------------------------------------------------------
-// parsers
-// -------------------------------------------------------------------------------------
-
-// -------------------------------------------------------------------------------------
-// utils
-// -------------------------------------------------------------------------------------
-
 const semigroupError = pipe(S.Semigroup, Semigroup.intercalate('\n'))
 
 const applicativeParser = RE.getApplicativeReaderValidation(semigroupError)
-
-const sequenceS = Apply.sequenceS(applicativeParser)
 
 const traverse = RA.traverse(applicativeParser)
 
@@ -210,11 +198,11 @@ const getExamples = (name: string, comment: Comment, isModule: boolean): ParserE
         Option.map(RA.compact),
         Option.match(
           () =>
-            M.concatAll(B.MonoidAll)([env.config.enforceExamples, !isModule])
+            Boolean.MonoidEvery.combineAll([env.config.enforceExamples, !isModule])
               ? Either.left(`Missing examples in ${env.path.join('/')}#${name} documentation`)
               : Either.right(RA.empty),
           (examples) =>
-            M.concatAll(B.MonoidAll)([env.config.enforceExamples, RA.isEmpty(examples), !isModule])
+            Boolean.MonoidEvery.combineAll([env.config.enforceExamples, RA.isEmpty(examples), !isModule])
               ? Either.left(`Missing examples in ${env.path.join('/')}#${name} documentation`)
               : Either.right(examples)
         )
@@ -417,12 +405,13 @@ const getFunctionDeclarations: RE.ReaderEither<
  * @since 0.9.0
  */
 export const parseFunctions: ParserEffect<ReadonlyArray<Function>> = pipe(
-  getFunctionDeclarations,
-  RE.flatMap(({ arrows, functions }) =>
-    sequenceS({
-      functionDeclarations: pipe(functions, traverse(parseFunctionDeclaration)),
-      variableDeclarations: pipe(arrows, traverse(parseFunctionVariableDeclaration))
-    })
+  RE.Do,
+  RE.bind('getFunctionDeclarations', () => getFunctionDeclarations),
+  RE.bind('functionDeclarations', ({ getFunctionDeclarations }) =>
+    pipe(getFunctionDeclarations.functions, traverse(parseFunctionDeclaration))
+  ),
+  RE.bind('variableDeclarations', ({ getFunctionDeclarations }) =>
+    pipe(getFunctionDeclarations.arrows, traverse(parseFunctionVariableDeclaration))
   ),
   RE.map(({ functionDeclarations, variableDeclarations }) =>
     RA.getMonoid<Function>().concat(functionDeclarations, variableDeclarations)
@@ -771,7 +760,7 @@ export const parseModuleDocumentation: ParserEffect<Documentable> = pipe(
     const name = getModuleName(env.path)
     // if any of the settings enforcing documentation are set to `true`, then
     // a module should have associated documentation
-    const isDocumentationRequired = M.concatAll(B.MonoidAny)([
+    const isDocumentationRequired = Boolean.MonoidSome.combineAll([
       env.config.enforceDescriptions,
       env.config.enforceVersion
     ])
@@ -809,8 +798,8 @@ export const parseModule: ParserEffect<Module> = pipe(
   RE.ask<ParserEnv>(),
   RE.flatMap((env) =>
     pipe(
-      parseModuleDocumentation,
-      RE.bindTo('documentation'),
+      RE.Do,
+      RE.bind('documentation', () => parseModuleDocumentation),
       RE.bind('interfaces', () => parseInterfaces),
       RE.bind('functions', () => parseFunctions),
       RE.bind('typeAliases', () => parseTypeAliases),
@@ -823,10 +812,6 @@ export const parseModule: ParserEffect<Module> = pipe(
     )
   )
 )
-
-// -------------------------------------------------------------------------------------
-// files
-// -------------------------------------------------------------------------------------
 
 /**
  * @internal
@@ -848,7 +833,7 @@ export const parseFile =
       })
     )
 
-const createProject = (files: ReadonlyArray<File>): Effect.Effect<Config, ReadonlyArray<string>, ast.Project> =>
+const createProject = (files: ReadonlyArray<File>) =>
   pipe(
     Config,
     Effect.map(({ config }) => {
@@ -870,9 +855,7 @@ const createProject = (files: ReadonlyArray<File>): Effect.Effect<Config, Readon
  * @category parsers
  * @since 0.9.0
  */
-export const parseFiles = (
-  files: ReadonlyArray<File>
-): Effect.Effect<Config, ReadonlyArray<string>, ReadonlyArray<Module>> =>
+export const parseFiles = (files: ReadonlyArray<File>) =>
   pipe(
     createProject(files),
     Effect.flatMap((project) =>

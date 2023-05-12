@@ -18,6 +18,7 @@ import * as RR from 'fp-ts/ReadonlyRecord'
 import * as Semigroup from 'fp-ts/Semigroup'
 import * as S from 'fp-ts/string'
 import * as T from 'fp-ts/Task'
+import * as TaskEither from 'fp-ts/TaskEither'
 import * as Path from 'path'
 import * as ast from 'ts-morph'
 
@@ -838,23 +839,21 @@ export const parseFile =
       )
     )
 
-const createProject = (files: ReadonlyArray<File>): RTE.ReaderTaskEither<_.Config, string, ast.Project> =>
-  pipe(
-    RTE.ask<_.Config>(),
-    RTE.flatMap((config) => {
-      const options: ast.ProjectOptions = {
-        compilerOptions: {
-          strict: true,
-          ...config.parseCompilerOptions
-        }
+const createProject =
+  (files: ReadonlyArray<File>): RTE.ReaderTaskEither<_.Config, string, ast.Project> =>
+  (config) => {
+    const options: ast.ProjectOptions = {
+      compilerOptions: {
+        strict: true,
+        ...config.parseCompilerOptions
       }
-      const project = new ast.Project(options)
-      for (const file of files) {
-        project.addSourceFileAtPath(file.path)
-      }
-      return RTE.of(project)
-    })
-  )
+    }
+    const project = new ast.Project(options)
+    for (const file of files) {
+      project.addSourceFileAtPath(file.path)
+    }
+    return TaskEither.of(project)
+  }
 
 /**
  * @category parsers
@@ -864,12 +863,15 @@ export const parseFiles = (files: ReadonlyArray<File>): RTE.ReaderTaskEither<_.C
   pipe(
     createProject(files),
     RTE.flatMap((project) =>
-      pipe(files, RA.traverse(RTE.getApplicativeReaderTaskValidation(T.ApplyPar, semigroupError))(parseFile(project)))
-    ),
-    RTE.map(
-      flow(
-        RA.filter((module) => !module.deprecated),
-        sortModules
+      pipe(
+        files,
+        RA.traverse(RTE.getApplicativeReaderTaskValidation(T.ApplyPar, semigroupError))(parseFile(project)),
+        RTE.map(
+          flow(
+            RA.filter((module) => !module.deprecated),
+            sortModules
+          )
+        )
       )
     )
   )

@@ -3,7 +3,7 @@
  */
 import * as Effect from '@effect/io/Effect'
 import * as E from 'fp-ts/Either'
-import { constVoid, flow, pipe } from 'fp-ts/function'
+import { pipe } from 'fp-ts/function'
 import * as Monoid from 'fp-ts/Monoid'
 import * as RTE from 'fp-ts/ReaderTaskEither'
 import * as ReadonlyArray from 'fp-ts/ReadonlyArray'
@@ -30,10 +30,10 @@ export const main: Effect.Effect<never, Error, void> = pipe(
   Effect.flatMap((config) => {
     const program: Program<void> = pipe(
       readSourceFiles,
-      RTE.flatMap(parseFiles),
+      RTE.flatMap(parse),
       RTE.tap(typeCheckExamples),
-      RTE.flatMap(getMarkdownFiles),
-      RTE.flatMap(writeMarkdownFiles)
+      RTE.flatMap(getMarkdown),
+      RTE.flatMap(writeMarkdown)
     )
     return effectFromTaskEither(program(config))
   })
@@ -46,58 +46,56 @@ export const main: Effect.Effect<never, Error, void> = pipe(
 export interface Program<A> extends RTE.ReaderTaskEither<_.Config, Error, A> {}
 
 // -------------------------------------------------------------------------------------
-// filesystem
+// readSourceFiles
 // -------------------------------------------------------------------------------------
 
-const readFile = (path: string): TaskEither.TaskEither<Error, _.File> =>
-  pipe(
-    _.toTaskEither(_.readFile(path)),
-    TaskEither.map((content) => _.createFile(path, content, false))
-  )
-
-const readFiles: (paths: ReadonlyArray<string>) => TaskEither.TaskEither<Error, ReadonlyArray<_.File>> =
-  ReadonlyArray.traverse(TaskEither.ApplicativePar)(readFile)
-
-const writeFile = (file: _.File): TaskEither.TaskEither<Error, void> => {
-  const overwrite: TaskEither.TaskEither<Error, void> = pipe(
-    _.toTaskEither(_.debug(`Overwriting file ${file.path}`)),
-    TaskEither.flatMap(() => _.toTaskEither(_.writeFile(file.path, file.content)))
-  )
-
-  const skip: TaskEither.TaskEither<Error, void> = _.toTaskEither(
-    _.debug(`File ${file.path} already exists, skipping creation`)
-  )
-
-  const write: TaskEither.TaskEither<Error, void> = _.toTaskEither(_.writeFile(file.path, file.content))
-
-  return pipe(
-    _.toTaskEither(_.exists(file.path)),
-    TaskEither.flatMap((exists) => (exists ? (file.overwrite ? overwrite : skip) : write))
-  )
-}
-
-const writeFiles: (files: ReadonlyArray<_.File>) => TaskEither.TaskEither<Error, void> = flow(
-  ReadonlyArray.traverse(TaskEither.ApplicativePar)(writeFile),
-  TaskEither.map(constVoid)
-)
-
 const readSourcePaths: Program<ReadonlyArray<string>> = (config) =>
-  pipe(
-    _.toTaskEither(_.search(NodePath.join(config.srcDir, '**', '*.ts'), config.exclude)),
-    TaskEither.map(ReadonlyArray.map(NodePath.normalize)),
-    TaskEither.tap((paths) => _.toTaskEither(_.info(`${paths.length} module(s) found`)))
+  _.toTaskEither(
+    pipe(
+      _.glob(NodePath.join(config.srcDir, '**', '*.ts'), config.exclude),
+      Effect.map(ReadonlyArray.map(NodePath.normalize)),
+      Effect.tap((paths) => _.info(`${paths.length} module(s) found`))
+    )
   )
 
 const readSourceFiles: Program<ReadonlyArray<_.File>> = pipe(
   readSourcePaths,
-  RTE.chainTaskEitherK((paths) => readFiles(paths))
+  RTE.flatMap((paths) => _.toReaderTaskEither(readFiles(paths)))
 )
 
+const readFile = (path: string): Effect.Effect<never, Error, _.File> =>
+  pipe(
+    _.readFile(path),
+    Effect.map((content) => _.createFile(path, content, false))
+  )
+
+const readFiles = (paths: ReadonlyArray<string>): Effect.Effect<never, Error, ReadonlyArray<_.File>> =>
+  Effect.forEachPar(paths, readFile)
+
+const writeFile = (file: _.File): Effect.Effect<never, Error, void> => {
+  const overwrite: Effect.Effect<never, Error, void> = pipe(
+    _.debug(`Overwriting file ${file.path}`),
+    Effect.flatMap(() => _.writeFile(file.path, file.content))
+  )
+
+  const skip: Effect.Effect<never, Error, void> = _.debug(`File ${file.path} already exists, skipping creation`)
+
+  const write: Effect.Effect<never, Error, void> = _.writeFile(file.path, file.content)
+
+  return pipe(
+    _.exists(file.path),
+    Effect.flatMap((exists) => (exists ? (file.overwrite ? overwrite : skip) : write))
+  )
+}
+
+const writeFiles = (files: ReadonlyArray<_.File>): Effect.Effect<never, Error, void> =>
+  Effect.forEachDiscard(files, writeFile)
+
 // -------------------------------------------------------------------------------------
-// parsers
+// parse
 // -------------------------------------------------------------------------------------
 
-const parseFiles = (files: ReadonlyArray<_.File>): Program<ReadonlyArray<Module>> =>
+const parse = (files: ReadonlyArray<_.File>): Program<ReadonlyArray<Module>> =>
   pipe(
     _.toReaderTaskEither(_.debug('Parsing files...')),
     RTE.flatMap(() =>
@@ -109,8 +107,24 @@ const parseFiles = (files: ReadonlyArray<_.File>): Program<ReadonlyArray<Module>
   )
 
 // -------------------------------------------------------------------------------------
-// examples
+// typeCheckExamples
 // -------------------------------------------------------------------------------------
+
+const typeCheckExamples = (modules: ReadonlyArray<Module>): Program<void> =>
+  pipe(
+    getExampleFiles(modules),
+    RTE.flatMap(handleImports),
+    RTE.flatMap((examples) =>
+      examples.length === 0
+        ? cleanExamples
+        : pipe(
+            writeExamples(examples),
+            RTE.flatMap(() => writeTsConfigJson),
+            RTE.flatMap(() => spawnTsNode),
+            RTE.flatMap(() => cleanExamples)
+          )
+    )
+  )
 
 const concatAllFiles = Monoid.concatAll(ReadonlyArray.getMonoid<_.File>())
 
@@ -211,7 +225,7 @@ const writeExamples = (examples: ReadonlyArray<_.File>): Program<void> =>
       pipe(
         getExampleIndex(examples),
         RTE.map((index) => pipe(examples, ReadonlyArray.prepend(index))),
-        RTE.chainTaskEitherK((files) => writeFiles(files))
+        RTE.chainTaskEitherK((files) => _.toTaskEither(writeFiles(files)))
       )
     )
   )
@@ -220,41 +234,38 @@ const writeTsConfigJson: Program<void> = pipe(
   _.toReaderTaskEither(_.debug('Writing examples tsconfig...')),
   RTE.flatMap(
     () => (config: _.Config) =>
-      writeFile(
-        _.createFile(
-          NodePath.join(process.cwd(), config.outDir, 'examples', 'tsconfig.json'),
-          JSON.stringify(
-            {
-              compilerOptions: config.examplesCompilerOptions
-            },
-            null,
-            2
-          ),
-          true
+      _.toTaskEither(
+        writeFile(
+          _.createFile(
+            NodePath.join(process.cwd(), config.outDir, 'examples', 'tsconfig.json'),
+            JSON.stringify(
+              {
+                compilerOptions: config.examplesCompilerOptions
+              },
+              null,
+              2
+            ),
+            true
+          )
         )
       )
   )
 )
 
-const typeCheckExamples = (modules: ReadonlyArray<Module>): Program<void> =>
+// -------------------------------------------------------------------------------------
+// getMarkdown
+// -------------------------------------------------------------------------------------
+
+const getMarkdown = (modules: ReadonlyArray<Module>): Program<ReadonlyArray<_.File>> =>
   pipe(
-    getExampleFiles(modules),
-    RTE.flatMap(handleImports),
-    RTE.flatMap((examples) =>
-      examples.length === 0
-        ? cleanExamples
-        : pipe(
-            writeExamples(examples),
-            RTE.flatMap(() => writeTsConfigJson),
-            RTE.flatMap(() => spawnTsNode),
-            RTE.flatMap(() => cleanExamples)
-          )
+    RTE.sequenceArray([getHome, getModulesIndex, getConfigYML]),
+    RTE.flatMap((meta) =>
+      pipe(
+        getModuleMarkdownFiles(modules),
+        RTE.map((files) => ReadonlyArray.getMonoid<_.File>().concat(meta, files))
+      )
     )
   )
-
-// -------------------------------------------------------------------------------------
-// markdown
-// -------------------------------------------------------------------------------------
 
 const getHome: Program<_.File> = (config) =>
   TaskEither.of(
@@ -351,18 +362,11 @@ const getModuleMarkdownFiles = (modules: ReadonlyArray<Module>): Program<Readonl
     )
   )
 
-const getMarkdownFiles = (modules: ReadonlyArray<Module>): Program<ReadonlyArray<_.File>> =>
-  pipe(
-    RTE.sequenceArray([getHome, getModulesIndex, getConfigYML]),
-    RTE.flatMap((meta) =>
-      pipe(
-        getModuleMarkdownFiles(modules),
-        RTE.map((files) => ReadonlyArray.getMonoid<_.File>().concat(meta, files))
-      )
-    )
-  )
+// -------------------------------------------------------------------------------------
+// writeMarkdown
+// -------------------------------------------------------------------------------------
 
-const writeMarkdownFiles = (files: ReadonlyArray<_.File>): Program<void> =>
+const writeMarkdown = (files: ReadonlyArray<_.File>): Program<void> =>
   pipe(
     (config: _.Config) => {
       const outPattern = NodePath.join(config.outDir, '**/*.ts.md')
@@ -374,9 +378,11 @@ const writeMarkdownFiles = (files: ReadonlyArray<_.File>): Program<void> =>
       )
     },
     RTE.chainTaskEitherK(() =>
-      pipe(
-        _.toTaskEither(_.debug('Writing markdown files...')),
-        TaskEither.flatMap(() => writeFiles(files))
+      _.toTaskEither(
+        pipe(
+          _.debug('Writing markdown files...'),
+          Effect.flatMap(() => writeFiles(files))
+        )
       )
     )
   )

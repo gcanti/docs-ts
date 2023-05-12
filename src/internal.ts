@@ -14,7 +14,7 @@ import chalk from 'chalk'
 import * as ReaderTaskEither from 'fp-ts/ReaderTaskEither'
 import * as TaskEither from 'fp-ts/TaskEither'
 import * as fs from 'fs-extra'
-import * as glob from 'glob'
+import * as Glob from 'glob'
 import * as rimraf from 'rimraf'
 
 // -------------------------------------------------------------------------------------
@@ -134,9 +134,9 @@ export const remove = (path: string): Effect.Effect<never, Error, void> =>
   )
 
 /** @internal */
-export const search = (pattern: string, exclude: ReadonlyArray<string>): Effect.Effect<never, Error, Array<string>> =>
+export const glob = (pattern: string, exclude: ReadonlyArray<string>): Effect.Effect<never, Error, Array<string>> =>
   Effect.async((resume) =>
-    glob(pattern, { ignore: exclude }, (error, data) => {
+    Glob(pattern, { ignore: exclude }, (error, data) => {
       if (error) {
         resume(Effect.fail(error))
       } else {

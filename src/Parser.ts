@@ -1,6 +1,8 @@
 /**
  * @since 0.9.0
  */
+import * as NodePath from 'node:path'
+
 import * as doctrine from 'doctrine'
 import * as Apply from 'fp-ts/Apply'
 import * as B from 'fp-ts/boolean'
@@ -19,7 +21,6 @@ import * as Semigroup from 'fp-ts/Semigroup'
 import * as S from 'fp-ts/string'
 import * as T from 'fp-ts/Task'
 import * as TaskEither from 'fp-ts/TaskEither'
-import * as Path from 'path'
 import * as ast from 'ts-morph'
 
 import * as _ from './internal'
@@ -749,7 +750,7 @@ export const parseClasses: Parser<ReadonlyArray<Class>> = pipe(
 // modules
 // -------------------------------------------------------------------------------------
 
-const getModuleName = (path: RNEA.ReadonlyNonEmptyArray<string>): string => Path.parse(RNEA.last(path)).name
+const getModuleName = (path: RNEA.ReadonlyNonEmptyArray<string>): string => NodePath.parse(RNEA.last(path)).name
 
 /**
  * @internal
@@ -824,7 +825,7 @@ export const parseFile =
       RTE.ask<_.Config>(),
       RTE.flatMap((config) =>
         pipe(
-          RTE.right<_.Config, string, RNEA.ReadonlyNonEmptyArray<string>>(file.path.split(Path.sep) as any),
+          RTE.right<_.Config, string, RNEA.ReadonlyNonEmptyArray<string>>(file.path.split(NodePath.sep) as any),
           RTE.bindTo('path'),
           RTE.bind(
             'sourceFile',

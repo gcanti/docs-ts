@@ -8,6 +8,9 @@
   "main": "lib/index.js",
   "bin": "lib/bin.js",
   "typings": "lib/index.d.ts",
+  "engines": {
+    "node": ">=16.17.1"
+  },
   "scripts": {
     "lint": "eslint \"src/**/*.ts\" \"test/**/*.ts\"",
     "lint-fix": "eslint --fix \"src/**/*.ts\" \"test/**/*.ts\"",

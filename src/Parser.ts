@@ -15,29 +15,17 @@ import * as Order from '@effect/data/typeclass/Order'
 import * as Effect from '@effect/io/Effect'
 import chalk from 'chalk'
 import * as doctrine from 'doctrine'
-import * as RE from 'fp-ts/ReaderEither'
-import * as RA from 'fp-ts/ReadonlyArray'
 import * as ast from 'ts-morph'
 
 import * as _ from './internal'
 import * as Module from './Module'
-import { Config } from './Service'
+import { Config, Parser } from './Service'
 
 /**
  * @category model
  * @since 0.9.0
  */
-export interface ParserEnv {
-  readonly config: _.Config
-  readonly path: ReadonlyArray.NonEmptyReadonlyArray<string>
-  readonly sourceFile: ast.SourceFile
-}
-
-/**
- * @category model
- * @since 0.9.0
- */
-export interface ParserEffect<A> extends RE.ReaderEither<ParserEnv, Array<string>, A> {}
+export interface ParserEffect<A> extends Effect.Effect<Config | Parser, Array<string>, A> {}
 
 interface Comment {
   readonly description: Option.Option<string>
@@ -69,12 +57,6 @@ const CommentInfo = (
   examples,
   category
 })
-
-const applicativeParser = RE.getApplicativeReaderValidation(RA.getSemigroup<string>())
-
-const traverse: <A, FR, B>(
-  f: (a: A) => RE.ReaderEither<FR, Array<string>, B>
-) => (ta: ReadonlyArray<A>) => RE.ReaderEither<FR, Array<string>, Array<B>> = RA.traverse(applicativeParser) as any
 
 const every =
   <A>(predicates: ReadonlyArray<Predicate<A>>) =>
@@ -130,16 +112,16 @@ const missingTag = (tag: string, path: ReadonlyArray<string>, name: string): str
 
 const getSinceTag = (name: string, comment: Comment): ParserEffect<Option.Option<string>> =>
   pipe(
-    RE.ask<ParserEnv>(),
-    RE.chainEitherK((env) =>
+    Effect.all(Config, Parser),
+    Effect.flatMap(([Config, Parser]) =>
       pipe(
         comment.tags,
         ReadonlyRecord.get('since'),
         Option.flatMap(ReadonlyArray.headNonEmpty),
         Option.match(
           () =>
-            env.config.enforceVersion
-              ? Either.left([missingTag('@since', env.path, name)])
+            Config.config.enforceVersion
+              ? Either.left([missingTag('@since', Parser.path, name)])
               : Either.right(Option.none()),
           (since) => Either.right(Option.some(since))
         )
@@ -149,14 +131,14 @@ const getSinceTag = (name: string, comment: Comment): ParserEffect<Option.Option
 
 const getCategoryTag = (name: string, comment: Comment): ParserEffect<Option.Option<string>> =>
   pipe(
-    RE.ask<ParserEnv>(),
-    RE.chainEitherK((env) =>
+    Parser,
+    Effect.flatMap((Parser) =>
       pipe(
         comment.tags,
         ReadonlyRecord.get('category'),
         Option.flatMap(ReadonlyArray.headNonEmpty),
         Either.liftPredicate(not(every([Option.isNone, () => ReadonlyRecord.has(comment.tags, 'category')])), () => [
-          missingTag('@category', env.path, name)
+          missingTag('@category', Parser.path, name)
         ])
       )
     )
@@ -164,14 +146,14 @@ const getCategoryTag = (name: string, comment: Comment): ParserEffect<Option.Opt
 
 const getDescription = (name: string, comment: Comment): ParserEffect<Option.Option<string>> =>
   pipe(
-    RE.ask<ParserEnv>(),
-    RE.chainEitherK((env) =>
+    Effect.all(Config, Parser),
+    Effect.flatMap(([Config, Parser]) =>
       pipe(
         comment.description,
         Option.match(
           () =>
-            env.config.enforceDescriptions
-              ? Either.left([missing('description', env.path, name)])
+            Config.config.enforceDescriptions
+              ? Either.left([missing('description', Parser.path, name)])
               : Either.right(Option.none()),
           (description) => Either.right(Option.some(description))
         )
@@ -181,24 +163,24 @@ const getDescription = (name: string, comment: Comment): ParserEffect<Option.Opt
 
 const getExamples = (name: string, comment: Comment, isModule: boolean): ParserEffect<Array<string>> =>
   pipe(
-    RE.ask<ParserEnv>(),
-    RE.chainEitherK((env) =>
+    Effect.all(Config, Parser),
+    Effect.flatMap(([Config, Parser]) =>
       pipe(
         comment.tags,
         ReadonlyRecord.get('example'),
         Option.map(ReadonlyArray.compact),
         Option.match(
           () =>
-            Boolean.MonoidEvery.combineAll([env.config.enforceExamples, !isModule])
-              ? Either.left([missingTag('@example', env.path, name)])
+            Boolean.MonoidEvery.combineAll([Config.config.enforceExamples, !isModule])
+              ? Either.left([missingTag('@example', Parser.path, name)])
               : Either.right([]),
           (examples) =>
             Boolean.MonoidEvery.combineAll([
-              env.config.enforceExamples,
+              Config.config.enforceExamples,
               ReadonlyArray.isEmptyArray(examples),
               !isModule
             ])
-              ? Either.left([missingTag('@example', env.path, name)])
+              ? Either.left([missingTag('@example', Parser.path, name)])
               : Either.right(examples.slice())
         )
       )
@@ -212,16 +194,16 @@ export const getCommentInfo =
   (name: string, isModule = false) =>
   (text: string): ParserEffect<CommentInfo> =>
     pipe(
-      RE.Do,
-      RE.bind('comment', () => RE.right(parseComment(text))),
-      RE.bind('since', ({ comment }) => getSinceTag(name, comment)),
-      RE.bind('category', ({ comment }) => getCategoryTag(name, comment)),
-      RE.bind('description', ({ comment }) => getDescription(name, comment)),
-      RE.bind('examples', ({ comment }) => getExamples(name, comment, isModule)),
-      RE.bind('deprecated', ({ comment }) =>
-        RE.right(pipe(comment.tags, ReadonlyRecord.get('deprecated'), Option.isSome))
+      Effect.Do(),
+      Effect.bind('comment', () => Either.right(parseComment(text))),
+      Effect.bind('since', ({ comment }) => getSinceTag(name, comment)),
+      Effect.bind('category', ({ comment }) => getCategoryTag(name, comment)),
+      Effect.bind('description', ({ comment }) => getDescription(name, comment)),
+      Effect.bind('examples', ({ comment }) => getExamples(name, comment, isModule)),
+      Effect.bind('deprecated', ({ comment }) =>
+        Either.right(pipe(comment.tags, ReadonlyRecord.get('deprecated'), Option.isSome))
       ),
-      RE.map(({ category, deprecated, description, examples, since }) => {
+      Effect.map(({ category, deprecated, description, examples, since }) => {
         return CommentInfo(description, since, deprecated, examples, category)
       })
     )
@@ -250,7 +232,7 @@ const parseInterfaceDeclaration = (id: ast.InterfaceDeclaration): ParserEffect<M
   pipe(
     getJSDocText(id.getJsDocs()),
     getCommentInfo(id.getName()),
-    RE.map((info) =>
+    Effect.map((info) =>
       Module.createInterface(
         Module.createDocumentable(
           id.getName(),
@@ -270,9 +252,10 @@ const parseInterfaceDeclaration = (id: ast.InterfaceDeclaration): ParserEffect<M
  * @since 0.9.0
  */
 export const parseInterfaces: ParserEffect<Array<Module.Interface>> = pipe(
-  RE.asks((env: ParserEnv) =>
+  Parser,
+  Effect.map((Parser) =>
     pipe(
-      env.sourceFile.getInterfaces(),
+      Parser.sourceFile.getInterfaces(),
       ReadonlyArray.filter(
         every<ast.InterfaceDeclaration>([
           (id) => id.isExported(),
@@ -281,7 +264,13 @@ export const parseInterfaces: ParserEffect<Array<Module.Interface>> = pipe(
       )
     )
   ),
-  RE.flatMap(flow(traverse(parseInterfaceDeclaration), RE.map(ReadonlyArray.sort(byName))))
+  Effect.flatMap((interfaceDeclarations) =>
+    pipe(
+      interfaceDeclarations,
+      Effect.validateAll(parseInterfaceDeclaration),
+      Effect.mapBoth(ReadonlyArray.flatten, ReadonlyArray.sort(byName))
+    )
+  )
 )
 
 // -------------------------------------------------------------------------------------
@@ -313,19 +302,19 @@ const getFunctionDeclarationJSDocs = (fd: ast.FunctionDeclaration): Array<ast.JS
 
 const parseFunctionDeclaration = (fd: ast.FunctionDeclaration): ParserEffect<Module.Function> =>
   pipe(
-    RE.ask<ParserEnv>(),
-    RE.flatMap((env: ParserEnv) =>
+    Parser,
+    Effect.flatMap((Parser) =>
       pipe(
         Option.fromNullable(fd.getName()),
         Option.flatMap(Option.liftPredicate((name) => name.length > 0)),
-        RE.fromOption(() => [`Missing function name in module ${env.path.join('/')}`])
+        Option.toEither(() => [`Missing function name in module ${Parser.path.join('/')}`])
       )
     ),
-    RE.flatMap((name) =>
+    Effect.flatMap((name) =>
       pipe(
         getJSDocText(getFunctionDeclarationJSDocs(fd)),
         getCommentInfo(name),
-        RE.map((info) => {
+        Effect.map((info) => {
           const signatures = pipe(
             fd.getOverloads(),
             ReadonlyArray.matchRight(
@@ -359,7 +348,7 @@ const parseFunctionVariableDeclaration = (vd: ast.VariableDeclaration): ParserEf
   return pipe(
     getJSDocText(vs.getJsDocs()),
     getCommentInfo(name),
-    RE.map((info) => {
+    Effect.map((info) => {
       const signature = `export declare const ${name}: ${stripImportTypes(vd.getType().getText(vd))}`
       return Module.createFunction(
         Module.createDocumentable(name, info.description, info.since, info.deprecated, info.examples, info.category),
@@ -369,65 +358,72 @@ const parseFunctionVariableDeclaration = (vd: ast.VariableDeclaration): ParserEf
   )
 }
 
-const getFunctionDeclarations: RE.ReaderEither<
-  ParserEnv,
-  Array<string>,
-  {
-    functions: ReadonlyArray<ast.FunctionDeclaration>
-    arrows: ReadonlyArray<ast.VariableDeclaration>
-  }
-> = RE.asks((env) => ({
-  functions: pipe(
-    env.sourceFile.getFunctions(),
-    ReadonlyArray.filter(
-      every<ast.FunctionDeclaration>([
-        (fd) => fd.isExported(),
-        not(flow(getFunctionDeclarationJSDocs, getJSDocText, parseComment, shouldIgnore))
-      ])
-    )
-  ),
-  arrows: pipe(
-    env.sourceFile.getVariableDeclarations(),
-    ReadonlyArray.filter(
-      every<ast.VariableDeclaration>([
-        (vd) => isVariableDeclarationList(vd.getParent()),
-        (vd) => isVariableStatement(vd.getParent().getParent() as any),
-        (vd) =>
-          pipe(
-            vd.getInitializer(),
-            every([
-              flow(
-                Option.fromNullable,
-                Option.flatMap(Option.liftPredicate(ast.Node.isFunctionLikeDeclaration)),
-                Option.isSome
-              ),
-              () =>
-                pipe(
-                  (vd.getParent().getParent() as ast.VariableStatement).getJsDocs(),
-                  not(flow(getJSDocText, parseComment, shouldIgnore))
+const getFunctionDeclarations: ParserEffect<{
+  functions: ReadonlyArray<ast.FunctionDeclaration>
+  arrows: ReadonlyArray<ast.VariableDeclaration>
+}> = pipe(
+  Parser,
+  Effect.map((Parser) => ({
+    functions: pipe(
+      Parser.sourceFile.getFunctions(),
+      ReadonlyArray.filter(
+        every<ast.FunctionDeclaration>([
+          (fd) => fd.isExported(),
+          not(flow(getFunctionDeclarationJSDocs, getJSDocText, parseComment, shouldIgnore))
+        ])
+      )
+    ),
+    arrows: pipe(
+      Parser.sourceFile.getVariableDeclarations(),
+      ReadonlyArray.filter(
+        every<ast.VariableDeclaration>([
+          (vd) => isVariableDeclarationList(vd.getParent()),
+          (vd) => isVariableStatement(vd.getParent().getParent() as any),
+          (vd) =>
+            pipe(
+              vd.getInitializer(),
+              every([
+                flow(
+                  Option.fromNullable,
+                  Option.flatMap(Option.liftPredicate(ast.Node.isFunctionLikeDeclaration)),
+                  Option.isSome
                 ),
-              () => (vd.getParent().getParent() as ast.VariableStatement).isExported()
-            ])
-          )
-      ])
+                () =>
+                  pipe(
+                    (vd.getParent().getParent() as ast.VariableStatement).getJsDocs(),
+                    not(flow(getJSDocText, parseComment, shouldIgnore))
+                  ),
+                () => (vd.getParent().getParent() as ast.VariableStatement).isExported()
+              ])
+            )
+        ])
+      )
     )
-  )
-}))
+  }))
+)
 
 /**
  * @category parsers
  * @since 0.9.0
  */
 export const parseFunctions: ParserEffect<Array<Module.Function>> = pipe(
-  RE.Do,
-  RE.bind('getFunctionDeclarations', () => getFunctionDeclarations),
-  RE.bind('functionDeclarations', ({ getFunctionDeclarations }) =>
-    pipe(getFunctionDeclarations.functions, traverse(parseFunctionDeclaration))
+  Effect.Do(),
+  Effect.bind('getFunctionDeclarations', () => getFunctionDeclarations),
+  Effect.bind('functionDeclarations', ({ getFunctionDeclarations }) =>
+    pipe(
+      getFunctionDeclarations.functions,
+      Effect.validateAll(parseFunctionDeclaration),
+      Effect.mapError(ReadonlyArray.flatten)
+    )
   ),
-  RE.bind('variableDeclarations', ({ getFunctionDeclarations }) =>
-    pipe(getFunctionDeclarations.arrows, traverse(parseFunctionVariableDeclaration))
+  Effect.bind('variableDeclarations', ({ getFunctionDeclarations }) =>
+    pipe(
+      getFunctionDeclarations.arrows,
+      Effect.validateAll(parseFunctionVariableDeclaration),
+      Effect.mapError(ReadonlyArray.flatten)
+    )
   ),
-  RE.map(({ functionDeclarations, variableDeclarations }) => functionDeclarations.concat(variableDeclarations))
+  Effect.map(({ functionDeclarations, variableDeclarations }) => functionDeclarations.concat(variableDeclarations))
 )
 
 // -------------------------------------------------------------------------------------
@@ -436,12 +432,12 @@ export const parseFunctions: ParserEffect<Array<Module.Function>> = pipe(
 
 const parseTypeAliasDeclaration = (ta: ast.TypeAliasDeclaration): ParserEffect<Module.TypeAlias> =>
   pipe(
-    RE.of<ParserEnv, Array<string>, string>(ta.getName()),
-    RE.flatMap((name) =>
+    Effect.succeed(ta.getName()),
+    Effect.flatMap((name) =>
       pipe(
         getJSDocText(ta.getJsDocs()),
         getCommentInfo(name),
-        RE.map((info) =>
+        Effect.map((info) =>
           Module.createTypeAlias(
             Module.createDocumentable(
               name,
@@ -463,9 +459,10 @@ const parseTypeAliasDeclaration = (ta: ast.TypeAliasDeclaration): ParserEffect<M
  * @since 0.9.0
  */
 export const parseTypeAliases: ParserEffect<Array<Module.TypeAlias>> = pipe(
-  RE.asks((env: ParserEnv) =>
+  Parser,
+  Effect.map((Parser) =>
     pipe(
-      env.sourceFile.getTypeAliases(),
+      Parser.sourceFile.getTypeAliases(),
       ReadonlyArray.filter(
         every<ast.TypeAliasDeclaration>([
           (alias) => alias.isExported(),
@@ -474,8 +471,10 @@ export const parseTypeAliases: ParserEffect<Array<Module.TypeAlias>> = pipe(
       )
     )
   ),
-  RE.flatMap(traverse(parseTypeAliasDeclaration)),
-  RE.map(ReadonlyArray.sort(byName))
+  Effect.flatMap((typeAliasDeclarations) =>
+    pipe(typeAliasDeclarations, Effect.validateAll(parseTypeAliasDeclaration), Effect.mapError(ReadonlyArray.flatten))
+  ),
+  Effect.map(ReadonlyArray.sort(byName))
 )
 
 // -------------------------------------------------------------------------------------
@@ -488,7 +487,7 @@ const parseConstantVariableDeclaration = (vd: ast.VariableDeclaration): ParserEf
   return pipe(
     getJSDocText(vs.getJsDocs()),
     getCommentInfo(name),
-    RE.map((info) => {
+    Effect.map((info) => {
       const type = stripImportTypes(vd.getType().getText(vd))
       const signature = `export declare const ${name}: ${type}`
       return Module.createConstant(
@@ -504,9 +503,10 @@ const parseConstantVariableDeclaration = (vd: ast.VariableDeclaration): ParserEf
  * @since 0.9.0
  */
 export const parseConstants: ParserEffect<Array<Module.Constant>> = pipe(
-  RE.asks((env: ParserEnv) =>
+  Parser,
+  Effect.map((Parser) =>
     pipe(
-      env.sourceFile.getVariableDeclarations(),
+      Parser.sourceFile.getVariableDeclarations(),
       ReadonlyArray.filter(
         every<ast.VariableDeclaration>([
           (vd) => isVariableDeclarationList(vd.getParent()),
@@ -532,7 +532,13 @@ export const parseConstants: ParserEffect<Array<Module.Constant>> = pipe(
       )
     )
   ),
-  RE.flatMap(traverse(parseConstantVariableDeclaration))
+  Effect.flatMap((variableDeclarations) =>
+    pipe(
+      variableDeclarations,
+      Effect.validateAll(parseConstantVariableDeclaration),
+      Effect.mapError(ReadonlyArray.flatten)
+    )
+  )
 )
 
 // -------------------------------------------------------------------------------------
@@ -541,20 +547,20 @@ export const parseConstants: ParserEffect<Array<Module.Constant>> = pipe(
 
 const parseExportSpecifier = (es: ast.ExportSpecifier): ParserEffect<Module.Export> =>
   pipe(
-    RE.ask<ParserEnv>(),
-    RE.flatMap((env) =>
+    Parser,
+    Effect.flatMap((Parser) =>
       pipe(
-        RE.of<ParserEnv, Array<string>, string>(es.compilerNode.name.text),
-        RE.bindTo('name'),
-        RE.bind('type', () => RE.of(stripImportTypes(es.getType().getText(es)))),
-        RE.bind('signature', ({ name, type }) => RE.of(`export declare const ${name}: ${type}`)),
-        RE.flatMap(({ name, signature }) =>
+        Effect.Do(),
+        Effect.bind('name', () => Effect.succeed(es.compilerNode.name.text)),
+        Effect.bind('type', () => Effect.succeed(stripImportTypes(es.getType().getText(es)))),
+        Effect.bind('signature', ({ name, type }) => Effect.succeed(`export declare const ${name}: ${type}`)),
+        Effect.flatMap(({ name, signature }) =>
           pipe(
             es.getLeadingCommentRanges(),
             ReadonlyArray.head,
-            RE.fromOption(() => [`Missing ${name} documentation in ${env.path.join('/')}`]),
-            RE.flatMap((commentRange) => pipe(commentRange.getText(), getCommentInfo(name))),
-            RE.map((info) =>
+            Option.toEither(() => [`Missing ${name} documentation in ${Parser.path.join('/')}`]),
+            Effect.flatMap((commentRange) => pipe(commentRange.getText(), getCommentInfo(name))),
+            Effect.map((info) =>
               Module.createExport(
                 Module.createDocumentable(
                   name,
@@ -574,16 +580,19 @@ const parseExportSpecifier = (es: ast.ExportSpecifier): ParserEffect<Module.Expo
   )
 
 const parseExportDeclaration = (ed: ast.ExportDeclaration): ParserEffect<Array<Module.Export>> =>
-  pipe(ed.getNamedExports(), traverse(parseExportSpecifier))
+  pipe(ed.getNamedExports(), Effect.validateAll(parseExportSpecifier), Effect.mapError(ReadonlyArray.flatten))
 
 /**
  * @category parsers
  * @since 0.9.0
  */
 export const parseExports: ParserEffect<Array<Module.Export>> = pipe(
-  RE.asks((env: ParserEnv) => env.sourceFile.getExportDeclarations()),
-  RE.flatMap(traverse(parseExportDeclaration)),
-  RE.map(ReadonlyArray.flatten)
+  Parser,
+  Effect.map((Parser) => Parser.sourceFile.getExportDeclarations()),
+  Effect.flatMap((exportDeclarations) =>
+    pipe(exportDeclarations, Effect.validateAll(parseExportDeclaration), Effect.mapError(ReadonlyArray.flatten))
+  ),
+  Effect.map(ReadonlyArray.flatten)
 )
 
 // -------------------------------------------------------------------------------------
@@ -607,11 +616,11 @@ const getMethodSignature = (md: ast.MethodDeclaration): string =>
 
 const parseMethod = (md: ast.MethodDeclaration): ParserEffect<Option.Option<Module.Method>> =>
   pipe(
-    RE.of<ParserEnv, Array<string>, string>(md.getName()),
-    RE.bindTo('name'),
-    RE.bind('overloads', () => RE.of(md.getOverloads())),
-    RE.bind('jsdocs', ({ overloads }) =>
-      RE.of(
+    Effect.Do(),
+    Effect.bind('name', () => Effect.succeed(md.getName())),
+    Effect.bind('overloads', () => Effect.succeed(md.getOverloads())),
+    Effect.bind('jsdocs', ({ overloads }) =>
+      Effect.succeed(
         pipe(
           overloads,
           ReadonlyArray.matchLeft(
@@ -621,13 +630,13 @@ const parseMethod = (md: ast.MethodDeclaration): ParserEffect<Option.Option<Modu
         )
       )
     ),
-    RE.flatMap(({ jsdocs, overloads, name }) =>
+    Effect.flatMap(({ jsdocs, overloads, name }) =>
       shouldIgnore(parseComment(getJSDocText(jsdocs)))
-        ? RE.right(Option.none())
+        ? Effect.succeed(Option.none())
         : pipe(
             getJSDocText(jsdocs),
             getCommentInfo(name),
-            RE.map((info) => {
+            Effect.map((info) => {
               const signatures = pipe(
                 overloads,
                 ReadonlyArray.matchRight(
@@ -664,7 +673,7 @@ const parseProperty =
     return pipe(
       getJSDocText(pd.getJsDocs()),
       getCommentInfo(`${classname}#${name}`),
-      RE.map((info) => {
+      Effect.map((info) => {
         const type = stripImportTypes(pd.getType().getText(pd))
         const readonly = pipe(
           Option.fromNullable(pd.getFirstModifierByKind(ast.ts.SyntaxKind.ReadonlyKeyword)),
@@ -685,7 +694,6 @@ const parseProperty =
 const parseProperties = (name: string, c: ast.ClassDeclaration): ParserEffect<Array<Module.Property>> =>
   pipe(
     c.getProperties(),
-    // take public, instance properties
     ReadonlyArray.filter(
       every<ast.PropertyDeclaration>([
         (prop) => !prop.isStatic(),
@@ -694,7 +702,8 @@ const parseProperties = (name: string, c: ast.ClassDeclaration): ParserEffect<Ar
         (prop) => pipe(prop.getJsDocs(), not(flow(getJSDocText, parseComment, shouldIgnore)))
       ])
     ),
-    traverse(parseProperty(name))
+    (propertyDeclarations) =>
+      pipe(propertyDeclarations, Effect.validateAll(parseProperty(name)), Effect.mapError(ReadonlyArray.flatten))
   )
 
 /**
@@ -714,11 +723,11 @@ export const getConstructorDeclarationSignature = (c: ast.ConstructorDeclaration
 
 const getClassName = (c: ast.ClassDeclaration): ParserEffect<string> =>
   pipe(
-    RE.ask<ParserEnv>(),
-    RE.flatMap((env) =>
+    Parser,
+    Effect.flatMap((Parser) =>
       pipe(
         Option.fromNullable(c.getName()),
-        RE.fromOption(() => [`Missing class name in module ${env.path.join('/')}`])
+        Option.toEither(() => [`Missing class name in module ${Parser.path.join('/')}`])
       )
     )
   )
@@ -728,9 +737,9 @@ const getClassCommentInfo = (name: string, c: ast.ClassDeclaration): ParserEffec
 
 const getClassDeclarationSignature = (name: string, c: ast.ClassDeclaration): ParserEffect<string> =>
   pipe(
-    RE.ask<ParserEnv>(),
-    RE.map(() => getTypeParameters(c.getTypeParameters())),
-    RE.map((typeParameters) =>
+    Parser,
+    Effect.map(() => getTypeParameters(c.getTypeParameters())),
+    Effect.map((typeParameters) =>
       pipe(
         c.getConstructors(),
         ReadonlyArray.matchLeft(
@@ -743,14 +752,26 @@ const getClassDeclarationSignature = (name: string, c: ast.ClassDeclaration): Pa
 
 const parseClass = (c: ast.ClassDeclaration): ParserEffect<Module.Class> =>
   pipe(
-    getClassName(c),
-    RE.bindTo('name'),
-    RE.bind('info', ({ name }) => getClassCommentInfo(name, c)),
-    RE.bind('signature', ({ name }) => getClassDeclarationSignature(name, c)),
-    RE.bind('methods', () => pipe(c.getInstanceMethods(), traverse(parseMethod), RE.map(ReadonlyArray.compact))),
-    RE.bind('staticMethods', () => pipe(c.getStaticMethods(), traverse(parseMethod), RE.map(ReadonlyArray.compact))),
-    RE.bind('properties', ({ name }) => parseProperties(name, c)),
-    RE.map(({ methods, staticMethods, properties, info, name, signature }) =>
+    Effect.Do(),
+    Effect.bind('name', () => getClassName(c)),
+    Effect.bind('info', ({ name }) => getClassCommentInfo(name, c)),
+    Effect.bind('signature', ({ name }) => getClassDeclarationSignature(name, c)),
+    Effect.bind('methods', () =>
+      pipe(
+        c.getInstanceMethods(),
+        Effect.validateAll(parseMethod),
+        Effect.mapBoth(ReadonlyArray.flatten, ReadonlyArray.compact)
+      )
+    ),
+    Effect.bind('staticMethods', () =>
+      pipe(
+        c.getStaticMethods(),
+        Effect.validateAll(parseMethod),
+        Effect.mapBoth(ReadonlyArray.flatten, ReadonlyArray.compact)
+      )
+    ),
+    Effect.bind('properties', ({ name }) => parseProperties(name, c)),
+    Effect.map(({ methods, staticMethods, properties, info, name, signature }) =>
       Module.createClass(
         Module.createDocumentable(name, info.description, info.since, info.deprecated, info.examples, info.category),
         signature,
@@ -761,10 +782,13 @@ const parseClass = (c: ast.ClassDeclaration): ParserEffect<Module.Class> =>
     )
   )
 
-const getClasses: ParserEffect<Array<ast.ClassDeclaration>> = RE.asks((env: ParserEnv) =>
-  pipe(
-    env.sourceFile.getClasses(),
-    ReadonlyArray.filter((c) => c.isExported())
+const getClasses: ParserEffect<Array<ast.ClassDeclaration>> = pipe(
+  Parser,
+  Effect.map((Parser) =>
+    pipe(
+      Parser.sourceFile.getClasses(),
+      ReadonlyArray.filter((c) => c.isExported())
+    )
   )
 )
 
@@ -774,8 +798,13 @@ const getClasses: ParserEffect<Array<ast.ClassDeclaration>> = RE.asks((env: Pars
  */
 export const parseClasses: ParserEffect<Array<Module.Class>> = pipe(
   getClasses,
-  RE.flatMap(traverse(parseClass)),
-  RE.map(ReadonlyArray.sort(byName))
+  Effect.flatMap((classDeclarations) =>
+    pipe(
+      classDeclarations,
+      Effect.validateAll(parseClass),
+      Effect.mapBoth(ReadonlyArray.flatten, ReadonlyArray.sort(byName))
+    )
+  )
 )
 
 // -------------------------------------------------------------------------------------
@@ -789,31 +818,28 @@ const getModuleName = (path: ReadonlyArray.NonEmptyReadonlyArray<string>): strin
  * @internal
  */
 export const parseModuleDocumentation: ParserEffect<Module.Documentable> = pipe(
-  RE.ask<ParserEnv>(),
-  RE.chainEitherK((env) => {
-    const name = getModuleName(env.path)
+  Effect.all(Config, Parser),
+  Effect.flatMap(([Config, Parser]) => {
+    const name = getModuleName(Parser.path)
     // if any of the settings enforcing documentation are set to `true`, then
     // a module should have associated documentation
     const isDocumentationRequired = Boolean.MonoidSome.combineAll([
-      env.config.enforceDescriptions,
-      env.config.enforceVersion
+      Config.config.enforceDescriptions,
+      Config.config.enforceVersion
     ])
     const onMissingDocumentation = () =>
       isDocumentationRequired
-        ? Either.left([`Missing documentation in ${env.path.join('/')} module`])
+        ? Either.left([`Missing documentation in ${Parser.path.join('/')} module`])
         : Either.right(Module.createDocumentable(name, Option.none(), Option.none(), false, [], Option.none()))
     return pipe(
-      env.sourceFile.getStatements(),
+      Parser.sourceFile.getStatements(),
       ReadonlyArray.matchLeft(onMissingDocumentation, (statement) =>
         pipe(
           statement.getLeadingCommentRanges(),
           ReadonlyArray.matchLeft(onMissingDocumentation, (commentRange) =>
             pipe(
-              getCommentInfo(name, true)(commentRange.getText())(env),
-              // TODO
-              (e): Either.Either<Array<string>, CommentInfo> =>
-                e._tag === 'Left' ? Either.left(e.left) : Either.right(e.right),
-              Either.map((info) =>
+              getCommentInfo(name, true)(commentRange.getText()),
+              Effect.map((info) =>
                 Module.createDocumentable(
                   name,
                   info.description,
@@ -836,19 +862,19 @@ export const parseModuleDocumentation: ParserEffect<Module.Documentable> = pipe(
  * @since 0.9.0
  */
 export const parseModule: ParserEffect<Module.Module> = pipe(
-  RE.ask<ParserEnv>(),
-  RE.flatMap((env) =>
+  Parser,
+  Effect.flatMap((Parser) =>
     pipe(
-      RE.Do,
-      RE.bind('documentation', () => parseModuleDocumentation),
-      RE.bind('interfaces', () => parseInterfaces),
-      RE.bind('functions', () => parseFunctions),
-      RE.bind('typeAliases', () => parseTypeAliases),
-      RE.bind('classes', () => parseClasses),
-      RE.bind('constants', () => parseConstants),
-      RE.bind('exports', () => parseExports),
-      RE.map(({ documentation, classes, interfaces, functions, typeAliases, constants, exports }) =>
-        Module.createModule(documentation, env.path, classes, interfaces, functions, typeAliases, constants, exports)
+      Effect.Do(),
+      Effect.bind('documentation', () => parseModuleDocumentation),
+      Effect.bind('interfaces', () => parseInterfaces),
+      Effect.bind('functions', () => parseFunctions),
+      Effect.bind('typeAliases', () => parseTypeAliases),
+      Effect.bind('classes', () => parseClasses),
+      Effect.bind('constants', () => parseConstants),
+      Effect.bind('exports', () => parseExports),
+      Effect.map(({ documentation, classes, interfaces, functions, typeAliases, constants, exports }) =>
+        Module.createModule(documentation, Parser.path, classes, interfaces, functions, typeAliases, constants, exports)
       )
     )
   )
@@ -859,20 +885,20 @@ export const parseModule: ParserEffect<Module.Module> = pipe(
  */
 export const parseFile =
   (project: ast.Project) =>
-  (file: _.File): Effect.Effect<Config, Array<string>, Module.Module> =>
-    pipe(
-      Config,
-      Effect.flatMap(({ config }) => {
-        const path = file.path.split(NodePath.sep) as any as ReadonlyArray.NonEmptyReadonlyArray<string>
-        const sourceFile = project.getSourceFile(file.path)
-        if (sourceFile !== undefined) {
-          const x = parseModule({ config, path, sourceFile })
-          // TODO
-          return x._tag === 'Left' ? Either.left(x.left) : Either.right(x.right)
-        }
-        return Either.left([`Unable to locate file: ${file.path}`])
-      })
-    )
+  (file: _.File): Effect.Effect<Config, Array<string>, Module.Module> => {
+    const path = file.path.split(NodePath.sep) as any as ReadonlyArray.NonEmptyReadonlyArray<string>
+    const sourceFile = project.getSourceFile(file.path)
+    if (sourceFile !== undefined) {
+      return pipe(
+        parseModule,
+        Effect.provideService(Parser, {
+          path,
+          sourceFile
+        })
+      )
+    }
+    return Either.left([`Unable to locate file: ${file.path}`])
+  }
 
 const createProject = (files: ReadonlyArray<_.File>) =>
   pipe(

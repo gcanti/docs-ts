@@ -3,12 +3,11 @@ import { pipe } from '@effect/data/Function'
 import * as Option from '@effect/data/Option'
 import * as Effect from '@effect/io/Effect'
 import * as assert from 'assert'
-import * as E from 'fp-ts/Either'
 import * as ast from 'ts-morph'
 
 import * as _ from '../src/internal'
 import * as Parser from '../src/Parser'
-import { Config } from '../src/Service'
+import * as Service from '../src/Service'
 
 let testCounter = 0
 
@@ -17,7 +16,7 @@ const project = new ast.Project({
   useInMemoryFileSystem: true
 })
 
-const config: _.Config = {
+const defaultConfig: _.Config = {
   projectName: 'docs-ts',
   projectHomepage: 'https://github.com/gcanti/docs-ts',
   srcDir: 'src',
@@ -32,57 +31,57 @@ const config: _.Config = {
   examplesCompilerOptions: {}
 }
 
-const getTestEnv = (sourceText: string): Parser.ParserEnv => ({
+const getParser = (sourceText: string): Service.Parser => ({
   path: ['test'],
-  sourceFile: project.createSourceFile(`test-${testCounter++}.ts`, sourceText),
-  config
+  sourceFile: project.createSourceFile(`test-${testCounter++}.ts`, sourceText)
 })
 
-const expectLeft = <A>(sourceText: string, eff: Parser.ParserEffect<A>, left: Array<string>) => {
-  const actual = eff(getTestEnv(sourceText))
-  if (Either.isEither(actual)) {
-    expect(actual).toEqual(Either.left(left))
-  } else {
-    expect(actual).toEqual(E.left(left))
-  }
+const expectLeft = <A>(
+  sourceText: string,
+  eff: Parser.ParserEffect<A>,
+  left: Array<string>,
+  config?: Partial<_.Config>
+) => {
+  const actual = pipe(
+    eff,
+    Effect.provideService(Service.Parser, getParser(sourceText)),
+    Effect.provideService(Service.Config, { config: { ...defaultConfig, ...config } }),
+    Effect.runSyncEither
+  )
+  expect(actual).toEqual(Either.left(left))
 }
 
-const expectRight = <A>(sourceText: string, eff: Parser.ParserEffect<A>, a: A) => {
-  const actual = eff(getTestEnv(sourceText))
-  if (Either.isEither(actual)) {
-    expect(actual).toEqual(Either.right(a))
-  } else {
-    expect(actual).toEqual(E.right(a))
-  }
+const expectRight = <A>(sourceText: string, eff: Parser.ParserEffect<A>, a: A, config?: Partial<_.Config>) => {
+  const actual = pipe(
+    eff,
+    Effect.provideService(Service.Parser, getParser(sourceText)),
+    Effect.provideService(Service.Config, { config: { ...defaultConfig, ...config } }),
+    Effect.runSyncEither
+  )
+  expect(actual).toEqual(Either.right(a))
 }
 
 describe.concurrent('Parser', () => {
   describe.concurrent('parsers', () => {
     describe.concurrent('parseInterfaces', () => {
       it('should return no `Interface`s if the file is empty', () => {
-        const env = getTestEnv('')
-
-        assert.deepStrictEqual(Parser.parseInterfaces(env), E.right([]))
+        expectRight('', Parser.parseInterfaces, [])
       })
 
       it('should return no `Interface`s if there are no exported interfaces', () => {
-        const env = getTestEnv('interface A {}')
-
-        assert.deepStrictEqual(Parser.parseInterfaces(env), E.right([]))
+        expectRight('interface A {}', Parser.parseInterfaces, [])
       })
 
       it('should return an `Interface`', () => {
-        const env = getTestEnv(
+        expectRight(
           `/**
-            * a description...
-            * @since 1.0.0
-            * @deprecated
-            */
-            export interface A {}`
-        )
-        assert.deepStrictEqual(
-          Parser.parseInterfaces(env),
-          E.right([
+        * a description...
+        * @since 1.0.0
+        * @deprecated
+        */
+        export interface A {}`,
+          Parser.parseInterfaces,
+          [
             {
               _tag: 'Interface',
               deprecated: true,
@@ -93,26 +92,24 @@ describe.concurrent('Parser', () => {
               examples: [],
               category: Option.none()
             }
-          ])
+          ]
         )
       })
 
       it('should return interfaces sorted by name', () => {
-        const env = getTestEnv(
+        expectRight(
           `
-          /**
-           * @since 1.0.0
-           */
-          export interface B {}
-          /**
-           * @since 1.0.0
-           */
-          export interface A {}
-          `
-        )
-        assert.deepStrictEqual(
-          Parser.parseInterfaces(env),
-          E.right([
+        /**
+         * @since 1.0.0
+         */
+        export interface B {}
+        /**
+         * @since 1.0.0
+         */
+        export interface A {}
+        `,
+          Parser.parseInterfaces,
+          [
             {
               _tag: 'Interface',
               name: 'A',
@@ -133,7 +130,7 @@ describe.concurrent('Parser', () => {
               examples: [],
               signature: 'export interface B {}'
             }
-          ])
+          ]
         )
       })
     })
@@ -146,84 +143,78 @@ describe.concurrent('Parser', () => {
       })
 
       it('should not return private function declarations', () => {
-        const env = getTestEnv(`function sum(a: number, b: number): number { return a + b }`)
-
-        expect(Parser.parseFunctions(env)).toEqual(E.right([]))
+        expectRight(`function sum(a: number, b: number): number { return a + b }`, Parser.parseFunctions, [])
       })
 
       it('should not return ignored function declarations', () => {
-        const env = getTestEnv(
+        expectRight(
           `/**
-            * @ignore
-            */
-            export function sum(a: number, b: number): number { return a + b }`
+        * @ignore
+        */
+        export function sum(a: number, b: number): number { return a + b }`,
+          Parser.parseFunctions,
+          []
         )
-
-        expect(Parser.parseFunctions(env)).toEqual(E.right([]))
       })
 
       it('should not return ignored function declarations with overloads', () => {
-        const env = getTestEnv(
+        expectRight(
           `/**
             * @ignore
             */
             export function sum(a: number, b: number)
-            export function sum(a: number, b: number): number { return a + b }`
+            export function sum(a: number, b: number): number { return a + b }`,
+          Parser.parseFunctions,
+          []
         )
-
-        expect(Parser.parseFunctions(env)).toEqual(E.right([]))
       })
 
       it('should not return internal function declarations', () => {
-        const env = getTestEnv(
+        expectRight(
           `/**
             * @internal
             */
-            export function sum(a: number, b: number): number { return a + b }`
+            export function sum(a: number, b: number): number { return a + b }`,
+          Parser.parseFunctions,
+          []
         )
-
-        expect(Parser.parseFunctions(env)).toEqual(E.right([]))
       })
 
       it('should not return internal function declarations even with overloads', () => {
-        const env = getTestEnv(
+        expectRight(
           `/**
             * @internal
             */
             export function sum(a: number, b: number)
-            export function sum(a: number, b: number): number { return a + b }`
+            export function sum(a: number, b: number): number { return a + b }`,
+          Parser.parseFunctions,
+          []
         )
-
-        expect(Parser.parseFunctions(env)).toEqual(E.right([]))
       })
 
       it('should not return private const function declarations', () => {
-        const env = getTestEnv(`const sum = (a: number, b: number): number => a + b `)
-
-        expect(Parser.parseFunctions(env)).toEqual(E.right([]))
+        expectRight(`const sum = (a: number, b: number): number => a + b `, Parser.parseFunctions, [])
       })
 
       it('should not return internal const function declarations', () => {
-        const env = getTestEnv(
+        expectRight(
           `/**
             * @internal
             */
-            export const sum = (a: number, b: number): number => a + b `
+            export const sum = (a: number, b: number): number => a + b `,
+          Parser.parseFunctions,
+          []
         )
-
-        expect(Parser.parseFunctions(env)).toEqual(E.right([]))
       })
 
       it('should account for nullable polymorphic return types', () => {
-        const env = getTestEnv(
+        expectRight(
           `/**
             * @since 1.0.0
             */
-           export const toNullable = <A>(ma: A | null): A | null => ma`
-        )
-
-        expect(Parser.parseFunctions(env)).toEqual(
-          E.right([
+           export const toNullable = <A>(ma: A | null): A | null => ma`,
+          Parser.parseFunctions,
+          [
             {
               _tag: 'Function',
               deprecated: false,
@@ -234,12 +225,12 @@ describe.concurrent('Parser', () => {
               examples: [],
               category: Option.none()
             }
-          ])
+          ]
         )
       })
 
       it('should return a const function declaration', () => {
-        const env = getTestEnv(
+        expectRight(
           `/**
             * a description...
             * @since 1.0.0
@@ -249,11 +240,9 @@ describe.concurrent('Parser', () => {
             * assert.deepStrictEqual(f(3, 4), { a: 3, b: 4 })
             * @deprecated
             */
-            export const f = (a: number, b: number): { [key: string]: number } => ({ a, b })`
-        )
-
-        expect(Parser.parseFunctions(env)).toEqual(
-          E.right([
+            export const f = (a: number, b: number): { [key: string]: number } => ({ a, b })`,
+          Parser.parseFunctions,
+          [
             {
               _tag: 'Function',
               deprecated: true,
@@ -267,20 +256,18 @@ describe.concurrent('Parser', () => {
               ],
               category: Option.none()
             }
-          ])
+          ]
         )
       })
 
       it('should return a function declaration', () => {
-        const env = getTestEnv(
+        expectRight(
           `/**
             * @since 1.0.0
             */
-            export function f(a: number, b: number): { [key: string]: number } { return { a, b } }`
-        )
-
-        expect(Parser.parseFunctions(env)).toEqual(
-          E.right([
+            export function f(a: number, b: number): { [key: string]: number } { return { a, b } }`,
+          Parser.parseFunctions,
+          [
             {
               _tag: 'Function',
               deprecated: false,
@@ -291,22 +278,20 @@ describe.concurrent('Parser', () => {
               examples: [],
               category: Option.none()
             }
-          ])
+          ]
         )
       })
 
       it('should return a function with comments', () => {
-        const env = getTestEnv(
+        expectRight(
           `/**
             * a description...
             * @since 1.0.0
             * @deprecated
             */
-            export function f(a: number, b: number): { [key: string]: number } { return { a, b } }`
-        )
-
-        expect(Parser.parseFunctions(env)).toEqual(
-          E.right([
+            export function f(a: number, b: number): { [key: string]: number } { return { a, b } }`,
+          Parser.parseFunctions,
+          [
             {
               _tag: 'Function',
               deprecated: true,
@@ -317,12 +302,12 @@ describe.concurrent('Parser', () => {
               examples: [],
               category: Option.none()
             }
-          ])
+          ]
         )
       })
 
       it('should handle overloadings', () => {
-        const env = getTestEnv(
+        expectRight(
           `/**
             * a description...
             * @since 1.0.0
@@ -330,11 +315,9 @@ describe.concurrent('Parser', () => {
             */
             export function f(a: Int, b: Int): { [key: string]: number }
             export function f(a: number, b: number): { [key: string]: number }
-            export function f(a: any, b: any): { [key: string]: number } { return { a, b } }`
-        )
-
-        expect(Parser.parseFunctions(env)).toEqual(
-          E.right([
+            export function f(a: any, b: any): { [key: string]: number } { return { a, b } }`,
+          Parser.parseFunctions,
+          [
             {
               _tag: 'Function',
               name: 'f',
@@ -348,24 +331,22 @@ describe.concurrent('Parser', () => {
                 'export declare function f(a: number, b: number): { [key: string]: number }'
               ]
             }
-          ])
+          ]
         )
       })
     })
 
     describe.concurrent('parseTypeAlias', () => {
       it('should return a `TypeAlias`', () => {
-        const env = getTestEnv(
+        expectRight(
           `/**
             * a description...
             * @since 1.0.0
             * @deprecated
             */
-            export type Option<A> = None<A> | Some<A>`
-        )
-
-        expect(Parser.parseTypeAliases(env)).toEqual(
-          E.right([
+            export type Option<A> = None<A> | Some<A>`,
+          Parser.parseTypeAliases,
+          [
             {
               _tag: 'TypeAlias',
               name: 'Option',
@@ -376,24 +357,22 @@ describe.concurrent('Parser', () => {
               signature: 'export type Option<A> = None<A> | Some<A>',
               examples: []
             }
-          ])
+          ]
         )
       })
     })
 
     describe.concurrent('parseConstants', () => {
       it('should handle a constant value', () => {
-        const env = getTestEnv(
+        expectRight(
           `/**
             * a description...
             * @since 1.0.0
             * @deprecated
             */
-            export const s: string = ''`
-        )
-
-        expect(Parser.parseConstants(env)).toEqual(
-          E.right([
+            export const s: string = ''`,
+          Parser.parseConstants,
+          [
             {
               _tag: 'Constant',
               name: 's',
@@ -404,20 +383,18 @@ describe.concurrent('Parser', () => {
               signature: 'export declare const s: string',
               examples: []
             }
-          ])
+          ]
         )
       })
 
       it('should support constants with default type parameters', () => {
-        const env = getTestEnv(
+        expectRight(
           `/**
             * @since 1.0.0
             */
-            export const left: <E = never, A = never>(l: E) => string = T.left`
-        )
-
-        expect(Parser.parseConstants(env)).toEqual(
-          E.right([
+            export const left: <E = never, A = never>(l: E) => string = T.left`,
+          Parser.parseConstants,
+          [
             {
               _tag: 'Constant',
               name: 'left',
@@ -428,7 +405,7 @@ describe.concurrent('Parser', () => {
               signature: 'export declare const left: <E = never, A = never>(l: E) => string',
               examples: []
             }
-          ])
+          ]
         )
       })
 
@@ -576,16 +553,19 @@ describe.concurrent('Parser', () => {
       })
 
       it('should get a constructor declaration signature', () => {
-        const env = getTestEnv(`
-          /**
-           * @since 1.0.0
-           */
-          declare class A {
-            constructor()
-          }
-        `)
+        const sourceFile = project.createSourceFile(
+          `test-${testCounter++}.ts`,
+          `
+        /**
+         * @since 1.0.0
+         */
+        declare class A {
+          constructor()
+        }
+      `
+        )
 
-        const constructorDeclaration = env.sourceFile.getClass('A')!.getConstructors()[0]
+        const constructorDeclaration = sourceFile.getClass('A')!.getConstructors()[0]
 
         assert.deepStrictEqual(Parser.getConstructorDeclarationSignature(constructorDeclaration), 'constructor()')
       })
@@ -847,19 +827,18 @@ describe.concurrent('Parser', () => {
       })
 
       it('should support absence of module documentation when no documentation is enforced', () => {
-        const defaultEnv = getTestEnv('export const a: number = 1')
-        const env: Parser.ParserEnv = { ...defaultEnv, config: { ...defaultEnv.config, enforceVersion: false } }
-
-        assert.deepStrictEqual(
-          pipe(env, Parser.parseModuleDocumentation),
-          Either.right({
+        expectRight(
+          'export const a: number = 1',
+          Parser.parseModuleDocumentation,
+          {
             name: 'test',
             description: Option.none(),
             since: Option.none(),
             deprecated: false,
             category: Option.none(),
             examples: []
-          })
+          },
+          { enforceVersion: false }
         )
       })
     })
@@ -951,18 +930,17 @@ describe.concurrent('Parser', () => {
             b
           }`
         )
-
-        expect(
-          pipe(
-            {
-              path: ['test'],
-              sourceFile,
-              config
-            },
-            Parser.parseExports
-          )
-        ).toEqual(
-          E.right([
+        const actual = pipe(
+          Parser.parseExports,
+          Effect.provideService(Service.Parser, {
+            path: ['test'],
+            sourceFile
+          }),
+          Effect.provideService(Service.Config, { config: defaultConfig }),
+          Effect.runSyncEither
+        )
+        expect(actual).toEqual(
+          Either.right([
             {
               _tag: 'Export',
               name: 'b',
@@ -984,7 +962,8 @@ describe.concurrent('Parser', () => {
       })
 
       it('should not require an example for modules when `enforceExamples` is set to true (#38)', () => {
-        const env = getTestEnv(`/**
+        expectRight(
+          `/**
 * This is the assert module.
 *
 * @since 1.0.0
@@ -1002,10 +981,9 @@ import * as assert from 'assert'
  * @category foo
  * @since 1.0.0
  */
-export const foo = 'foo'`)
-
-        expect(pipe({ ...env, config: { ...env.config, enforceExamples: true } }, Parser.parseModule)).toEqual(
-          E.right({
+export const foo = 'foo'`,
+          Parser.parseModule,
+          {
             name: 'test',
             description: Option.some('This is the assert module.'),
             since: Option.some('1.0.0'),
@@ -1030,7 +1008,8 @@ export const foo = 'foo'`)
               }
             ],
             exports: []
-          })
+          },
+          { enforceExamples: true }
         )
       })
     })
@@ -1041,7 +1020,11 @@ export const foo = 'foo'`)
         const project = new ast.Project({ useInMemoryFileSystem: true })
 
         assert.deepStrictEqual(
-          pipe(Parser.parseFile(project)(file), Effect.provideService(Config, { config }), Effect.runSyncEither),
+          pipe(
+            Parser.parseFile(project)(file),
+            Effect.provideService(Service.Config, { config: defaultConfig }),
+            Effect.runSyncEither
+          ),
           Either.left(['Unable to locate file: non-existent.ts'])
         )
       })
@@ -1051,68 +1034,53 @@ export const foo = 'foo'`)
   describe.concurrent('utils', () => {
     describe.concurrent('getCommentInfo', () => {
       it('should parse comment information', () => {
-        const env = getTestEnv('')
-
         const text = `/**
 * description
 * @category instances
 * @since 1.0.0
 */`
-
-        expect(pipe(env, Parser.getCommentInfo('name')(text))).toEqual(
-          E.right({
-            description: Option.some('description'),
-            since: Option.some('1.0.0'),
-            category: Option.some('instances'),
-            deprecated: false,
-            examples: []
-          })
-        )
+        expectRight('', Parser.getCommentInfo('name')(text), {
+          description: Option.some('description'),
+          since: Option.some('1.0.0'),
+          category: Option.some('instances'),
+          deprecated: false,
+          examples: []
+        })
       })
 
       it('should fail if an empty comment tag is provided', () => {
-        const env = getTestEnv('')
-
         const text = `/**
 * @category
 * @since 1.0.0
 */`
 
-        expect(pipe(env, Parser.getCommentInfo('name')(text))).toEqual(
-          Either.left(['Missing @category tag in test#name documentation'])
-        )
+        expectLeft('', Parser.getCommentInfo('name')(text), ['Missing @category tag in test#name documentation'])
       })
 
       it('should require a description if `enforceDescriptions` is set to true', () => {
-        const env = getTestEnv('')
-
         const text = `/**
 * @category instances
 * @since 1.0.0
 */`
 
-        expect(
-          pipe({ ...env, config: { ...env.config, enforceDescriptions: true } }, Parser.getCommentInfo('name')(text))
-        ).toEqual(Either.left(['Missing description in test#name documentation']))
+        expectLeft('', Parser.getCommentInfo('name')(text), ['Missing description in test#name documentation'], {
+          enforceDescriptions: true
+        })
       })
 
       it('should require at least one example if `enforceExamples` is set to true', () => {
-        const env = getTestEnv('')
-
         const text = `/**
 * description
 * @category instances
 * @since 1.0.0
 */`
 
-        expect(
-          pipe({ ...env, config: { ...env.config, enforceExamples: true } }, Parser.getCommentInfo('name')(text))
-        ).toEqual(Either.left(['Missing @example tag in test#name documentation']))
+        expectLeft('', Parser.getCommentInfo('name')(text), ['Missing @example tag in test#name documentation'], {
+          enforceExamples: true
+        })
       })
 
       it('should require at least one non-empty example if `enforceExamples` is set to true', () => {
-        const env = getTestEnv('')
-
         const text = `/**
 * description
 * @example
@@ -1120,29 +1088,28 @@ export const foo = 'foo'`)
 * @since 1.0.0
 */`
 
-        expect(
-          pipe({ ...env, config: { ...env.config, enforceExamples: true } }, Parser.getCommentInfo('name')(text))
-        ).toEqual(Either.left(['Missing @example tag in test#name documentation']))
+        expectLeft('', Parser.getCommentInfo('name')(text), ['Missing @example tag in test#name documentation'], {
+          enforceExamples: true
+        })
       })
 
       it('should allow no since tag if `enforceVersion` is set to false', () => {
-        const env = getTestEnv('')
-
         const text = `/**
 * description
 * @category instances
 */`
 
-        expect(
-          pipe({ ...env, config: { ...env.config, enforceVersion: false } }, Parser.getCommentInfo('name')(text))
-        ).toEqual(
-          E.right({
+        expectRight(
+          '',
+          Parser.getCommentInfo('name')(text),
+          {
             description: Option.some('description'),
             since: Option.none(),
             category: Option.some('instances'),
             deprecated: false,
             examples: []
-          })
+          },
+          { enforceVersion: false }
         )
       })
     })

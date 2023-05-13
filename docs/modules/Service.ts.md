@@ -60,7 +60,7 @@ Added in v0.9.0
 
 ```ts
 export interface Parser {
-  readonly path: RNEA.ReadonlyNonEmptyArray<string>
+  readonly path: ReadonlyArray.NonEmptyReadonlyArray<string>
   readonly sourceFile: ast.SourceFile
 }
 ```

@@ -14,7 +14,6 @@ Added in v0.9.0
 
 - [model](#model)
   - [ParserEffect (interface)](#parsereffect-interface)
-  - [ParserEnv (interface)](#parserenv-interface)
 - [parsers](#parsers)
   - [parseClasses](#parseclasses)
   - [parseConstants](#parseconstants)
@@ -34,21 +33,7 @@ Added in v0.9.0
 **Signature**
 
 ```ts
-export interface ParserEffect<A> extends RE.ReaderEither<ParserEnv, Array<string>, A> {}
-```
-
-Added in v0.9.0
-
-## ParserEnv (interface)
-
-**Signature**
-
-```ts
-export interface ParserEnv {
-  readonly config: _.Config
-  readonly path: ReadonlyArray.NonEmptyReadonlyArray<string>
-  readonly sourceFile: ast.SourceFile
-}
+export interface ParserEffect<A> extends Effect.Effect<Config | Parser, Array<string>, A> {}
 ```
 
 Added in v0.9.0

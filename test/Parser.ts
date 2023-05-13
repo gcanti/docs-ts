@@ -31,34 +31,41 @@ const defaultConfig: _.Config = {
   examplesCompilerOptions: {}
 }
 
-const getParser = (sourceText: string): Service.Parser => ({
+const getParser = (sourceText: string): Service.Source => ({
   path: ['test'],
   sourceFile: project.createSourceFile(`test-${testCounter++}.ts`, sourceText)
 })
 
-const expectLeft = <A>(
+const expectLeft = <E, A>(
   sourceText: string,
-  eff: Parser.ParserEffect<A>,
+  eff: Effect.Effect<Service.Source | Service.Config, E, A>,
   left: Array<string>,
   config?: Partial<_.Config>
 ) => {
-  const actual = pipe(
-    eff,
-    Effect.provideService(Service.Parser, getParser(sourceText)),
-    Effect.provideService(Service.Config, { config: { ...defaultConfig, ...config } }),
-    Effect.runSyncEither
-  )
-  expect(actual).toEqual(Either.left(left))
+  expect(
+    pipe(
+      eff,
+      Effect.provideService(Service.Source, getParser(sourceText)),
+      Effect.provideService(Service.Config, { config: { ...defaultConfig, ...config } }),
+      Effect.runSyncEither
+    )
+  ).toEqual(Either.left(left))
 }
 
-const expectRight = <A>(sourceText: string, eff: Parser.ParserEffect<A>, a: A, config?: Partial<_.Config>) => {
-  const actual = pipe(
-    eff,
-    Effect.provideService(Service.Parser, getParser(sourceText)),
-    Effect.provideService(Service.Config, { config: { ...defaultConfig, ...config } }),
-    Effect.runSyncEither
-  )
-  expect(actual).toEqual(Either.right(a))
+const expectRight = <E, A>(
+  sourceText: string,
+  eff: Effect.Effect<Service.Source | Service.Config, E, A>,
+  a: A,
+  config?: Partial<_.Config>
+) => {
+  expect(
+    pipe(
+      eff,
+      Effect.provideService(Service.Source, getParser(sourceText)),
+      Effect.provideService(Service.Config, { config: { ...defaultConfig, ...config } }),
+      Effect.runSyncEither
+    )
+  ).toEqual(Either.right(a))
 }
 
 describe.concurrent('Parser', () => {
@@ -932,7 +939,7 @@ describe.concurrent('Parser', () => {
         )
         const actual = pipe(
           Parser.parseExports,
-          Effect.provideService(Service.Parser, {
+          Effect.provideService(Service.Source, {
             path: ['test'],
             sourceFile
           }),

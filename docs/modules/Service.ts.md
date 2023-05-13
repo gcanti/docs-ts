@@ -1,6 +1,6 @@
 ---
 title: Service.ts
-nav_order: 8
+nav_order: 9
 parent: Modules
 ---
 
@@ -15,8 +15,8 @@ Added in v0.9.0
 - [service](#service)
   - [Config](#config)
   - [Config (interface)](#config-interface)
-  - [Parser](#parser)
-  - [Parser (interface)](#parser-interface)
+  - [Source](#source)
+  - [Source (interface)](#source-interface)
 
 ---
 
@@ -44,22 +44,22 @@ export interface Config {
 
 Added in v0.9.0
 
-## Parser
+## Source
 
 **Signature**
 
 ```ts
-export declare const Parser: Context.Tag<Parser, Parser>
+export declare const Source: Context.Tag<Source, Source>
 ```
 
 Added in v0.9.0
 
-## Parser (interface)
+## Source (interface)
 
 **Signature**
 
 ```ts
-export interface Parser {
+export interface Source {
   readonly path: ReadonlyArray.NonEmptyReadonlyArray<string>
   readonly sourceFile: ast.SourceFile
 }

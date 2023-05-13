@@ -15,6 +15,9 @@ import * as fs from 'fs-extra'
 import * as Glob from 'glob'
 import * as rimraf from 'rimraf'
 
+import * as Process from './Process'
+import * as Service from './Service'
+
 // -------------------------------------------------------------------------------------
 // spawn
 // -------------------------------------------------------------------------------------
@@ -175,8 +178,7 @@ const ConfigSchema = Schema.struct({
   examplesCompilerOptions: Schema.record(Schema.string, Schema.unknown)
 })
 
-/** @internal */
-export const PartialConfigSchema = Schema.partial(ConfigSchema)
+const PartialConfigSchema = Schema.partial(ConfigSchema)
 
 /**
  * @category Config
@@ -186,48 +188,47 @@ export interface Config extends Schema.To<typeof ConfigSchema> {
   readonly projectName: string
 }
 
-/** @internal */
-export const getConfig: Effect.Effect<never, Error, Config> = pipe(
-  Effect.Do(),
-  Effect.bind('pkg', () => parsePackageJson),
-  Effect.bind('config', () => parseConfig),
-  Effect.map(({ pkg, config }) => {
-    const defaultConfig = getDefaultConfig(pkg.name, pkg.homepage)
-    return Option.match(
-      config,
-      () => defaultConfig,
-      (config) => ({ ...defaultConfig, ...config })
-    )
-  })
-)
-
 const PackageJSONSchema = Schema.struct({
   name: Schema.string,
   homepage: Schema.string
 })
 
-const parsePackageJson = parseJsonFile(NodePath.join(process.cwd(), 'package.json'), PackageJSONSchema)
+const parsePackageJson = pipe(
+  Process.cwd,
+  Effect.flatMap((cwd) => parseJsonFile(NodePath.join(cwd, 'package.json'), PackageJSONSchema))
+)
 
-const configPath = NodePath.join(process.cwd(), 'docs-ts.json')
+const getConfigPath = Effect.map(Process.cwd, (cwd) => NodePath.join(cwd, 'docs-ts.json'))
 
-const parseConfig = pipe(
-  exists(configPath),
-  Effect.flatMap((exists) =>
-    exists
-      ? pipe(
-          info(chalk.bold('Configuration file found')),
-          Effect.flatMap(() => parseJsonFile(configPath, PartialConfigSchema)),
-          Effect.map(Option.some)
-        )
-      : pipe(
-          info(chalk.bold('No configuration file detected, using default configuration')),
-          Effect.map(() => Option.none())
-        )
+const loadConfig = pipe(
+  Effect.ifEffect(
+    Effect.flatMap(getConfigPath, exists),
+    pipe(
+      info(chalk.bold('Configuration file found')),
+      Effect.flatMap(() => getConfigPath),
+      Effect.flatMap((configPath) => parseJsonFile(configPath, PartialConfigSchema)),
+      Effect.map(Option.some)
+    ),
+    pipe(info(chalk.bold('No configuration file detected, using default configuration')), Effect.as(Option.none()))
   )
 )
 
 /** @internal */
-export const getDefaultConfig = (projectName: string, projectHomepage: string): Config => {
+export const getConfig: Effect.Effect<never, Error, Service.Config> = pipe(
+  Effect.all(parsePackageJson, loadConfig),
+  Effect.map(([pkg, config]) => {
+    const defaultConfig = getDefaultConfig(pkg.name, pkg.homepage)
+    return {
+      config: Option.match(
+        config,
+        () => defaultConfig,
+        (config) => ({ ...defaultConfig, ...config })
+      )
+    }
+  })
+)
+
+const getDefaultConfig = (projectName: string, projectHomepage: string): Config => {
   return {
     projectName,
     projectHomepage,

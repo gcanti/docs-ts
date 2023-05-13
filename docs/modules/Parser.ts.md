@@ -12,8 +12,6 @@ Added in v0.9.0
 
 <h2 class="text-delta">Table of contents</h2>
 
-- [model](#model)
-  - [ParserEffect (interface)](#parsereffect-interface)
 - [parsers](#parsers)
   - [parseClasses](#parseclasses)
   - [parseConstants](#parseconstants)
@@ -26,18 +24,6 @@ Added in v0.9.0
 
 ---
 
-# model
-
-## ParserEffect (interface)
-
-**Signature**
-
-```ts
-export interface ParserEffect<A> extends Effect.Effect<Config | Parser, Array<string>, A> {}
-```
-
-Added in v0.9.0
-
 # parsers
 
 ## parseClasses
@@ -45,7 +31,7 @@ Added in v0.9.0
 **Signature**
 
 ```ts
-export declare const parseClasses: ParserEffect<Module.Class[]>
+export declare const parseClasses: Effect.Effect<any, unknown[], Module.Class[]>
 ```
 
 Added in v0.9.0
@@ -55,7 +41,7 @@ Added in v0.9.0
 **Signature**
 
 ```ts
-export declare const parseConstants: ParserEffect<Module.Constant[]>
+export declare const parseConstants: Effect.Effect<any, unknown[], Module.Constant[]>
 ```
 
 Added in v0.9.0
@@ -65,7 +51,7 @@ Added in v0.9.0
 **Signature**
 
 ```ts
-export declare const parseExports: ParserEffect<Module.Export[]>
+export declare const parseExports: Effect.Effect<any, unknown[], Module.Export[]>
 ```
 
 Added in v0.9.0
@@ -75,7 +61,9 @@ Added in v0.9.0
 **Signature**
 
 ```ts
-export declare const parseFiles: (files: ReadonlyArray<_.File>) => Effect.Effect<Config, string[][], Module.Module[]>
+export declare const parseFiles: (
+  files: ReadonlyArray<_.File>
+) => Effect.Effect<Service.Config, string[][], Module.Module[]>
 ```
 
 Added in v0.9.0
@@ -85,7 +73,7 @@ Added in v0.9.0
 **Signature**
 
 ```ts
-export declare const parseFunctions: ParserEffect<Module.Function[]>
+export declare const parseFunctions: Effect.Effect<any, unknown[], Module.Function[]>
 ```
 
 Added in v0.9.0
@@ -95,7 +83,7 @@ Added in v0.9.0
 **Signature**
 
 ```ts
-export declare const parseInterfaces: ParserEffect<Module.Interface[]>
+export declare const parseInterfaces: Effect.Effect<any, unknown[], Module.Interface[]>
 ```
 
 Added in v0.9.0
@@ -105,7 +93,7 @@ Added in v0.9.0
 **Signature**
 
 ```ts
-export declare const parseModule: ParserEffect<Module.Module>
+export declare const parseModule: Effect.Effect<any, any, Module.Module>
 ```
 
 Added in v0.9.0
@@ -115,7 +103,7 @@ Added in v0.9.0
 **Signature**
 
 ```ts
-export declare const parseTypeAliases: ParserEffect<Module.TypeAlias[]>
+export declare const parseTypeAliases: Effect.Effect<any, unknown[], Module.TypeAlias[]>
 ```
 
 Added in v0.9.0

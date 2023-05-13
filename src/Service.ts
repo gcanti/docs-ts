@@ -25,7 +25,7 @@ export const Config = Context.Tag<Config>()
  * @category service
  * @since 0.9.0
  */
-export interface Parser {
+export interface Source {
   readonly path: ReadonlyArray.NonEmptyReadonlyArray<string>
   readonly sourceFile: ast.SourceFile
 }
@@ -34,4 +34,4 @@ export interface Parser {
  * @category service
  * @since 0.9.0
  */
-export const Parser = Context.Tag<Parser>()
+export const Source = Context.Tag<Source>()

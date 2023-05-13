@@ -13,30 +13,8 @@ import * as _ from './internal'
 import { printModule } from './Markdown'
 import * as Module from './Module'
 import * as Parser from './Parser'
+import * as Process from './Process'
 import { Config } from './Service'
-
-/**
- * @category main
- * @since 0.9.0
- */
-export const main = pipe(
-  _.getConfig,
-  Effect.flatMap((config) =>
-    pipe(
-      _.info('reading modules...'),
-      Effect.flatMap(() => readFiles),
-      Effect.tap(() => _.info('parsing modules...')),
-      Effect.flatMap(getModules),
-      Effect.tap(() => _.info('typechecking examples...')),
-      Effect.tap(typeCheckExamples),
-      Effect.tap(() => _.info('creating markdown files...')),
-      Effect.flatMap(getMarkdown),
-      Effect.tap(() => _.info('writing markdown files...')),
-      Effect.flatMap(writeMarkdown),
-      Effect.provideService(Config, { config })
-    )
-  )
-)
 
 // -------------------------------------------------------------------------------------
 // readFiles
@@ -55,9 +33,9 @@ const readFiles = pipe(
 
 const writeFile = (file: _.File): Effect.Effect<Config, Error, void> =>
   pipe(
-    Config,
-    Effect.flatMap((Config) => {
-      const fileName = NodePath.relative(NodePath.join(process.cwd(), Config.config.outDir), file.path)
+    Effect.all(Config, Process.cwd),
+    Effect.flatMap(([Config, cwd]) => {
+      const fileName = NodePath.relative(NodePath.join(cwd, Config.config.outDir), file.path)
 
       const overwrite = pipe(
         _.debug(`overwriting file ${chalk.black(fileName)}`),
@@ -194,10 +172,10 @@ const cleanExamples = pipe(
 
 const spawnTsNode = pipe(
   _.debug('Type checking examples...'),
-  Effect.flatMap(() => Config),
-  Effect.flatMap(({ config }) => {
+  Effect.flatMap(() => Effect.all(Config, Process.cwd)),
+  Effect.flatMap(([Config, cwd]) => {
     const command = process.platform === 'win32' ? 'ts-node.cmd' : 'ts-node'
-    const executable = join(process.cwd(), config.outDir, 'examples', 'index.ts')
+    const executable = join(cwd, Config.config.outDir, 'examples', 'index.ts')
     return _.spawn(command, executable)
   })
 )
@@ -215,14 +193,14 @@ const writeExamples = (examples: ReadonlyArray<_.File>) =>
 
 const writeTsConfigJson = pipe(
   _.debug('Writing examples tsconfig...'),
-  Effect.flatMap(() => Config),
-  Effect.flatMap(({ config }) =>
+  Effect.flatMap(() => Effect.all(Config, Process.cwd)),
+  Effect.flatMap(([Config, cwd]) =>
     writeFile(
       _.createFile(
-        join(process.cwd(), config.outDir, 'examples', 'tsconfig.json'),
+        join(cwd, Config.config.outDir, 'examples', 'tsconfig.json'),
         JSON.stringify(
           {
-            compilerOptions: config.examplesCompilerOptions
+            compilerOptions: Config.config.examplesCompilerOptions
           },
           null,
           2
@@ -252,10 +230,10 @@ const getMarkdown = (modules: ReadonlyArray<Module.Module>) =>
   )
 
 const getHome = pipe(
-  Config,
-  Effect.map(({ config }) =>
+  Effect.all(Config, Process.cwd),
+  Effect.map(([Config, cwd]) =>
     _.createFile(
-      join(process.cwd(), config.outDir, 'index.md'),
+      join(cwd, Config.config.outDir, 'index.md'),
       `---
 title: Home
 nav_order: 1
@@ -267,10 +245,10 @@ nav_order: 1
 )
 
 const getModulesIndex = pipe(
-  Config,
-  Effect.map(({ config }) =>
+  Effect.all(Config, Process.cwd),
+  Effect.map(([Config, cwd]) =>
     _.createFile(
-      join(process.cwd(), config.outDir, 'modules', 'index.md'),
+      join(cwd, Config.config.outDir, 'modules', 'index.md'),
       `---
 title: Modules
 has_children: true
@@ -304,29 +282,29 @@ const getHomepageNavigationHeader = (config: _.Config): string => {
 }
 
 const getConfigYML = pipe(
-  Config,
-  Effect.flatMap(({ config }) => {
-    const filePath = join(process.cwd(), config.outDir, '_config.yml')
+  Effect.all(Config, Process.cwd),
+  Effect.flatMap(([Config, cwd]) => {
+    const filePath = join(cwd, Config.config.outDir, '_config.yml')
     return pipe(
       _.exists(filePath),
       Effect.flatMap((exists) =>
         exists
           ? pipe(
               _.readFile(filePath),
-              Effect.map((content) => _.createFile(filePath, resolveConfigYML(content, config), true))
+              Effect.map((content) => _.createFile(filePath, resolveConfigYML(content, Config.config), true))
             )
           : Effect.succeed(
               _.createFile(
                 filePath,
-                `remote_theme: ${config.theme}
+                `remote_theme: ${Config.config.theme}
 
   # Enable or disable the site search
-  search_enabled: ${config.enableSearch}
+  search_enabled: ${Config.config.enableSearch}
 
   # Aux links for the upper right navigation
   aux_links:
-  '${getHomepageNavigationHeader(config)}':
-    - '${config.projectHomepage}'`,
+  '${getHomepageNavigationHeader(Config.config)}':
+    - '${Config.config.projectHomepage}'`,
                 false
               )
             )
@@ -363,3 +341,21 @@ const writeMarkdown = (files: ReadonlyArray<_.File>) =>
     Effect.flatMap((pattern) => _.remove(pattern)),
     Effect.flatMap(() => writeFiles(files))
   )
+
+/**
+ * @category main
+ * @since 0.9.0
+ */
+export const main = pipe(
+  _.info('reading modules...'),
+  Effect.flatMap(() => readFiles),
+  Effect.tap(() => _.info('parsing modules...')),
+  Effect.flatMap(getModules),
+  Effect.tap(() => _.info('typechecking examples...')),
+  Effect.tap(typeCheckExamples),
+  Effect.tap(() => _.info('creating markdown files...')),
+  Effect.flatMap(getMarkdown),
+  Effect.tap(() => _.info('writing markdown files...')),
+  Effect.flatMap(writeMarkdown),
+  Effect.provideServiceEffect(Config, _.getConfig)
+)

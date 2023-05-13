@@ -4,6 +4,7 @@
 
 import { pipe } from '@effect/data/Function'
 import * as Effect from '@effect/io/Effect'
+import chalk from 'chalk'
 import * as Monoid from 'fp-ts/Monoid'
 import * as ReadonlyArray from 'fp-ts/ReadonlyArray'
 import * as S from 'fp-ts/string'
@@ -47,24 +48,30 @@ const join = (...paths: Array<string>): string => NodePath.normalize(NodePath.jo
 const readFiles = pipe(
   Config,
   Effect.flatMap(({ config }) => _.glob(join(config.srcDir, '**', '*.ts'), config.exclude)),
-  Effect.tap((paths) => _.info(`${paths.length} module(s) found`)),
+  Effect.tap((paths) => _.info(chalk.bold(`${paths.length} module(s) found`))),
   Effect.flatMap(
     Effect.forEachPar((path) => Effect.map(_.readFile(path), (content) => _.createFile(path, content, false)))
   )
 )
 
-const writeFile = (file: _.File): Effect.Effect<never, Error, void> => {
-  const overwrite = pipe(
-    _.debug(`Overwriting file ${file.path}`),
-    Effect.flatMap(() => _.writeFile(file.path, file.content))
+const writeFile = (file: _.File): Effect.Effect<Config, Error, void> =>
+  pipe(
+    Config,
+    Effect.flatMap((Config) => {
+      const fileName = NodePath.relative(NodePath.join(process.cwd(), Config.config.outDir), file.path)
+
+      const overwrite = pipe(
+        _.debug(`overwriting file ${chalk.black(fileName)}`),
+        Effect.flatMap(() => _.writeFile(file.path, file.content))
+      )
+
+      const skip = _.debug(`file ${chalk.black(fileName)} already exists, skipping creation`)
+
+      const write = _.writeFile(file.path, file.content)
+
+      return Effect.ifEffect(_.exists(file.path), file.overwrite ? overwrite : skip, write)
+    })
   )
-
-  const skip = _.debug(`File ${file.path} already exists, skipping creation`)
-
-  const write = _.writeFile(file.path, file.content)
-
-  return Effect.ifEffect(_.exists(file.path), file.overwrite ? overwrite : skip, write)
-}
 
 // -------------------------------------------------------------------------------------
 // parse
@@ -196,7 +203,7 @@ const spawnTsNode = pipe(
   })
 )
 
-const writeFiles = (files: ReadonlyArray<_.File>): Effect.Effect<never, Error, void> =>
+const writeFiles = (files: ReadonlyArray<_.File>): Effect.Effect<Config, Error, void> =>
   Effect.forEachDiscard(files, writeFile)
 
 const writeExamples = (examples: ReadonlyArray<_.File>) =>
@@ -353,8 +360,7 @@ const writeMarkdown = (files: ReadonlyArray<_.File>) =>
   pipe(
     Config,
     Effect.map(({ config }) => join(config.outDir, '**/*.ts.md')),
-    Effect.tap((outPattern) => _.debug(`Cleaning up docs folder: deleting ${outPattern}`)),
-    Effect.flatMap((outPattern) => _.remove(outPattern)),
-    Effect.tap(() => _.debug('Writing markdown files...')),
+    Effect.tap((pattern) => _.debug(`deleting ${chalk.black(pattern)}`)),
+    Effect.flatMap((pattern) => _.remove(pattern)),
     Effect.flatMap(() => writeFiles(files))
   )

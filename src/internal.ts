@@ -11,27 +11,9 @@ import * as Effect from '@effect/io/Effect'
 import * as Schema from '@effect/schema/Schema'
 import * as TreeFormatter from '@effect/schema/TreeFormatter'
 import chalk from 'chalk'
-import * as ReaderTaskEither from 'fp-ts/ReaderTaskEither'
-import * as TaskEither from 'fp-ts/TaskEither'
 import * as fs from 'fs-extra'
 import * as Glob from 'glob'
 import * as rimraf from 'rimraf'
-
-// -------------------------------------------------------------------------------------
-// adapters
-// -------------------------------------------------------------------------------------
-
-/** @internal */
-export const toTaskEither =
-  <E, A>(eff: Effect.Effect<never, E, A>): TaskEither.TaskEither<E, A> =>
-  () =>
-    Effect.runPromiseEither(eff)
-
-/** @internal */
-export const toReaderTaskEither =
-  <R, E, A>(eff: Effect.Effect<never, E, A>): ReaderTaskEither.ReaderTaskEither<R, E, A> =>
-  () =>
-    toTaskEither(eff)
 
 // -------------------------------------------------------------------------------------
 // spawn
@@ -233,12 +215,12 @@ const parseConfig = pipe(
   Effect.flatMap((exists) =>
     exists
       ? pipe(
-          info('Configuration file found'),
+          info(chalk.bold('Configuration file found')),
           Effect.flatMap(() => parseJsonFile(configPath, PartialConfigSchema)),
           Effect.map(Option.some)
         )
       : pipe(
-          info('No configuration file detected, using default configuration'),
+          info(chalk.bold('No configuration file detected, using default configuration')),
           Effect.map(() => Option.none())
         )
   )

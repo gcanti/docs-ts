@@ -46,7 +46,7 @@ Added in v0.9.0
 ```ts
 export interface ParserEnv {
   readonly config: _.Config
-  readonly path: RNEA.ReadonlyNonEmptyArray<string>
+  readonly path: ReadonlyArray.NonEmptyReadonlyArray<string>
   readonly sourceFile: ast.SourceFile
 }
 ```

@@ -1,6 +1,5 @@
 import * as Option from '@effect/data/Option'
 import * as assert from 'assert'
-import * as RA from 'fp-ts/ReadonlyArray'
 
 import * as _ from '../src/Markdown'
 import {
@@ -31,36 +30,28 @@ const testCases = {
     'declare class A { constructor() }',
     [
       createMethod(
-        createDocumentable('hasOwnProperty', Option.none(), Option.some('1.0.0'), false, RA.empty, Option.none()),
+        createDocumentable('hasOwnProperty', Option.none(), Option.some('1.0.0'), false, [], Option.none()),
         ['hasOwnProperty(): boolean']
       )
     ],
     [
-      createMethod(
-        createDocumentable('staticTest', Option.none(), Option.some('1.0.0'), false, RA.empty, Option.none()),
-        ['static testStatic(): string;']
-      )
+      createMethod(createDocumentable('staticTest', Option.none(), Option.some('1.0.0'), false, [], Option.none()), [
+        'static testStatic(): string;'
+      ])
     ],
     [
       createProperty(
-        createDocumentable('foo', Option.none(), Option.some('1.0.0'), false, RA.empty, Option.none()),
+        createDocumentable('foo', Option.none(), Option.some('1.0.0'), false, [], Option.none()),
         'foo: string'
       )
     ]
   ),
   constant: createConstant(
-    createDocumentable(
-      'test',
-      Option.some('the test'),
-      Option.some('1.0.0'),
-      false,
-      RA.empty,
-      Option.some('constants')
-    ),
+    createDocumentable('test', Option.some('the test'), Option.some('1.0.0'), false, [], Option.some('constants')),
     'declare const test: string'
   ),
   export: createExport(
-    createDocumentable('test', Option.none(), Option.some('1.0.0'), false, RA.empty, Option.none()),
+    createDocumentable('test', Option.none(), Option.some('1.0.0'), false, [], Option.none()),
     'export declare const test: typeof test'
   ),
   function: createFunction(
@@ -68,11 +59,11 @@ const testCases = {
     ['declare const func: (test: string) => string']
   ),
   interface: createInterface(
-    createDocumentable('A', Option.none(), Option.some('1.0.0'), false, RA.empty, Option.none()),
+    createDocumentable('A', Option.none(), Option.some('1.0.0'), false, [], Option.none()),
     'export interface A extends Record<string, unknown> {}'
   ),
   typeAlias: createTypeAlias(
-    createDocumentable('A', Option.none(), Option.some('1.0.0'), false, RA.empty, Option.none()),
+    createDocumentable('A', Option.none(), Option.some('1.0.0'), false, [], Option.none()),
     'export type A = number'
   )
 }
@@ -146,9 +137,10 @@ describe.concurrent('Markdown', () => {
         Newline: () => `Newline`,
         Paragraph: (c) => `Paragraph(${match(c)})`,
         PlainText: (s) => s,
-        PlainTexts: (cs) => `PlainTexts(${RA.getShow({ show: match }).show(cs)})`,
+        PlainTexts: (cs) => `PlainTexts(${show(cs)})`,
         Strikethrough: (c) => `Strikethrough(${match(c)})`
       })
+      const show = (ms: ReadonlyArray<_.Markdown>): string => '[' + ms.map(match).join(', ') + ']'
 
       assert.strictEqual(match(_.createBold(content)), 'Bold(a)')
       assert.strictEqual(match(_.createFence('ts', content)), 'Fence(ts, a)')
@@ -391,14 +383,7 @@ export type A = number
     })
 
     it('printModule', () => {
-      const documentation = createDocumentable(
-        'tests',
-        Option.none(),
-        Option.some('1.0.0'),
-        false,
-        RA.empty,
-        Option.none()
-      )
+      const documentation = createDocumentable('tests', Option.none(), Option.some('1.0.0'), false, [], Option.none())
       const m = createModule(
         documentation,
         ['src', 'tests.ts'],
@@ -559,16 +544,7 @@ Added in v1.0.0
 `
       )
 
-      const empty = createModule(
-        documentation,
-        ['src', 'tests.ts'],
-        RA.empty,
-        RA.empty,
-        RA.empty,
-        RA.empty,
-        RA.empty,
-        RA.empty
-      )
+      const empty = createModule(documentation, ['src', 'tests.ts'], [], [], [], [], [], [])
 
       assert.strictEqual(
         _.printModule(empty, 1),
@@ -595,11 +571,11 @@ Added in v1.0.0
         ['src', 'tests.ts'],
         // @ts-expect-error - valid Markdown instance required
         [{ category: 'invalid markdown' }],
-        RA.empty,
-        RA.empty,
-        RA.empty,
-        RA.empty,
-        RA.empty
+        [],
+        [],
+        [],
+        [],
+        []
       )
 
       assert.throws(() => {

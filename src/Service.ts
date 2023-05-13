@@ -2,7 +2,7 @@
  * @since 0.9.0
  */
 import * as Context from '@effect/data/Context'
-import * as RNEA from 'fp-ts/ReadonlyNonEmptyArray'
+import * as ReadonlyArray from '@effect/data/ReadonlyArray'
 import * as ast from 'ts-morph'
 
 import * as _ from './internal'
@@ -26,7 +26,7 @@ export const Config = Context.Tag<Config>()
  * @since 0.9.0
  */
 export interface Parser {
-  readonly path: RNEA.ReadonlyNonEmptyArray<string>
+  readonly path: ReadonlyArray.NonEmptyReadonlyArray<string>
   readonly sourceFile: ast.SourceFile
 }
 

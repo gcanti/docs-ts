@@ -34,7 +34,7 @@ Added in v0.9.0
 **Signature**
 
 ```ts
-export interface ParserEffect<A> extends RE.ReaderEither<ParserEnv, ReadonlyArray<string>, A> {}
+export interface ParserEffect<A> extends RE.ReaderEither<ParserEnv, Array<string>, A> {}
 ```
 
 Added in v0.9.0
@@ -60,7 +60,7 @@ Added in v0.9.0
 **Signature**
 
 ```ts
-export declare const parseClasses: ParserEffect<readonly Class[]>
+export declare const parseClasses: ParserEffect<Class[]>
 ```
 
 Added in v0.9.0
@@ -70,7 +70,7 @@ Added in v0.9.0
 **Signature**
 
 ```ts
-export declare const parseConstants: ParserEffect<readonly Constant[]>
+export declare const parseConstants: ParserEffect<Constant[]>
 ```
 
 Added in v0.9.0
@@ -80,7 +80,7 @@ Added in v0.9.0
 **Signature**
 
 ```ts
-export declare const parseExports: ParserEffect<readonly Export[]>
+export declare const parseExports: ParserEffect<Export[]>
 ```
 
 Added in v0.9.0
@@ -90,9 +90,7 @@ Added in v0.9.0
 **Signature**
 
 ```ts
-export declare const parseFiles: (
-  files: ReadonlyArray<_.File>
-) => Effect.Effect<Config, (readonly string[])[], readonly Module[]>
+export declare const parseFiles: (files: ReadonlyArray<_.File>) => Effect.Effect<Config, string[][], readonly Module[]>
 ```
 
 Added in v0.9.0
@@ -102,7 +100,7 @@ Added in v0.9.0
 **Signature**
 
 ```ts
-export declare const parseFunctions: ParserEffect<readonly Function[]>
+export declare const parseFunctions: ParserEffect<Function[]>
 ```
 
 Added in v0.9.0
@@ -112,7 +110,7 @@ Added in v0.9.0
 **Signature**
 
 ```ts
-export declare const parseInterfaces: ParserEffect<readonly Interface[]>
+export declare const parseInterfaces: ParserEffect<Interface[]>
 ```
 
 Added in v0.9.0
@@ -132,7 +130,7 @@ Added in v0.9.0
 **Signature**
 
 ```ts
-export declare const parseTypeAliases: ParserEffect<readonly TypeAlias[]>
+export declare const parseTypeAliases: ParserEffect<TypeAlias[]>
 ```
 
 Added in v0.9.0

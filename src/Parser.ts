@@ -51,7 +51,7 @@ export interface ParserEnv {
  * @category model
  * @since 0.9.0
  */
-export interface ParserEffect<A> extends RE.ReaderEither<ParserEnv, ReadonlyArray<string>, A> {}
+export interface ParserEffect<A> extends RE.ReaderEither<ParserEnv, Array<string>, A> {}
 
 interface Comment {
   readonly description: Option.Option<string>
@@ -86,7 +86,9 @@ const CommentInfo = (
 
 const applicativeParser = RE.getApplicativeReaderValidation(RA.getSemigroup<string>())
 
-const traverse = RA.traverse(applicativeParser)
+const traverse: <A, FR, B>(
+  f: (a: A) => RE.ReaderEither<FR, Array<string>, B>
+) => (ta: ReadonlyArray<A>) => RE.ReaderEither<FR, Array<string>, Array<B>> = RA.traverse(applicativeParser) as any
 
 const every =
   <A>(predicates: ReadonlyArray<Predicate<A>>) =>
@@ -191,7 +193,7 @@ const getDescription = (name: string, comment: Comment): ParserEffect<Option.Opt
     )
   )
 
-const getExamples = (name: string, comment: Comment, isModule: boolean): ParserEffect<ReadonlyArray<string>> =>
+const getExamples = (name: string, comment: Comment, isModule: boolean): ParserEffect<Array<string>> =>
   pipe(
     RE.ask<ParserEnv>(),
     RE.chainEitherK((env) =>
@@ -203,11 +205,11 @@ const getExamples = (name: string, comment: Comment, isModule: boolean): ParserE
           () =>
             Boolean.MonoidEvery.combineAll([env.config.enforceExamples, !isModule])
               ? Either.left([missingTag('@example', env.path, name)])
-              : Either.right(RA.empty),
+              : Either.right([]),
           (examples) =>
             Boolean.MonoidEvery.combineAll([env.config.enforceExamples, RA.isEmpty(examples), !isModule])
               ? Either.left([missingTag('@example', env.path, name)])
-              : Either.right(examples)
+              : Either.right(examples.slice())
         )
       )
     )
@@ -268,7 +270,7 @@ const parseInterfaceDeclaration = (id: ast.InterfaceDeclaration): ParserEffect<I
  * @category parsers
  * @since 0.9.0
  */
-export const parseInterfaces: ParserEffect<ReadonlyArray<Interface>> = pipe(
+export const parseInterfaces: ParserEffect<Array<Interface>> = pipe(
   RE.asks((env: ParserEnv) =>
     pipe(
       env.sourceFile.getInterfaces(),
@@ -301,7 +303,7 @@ const getFunctionDeclarationSignature = (f: ast.FunctionDeclaration): string => 
   )
 }
 
-const getFunctionDeclarationJSDocs = (fd: ast.FunctionDeclaration): ReadonlyArray<ast.JSDoc> =>
+const getFunctionDeclarationJSDocs = (fd: ast.FunctionDeclaration): Array<ast.JSDoc> =>
   pipe(
     fd.getOverloads(),
     RA.foldLeft(
@@ -360,7 +362,7 @@ const parseFunctionVariableDeclaration = (vd: ast.VariableDeclaration): ParserEf
 
 const getFunctionDeclarations: RE.ReaderEither<
   ParserEnv,
-  ReadonlyArray<string>,
+  Array<string>,
   {
     functions: ReadonlyArray<ast.FunctionDeclaration>
     arrows: ReadonlyArray<ast.VariableDeclaration>
@@ -407,7 +409,7 @@ const getFunctionDeclarations: RE.ReaderEither<
  * @category parsers
  * @since 0.9.0
  */
-export const parseFunctions: ParserEffect<ReadonlyArray<Function>> = pipe(
+export const parseFunctions: ParserEffect<Array<Function>> = pipe(
   RE.Do,
   RE.bind('getFunctionDeclarations', () => getFunctionDeclarations),
   RE.bind('functionDeclarations', ({ getFunctionDeclarations }) =>
@@ -416,9 +418,7 @@ export const parseFunctions: ParserEffect<ReadonlyArray<Function>> = pipe(
   RE.bind('variableDeclarations', ({ getFunctionDeclarations }) =>
     pipe(getFunctionDeclarations.arrows, traverse(parseFunctionVariableDeclaration))
   ),
-  RE.map(({ functionDeclarations, variableDeclarations }) =>
-    RA.getMonoid<Function>().concat(functionDeclarations, variableDeclarations)
-  )
+  RE.map(({ functionDeclarations, variableDeclarations }) => functionDeclarations.concat(variableDeclarations))
 )
 
 // -------------------------------------------------------------------------------------
@@ -427,7 +427,7 @@ export const parseFunctions: ParserEffect<ReadonlyArray<Function>> = pipe(
 
 const parseTypeAliasDeclaration = (ta: ast.TypeAliasDeclaration): ParserEffect<TypeAlias> =>
   pipe(
-    RE.of<ParserEnv, ReadonlyArray<string>, string>(ta.getName()),
+    RE.of<ParserEnv, Array<string>, string>(ta.getName()),
     RE.flatMap((name) =>
       pipe(
         getJSDocText(ta.getJsDocs()),
@@ -446,7 +446,7 @@ const parseTypeAliasDeclaration = (ta: ast.TypeAliasDeclaration): ParserEffect<T
  * @category parsers
  * @since 0.9.0
  */
-export const parseTypeAliases: ParserEffect<ReadonlyArray<TypeAlias>> = pipe(
+export const parseTypeAliases: ParserEffect<Array<TypeAlias>> = pipe(
   RE.asks((env: ParserEnv) =>
     pipe(
       env.sourceFile.getTypeAliases(),
@@ -487,7 +487,7 @@ const parseConstantVariableDeclaration = (vd: ast.VariableDeclaration): ParserEf
  * @category parsers
  * @since 0.9.0
  */
-export const parseConstants: ParserEffect<ReadonlyArray<Constant>> = pipe(
+export const parseConstants: ParserEffect<Array<Constant>> = pipe(
   RE.asks((env: ParserEnv) =>
     pipe(
       env.sourceFile.getVariableDeclarations(),
@@ -528,7 +528,7 @@ const parseExportSpecifier = (es: ast.ExportSpecifier): ParserEffect<Export> =>
     RE.ask<ParserEnv>(),
     RE.flatMap((env) =>
       pipe(
-        RE.of<ParserEnv, ReadonlyArray<string>, string>(es.compilerNode.name.text),
+        RE.of<ParserEnv, Array<string>, string>(es.compilerNode.name.text),
         RE.bindTo('name'),
         RE.bind('type', () => RE.of(stripImportTypes(es.getType().getText(es)))),
         RE.bind('signature', ({ name, type }) => RE.of(`export declare const ${name}: ${type}`)),
@@ -550,17 +550,17 @@ const parseExportSpecifier = (es: ast.ExportSpecifier): ParserEffect<Export> =>
     )
   )
 
-const parseExportDeclaration = (ed: ast.ExportDeclaration): ParserEffect<ReadonlyArray<Export>> =>
+const parseExportDeclaration = (ed: ast.ExportDeclaration): ParserEffect<Array<Export>> =>
   pipe(ed.getNamedExports(), traverse(parseExportSpecifier))
 
 /**
  * @category parsers
  * @since 0.9.0
  */
-export const parseExports: ParserEffect<ReadonlyArray<Export>> = pipe(
+export const parseExports: ParserEffect<Array<Export>> = pipe(
   RE.asks((env: ParserEnv) => env.sourceFile.getExportDeclarations()),
   RE.flatMap(traverse(parseExportDeclaration)),
-  RE.map(RA.flatten)
+  RE.map(ReadonlyArray.flatten)
 )
 
 // -------------------------------------------------------------------------------------
@@ -584,7 +584,7 @@ const getMethodSignature = (md: ast.MethodDeclaration): string =>
 
 const parseMethod = (md: ast.MethodDeclaration): ParserEffect<Option.Option<Method>> =>
   pipe(
-    RE.of<ParserEnv, ReadonlyArray<string>, string>(md.getName()),
+    RE.of<ParserEnv, Array<string>, string>(md.getName()),
     RE.bindTo('name'),
     RE.bind('overloads', () => RE.of(md.getOverloads())),
     RE.bind('jsdocs', ({ overloads }) =>
@@ -652,7 +652,7 @@ const parseProperty =
     )
   }
 
-const parseProperties = (name: string, c: ast.ClassDeclaration): ParserEffect<ReadonlyArray<Property>> =>
+const parseProperties = (name: string, c: ast.ClassDeclaration): ParserEffect<Array<Property>> =>
   pipe(
     c.getProperties(),
     // take public, instance properties
@@ -731,10 +731,10 @@ const parseClass = (c: ast.ClassDeclaration): ParserEffect<Class> =>
     )
   )
 
-const getClasses: ParserEffect<ReadonlyArray<ast.ClassDeclaration>> = RE.asks((env: ParserEnv) =>
+const getClasses: ParserEffect<Array<ast.ClassDeclaration>> = RE.asks((env: ParserEnv) =>
   pipe(
     env.sourceFile.getClasses(),
-    RA.filter((c) => c.isExported())
+    ReadonlyArray.filter((c) => c.isExported())
   )
 )
 
@@ -742,7 +742,7 @@ const getClasses: ParserEffect<ReadonlyArray<ast.ClassDeclaration>> = RE.asks((e
  * @category parsers
  * @since 0.9.0
  */
-export const parseClasses: ParserEffect<ReadonlyArray<Class>> = pipe(
+export const parseClasses: ParserEffect<Array<Class>> = pipe(
   getClasses,
   RE.flatMap(traverse(parseClass)),
   RE.map(ReadonlyArray.sort(byName))
@@ -780,7 +780,7 @@ export const parseModuleDocumentation: ParserEffect<Documentable> = pipe(
             pipe(
               getCommentInfo(name, true)(commentRange.getText())(env),
               // TODO
-              (e): Either.Either<ReadonlyArray<string>, CommentInfo> =>
+              (e): Either.Either<Array<string>, CommentInfo> =>
                 e._tag === 'Left' ? Either.left(e.left) : Either.right(e.right),
               Either.map((info) =>
                 Documentable(name, info.description, info.since, info.deprecated, info.examples, info.category)
@@ -821,7 +821,7 @@ export const parseModule: ParserEffect<Module> = pipe(
  */
 export const parseFile =
   (project: ast.Project) =>
-  (file: _.File): Effect.Effect<Config, ReadonlyArray<string>, Module> =>
+  (file: _.File): Effect.Effect<Config, Array<string>, Module> =>
     pipe(
       Config,
       Effect.flatMap(({ config }) => {

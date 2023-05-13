@@ -8,7 +8,7 @@ import * as ReadonlyRecord from '@effect/data/ReadonlyRecord'
 import * as String from '@effect/data/String'
 import * as Monoid from '@effect/data/typeclass/Monoid'
 import * as Semigroup from '@effect/data/typeclass/Semigroup'
-import * as prettier from 'prettier'
+import * as Prettier from 'prettier'
 
 import * as Module from './Module'
 
@@ -117,7 +117,7 @@ export interface Strikethrough {
  * @category constructors
  * @since 0.9.0
  */
-export const Bold = (content: Markdown): Markdown => ({
+export const createBold = (content: Markdown): Markdown => ({
   _tag: 'Bold',
   content
 })
@@ -126,7 +126,7 @@ export const Bold = (content: Markdown): Markdown => ({
  * @category constructors
  * @since 0.9.0
  */
-export const Fence = (language: string, content: Markdown): Markdown => ({
+export const createFence = (language: string, content: Markdown): Markdown => ({
   _tag: 'Fence',
   language,
   content
@@ -136,7 +136,7 @@ export const Fence = (language: string, content: Markdown): Markdown => ({
  * @category constructors
  * @since 0.9.0
  */
-export const Header = (level: number, content: Markdown): Markdown => ({
+export const createHeader = (level: number, content: Markdown): Markdown => ({
   _tag: 'Header',
   level,
   content
@@ -154,7 +154,7 @@ export const Newline: Markdown = {
  * @category constructors
  * @since 0.9.0
  */
-export const Paragraph = (content: Markdown): Markdown => ({
+export const createParagraph = (content: Markdown): Markdown => ({
   _tag: 'Paragraph',
   content
 })
@@ -163,7 +163,7 @@ export const Paragraph = (content: Markdown): Markdown => ({
  * @category constructors
  * @since 0.9.0
  */
-export const PlainText = (content: string): Markdown => ({
+export const createPlainText = (content: string): Markdown => ({
   _tag: 'PlainText',
   content
 })
@@ -172,7 +172,7 @@ export const PlainText = (content: string): Markdown => ({
  * @category constructors
  * @since 0.9.0
  */
-export const PlainTexts = (content: ReadonlyArray<Markdown>): Markdown => ({
+export const createPlainTexts = (content: ReadonlyArray<Markdown>): Markdown => ({
   _tag: 'PlainTexts',
   content
 })
@@ -181,7 +181,7 @@ export const PlainTexts = (content: ReadonlyArray<Markdown>): Markdown => ({
  * @category constructors
  * @since 0.9.0
  */
-export const Strikethrough = (content: Markdown): Markdown => ({
+export const createStrikethrough = (content: Markdown): Markdown => ({
   _tag: 'Strikethrough',
   content
 })
@@ -195,8 +195,8 @@ export const Strikethrough = (content: Markdown): Markdown => ({
  * @since 0.9.0
  */
 export const monoidMarkdown: Monoid.Monoid<Markdown> = Monoid.fromSemigroup(
-  Semigroup.make((x, y) => PlainTexts([x, y])),
-  PlainText('')
+  Semigroup.make((x, y) => createPlainTexts([x, y])),
+  createPlainText('')
 )
 
 // -------------------------------------------------------------------------------------
@@ -207,7 +207,7 @@ export const monoidMarkdown: Monoid.Monoid<Markdown> = Monoid.fromSemigroup(
  * @category destructors
  * @since 0.9.0
  */
-export const fold = <R>(patterns: {
+export const match = <R>(patterns: {
   readonly Bold: (content: Markdown) => R
   readonly Fence: (language: string, content: Markdown) => R
   readonly Header: (level: number, content: Markdown) => R
@@ -246,65 +246,65 @@ export const fold = <R>(patterns: {
 // combinators
 // -------------------------------------------------------------------------------------
 
-const CRLF: Markdown = PlainTexts(ReadonlyArray.replicate(Newline, 2))
+const CRLF: Markdown = createPlainTexts(ReadonlyArray.replicate(Newline, 2))
 
 const intercalateCRLF: (xs: ReadonlyArray<Markdown>) => Markdown = ReadonlyArray.intercalate(monoidMarkdown)(CRLF)
 
 const intercalateNewline: (xs: ReadonlyArray<string>) => string = ReadonlyArray.intercalate(String.Monoid)('\n')
 
-const h1 = (content: Markdown) => Header(1, content)
+const h1 = (content: Markdown) => createHeader(1, content)
 
-const h2 = (content: Markdown) => Header(2, content)
+const h2 = (content: Markdown) => createHeader(2, content)
 
-const h3 = (content: Markdown) => Header(3, content)
+const h3 = (content: Markdown) => createHeader(3, content)
 
-const ts = (code: string) => Fence('ts', PlainText(code))
+const ts = (code: string) => createFence('ts', createPlainText(code))
 
 const since: (v: Option.Option<string>) => Markdown = Option.match(
   () => monoidMarkdown.empty,
-  (v) => monoidMarkdown.combineAll([CRLF, PlainText(`Added in v${v}`)])
+  (v) => monoidMarkdown.combineAll([CRLF, createPlainText(`Added in v${v}`)])
 )
 
 const title = (s: string, deprecated: boolean, type?: string): Markdown => {
   const title = s.trim() === 'hasOwnProperty' ? `${s} (function)` : s
-  const markdownTitle = deprecated ? Strikethrough(PlainText(title)) : PlainText(title)
+  const markdownTitle = deprecated ? createStrikethrough(createPlainText(title)) : createPlainText(title)
   return pipe(
     Option.fromNullable(type),
     Option.match(
       () => markdownTitle,
-      (t) => monoidMarkdown.combineAll([markdownTitle, PlainText(` ${t}`)])
+      (t) => monoidMarkdown.combineAll([markdownTitle, createPlainText(` ${t}`)])
     )
   )
 }
 
 const description: (d: Option.Option<string>) => Markdown = flow(
-  Option.match(() => monoidMarkdown.empty, PlainText),
-  Paragraph
+  Option.match(() => monoidMarkdown.empty, createPlainText),
+  createParagraph
 )
 
 const signature = (s: string): Markdown =>
   pipe(
     ReadonlyArray.of(ts(s)),
-    ReadonlyArray.prepend(Paragraph(Bold(PlainText('Signature')))),
+    ReadonlyArray.prepend(createParagraph(createBold(createPlainText('Signature')))),
     monoidMarkdown.combineAll
   )
 
 const signatures = (ss: ReadonlyArray<string>): Markdown =>
   pipe(
     ReadonlyArray.of(ts(intercalateNewline(ss))),
-    ReadonlyArray.prepend(Paragraph(Bold(PlainText('Signature')))),
+    ReadonlyArray.prepend(createParagraph(createBold(createPlainText('Signature')))),
     monoidMarkdown.combineAll
   )
 
 const examples: (es: ReadonlyArray<string>) => Markdown = flow(
   ReadonlyArray.map((code) =>
-    pipe(ReadonlyArray.of(ts(code)), ReadonlyArray.prepend(Bold(PlainText('Example'))), intercalateCRLF)
+    pipe(ReadonlyArray.of(ts(code)), ReadonlyArray.prepend(createBold(createPlainText('Example'))), intercalateCRLF)
   ),
   intercalateCRLF
 )
 
 const staticMethod = (m: Module.Method): Markdown =>
-  Paragraph(
+  createParagraph(
     monoidMarkdown.combineAll([
       h3(title(m.name, m.deprecated, '(static method)')),
       description(m.description),
@@ -315,7 +315,7 @@ const staticMethod = (m: Module.Method): Markdown =>
   )
 
 const method = (m: Module.Method): Markdown =>
-  Paragraph(
+  createParagraph(
     monoidMarkdown.combineAll([
       h3(title(m.name, m.deprecated, '(method)')),
       description(m.description),
@@ -326,7 +326,7 @@ const method = (m: Module.Method): Markdown =>
   )
 
 const propertyToMarkdown = (p: Module.Property): Markdown =>
-  Paragraph(
+  createParagraph(
     monoidMarkdown.combineAll([
       h3(title(p.name, p.deprecated, '(property)')),
       description(p.description),
@@ -349,9 +349,9 @@ const properties: (properties: ReadonlyArray<Module.Property>) => Markdown = flo
 )
 
 const moduleDescription = (m: Module.Module): Markdown =>
-  Paragraph(
+  createParagraph(
     monoidMarkdown.combineAll([
-      Paragraph(h2(title(m.name, m.deprecated, 'overview'))),
+      createParagraph(h2(title(m.name, m.deprecated, 'overview'))),
       description(m.description),
       examples(m.examples),
       since(m.since)
@@ -359,24 +359,24 @@ const moduleDescription = (m: Module.Module): Markdown =>
   )
 
 const meta = (title: string, order: number): Markdown =>
-  Paragraph(
+  createParagraph(
     monoidMarkdown.combineAll([
-      PlainText('---'),
+      createPlainText('---'),
       Newline,
-      PlainText(`title: ${title}`),
+      createPlainText(`title: ${title}`),
       Newline,
-      PlainText(`nav_order: ${order}`),
+      createPlainText(`nav_order: ${order}`),
       Newline,
-      PlainText(`parent: Modules`),
+      createPlainText(`parent: Modules`),
       Newline,
-      PlainText('---')
+      createPlainText('---')
     ])
   )
 
 const fromClass = (c: Module.Class): Markdown =>
-  Paragraph(
+  createParagraph(
     monoidMarkdown.combineAll([
-      Paragraph(
+      createParagraph(
         monoidMarkdown.combineAll([
           h2(title(c.name, c.deprecated, '(class)')),
           description(c.description),
@@ -392,7 +392,7 @@ const fromClass = (c: Module.Class): Markdown =>
   )
 
 const fromConstant = (c: Module.Constant): Markdown =>
-  Paragraph(
+  createParagraph(
     monoidMarkdown.combineAll([
       h2(title(c.name, c.deprecated)),
       description(c.description),
@@ -403,7 +403,7 @@ const fromConstant = (c: Module.Constant): Markdown =>
   )
 
 const fromExport = (e: Module.Export): Markdown =>
-  Paragraph(
+  createParagraph(
     monoidMarkdown.combineAll([
       h2(title(e.name, e.deprecated)),
       description(e.description),
@@ -414,7 +414,7 @@ const fromExport = (e: Module.Export): Markdown =>
   )
 
 const fromFunction = (f: Module.Function): Markdown =>
-  Paragraph(
+  createParagraph(
     monoidMarkdown.combineAll([
       h2(title(f.name, f.deprecated)),
       description(f.description),
@@ -425,7 +425,7 @@ const fromFunction = (f: Module.Function): Markdown =>
   )
 
 const fromInterface = (i: Module.Interface): Markdown =>
-  Paragraph(
+  createParagraph(
     monoidMarkdown.combineAll([
       h2(title(i.name, i.deprecated, '(interface)')),
       description(i.description),
@@ -436,7 +436,7 @@ const fromInterface = (i: Module.Interface): Markdown =>
   )
 
 const fromTypeAlias = (ta: Module.TypeAlias): Markdown =>
-  Paragraph(
+  createParagraph(
     monoidMarkdown.combineAll([
       h2(title(ta.name, ta.deprecated, '(type alias)')),
       description(ta.description),
@@ -485,37 +485,37 @@ const getPrintables = (module: Module.Module): ReadonlyArray<Printable> =>
  * @category printers
  * @since 0.9.0
  */
-export const printClass = (c: Module.Class): string => pipe(fromClass(c), showMarkdown)
+export const printClass = (c: Module.Class): string => pipe(fromClass(c), prettify)
 
 /**
  * @category printers
  * @since 0.9.0
  */
-export const printConstant = (c: Module.Constant): string => pipe(fromConstant(c), showMarkdown)
+export const printConstant = (c: Module.Constant): string => pipe(fromConstant(c), prettify)
 
 /**
  * @category printers
  * @since 0.9.0
  */
-export const printExport = (e: Module.Export): string => pipe(fromExport(e), showMarkdown)
+export const printExport = (e: Module.Export): string => pipe(fromExport(e), prettify)
 
 /**
  * @category printers
  * @since 0.9.0
  */
-export const printFunction = (f: Module.Function): string => pipe(fromFunction(f), showMarkdown)
+export const printFunction = (f: Module.Function): string => pipe(fromFunction(f), prettify)
 
 /**
  * @category printers
  * @since 0.9.0
  */
-export const printInterface = (i: Module.Interface): string => pipe(fromInterface(i), showMarkdown)
+export const printInterface = (i: Module.Interface): string => pipe(fromInterface(i), prettify)
 
 /**
  * @category printers
  * @since 0.9.0
  */
-export const printTypeAlias = (f: Module.TypeAlias): string => pipe(fromTypeAlias(f), showMarkdown)
+export const printTypeAlias = (f: Module.TypeAlias): string => pipe(fromTypeAlias(f), prettify)
 
 /**
  * @category printers
@@ -524,9 +524,9 @@ export const printTypeAlias = (f: Module.TypeAlias): string => pipe(fromTypeAlia
 export const printModule = (module: Module.Module, order: number): string => {
   const DEFAULT_CATEGORY = 'utils'
 
-  const header = pipe(meta(module.path.slice(1).join('/'), order), showMarkdown)
+  const header = pipe(meta(module.path.slice(1).join('/'), order), prettify)
 
-  const description = pipe(Paragraph(moduleDescription(module)), showMarkdown)
+  const description = pipe(createParagraph(moduleDescription(module)), prettify)
 
   const content = pipe(
     getPrintables(module),
@@ -538,10 +538,10 @@ export const printModule = (module: Module.Module, order: number): string => {
         )
       ),
       ReadonlyRecord.collect((category, printables) => {
-        const title = pipe(h1(PlainText(category)), showMarkdown)
+        const title = pipe(h1(createPlainText(category)), prettify)
         const documentation = pipe(
           printables,
-          ReadonlyArray.map(flow(fromPrintable, showMarkdown)),
+          ReadonlyArray.map(flow(fromPrintable, prettify)),
           ReadonlyArray.sort(String.Order),
           intercalateNewline
         )
@@ -554,45 +554,46 @@ export const printModule = (module: Module.Module, order: number): string => {
 
   const tableOfContents = (c: string): string =>
     pipe(
-      Paragraph(
+      createParagraph(
         monoidMarkdown.combineAll([
-          Paragraph(PlainText('<h2 class="text-delta">Table of contents</h2>')),
-          PlainText(toc(c).content)
+          createParagraph(createPlainText('<h2 class="text-delta">Table of contents</h2>')),
+          createPlainText(toc(c).content)
         ])
       ),
-      showMarkdown
+      prettify
     )
 
-  return pipe(intercalateNewline([header, description, '---\n', tableOfContents(content), '---\n', content]), prettify)
+  return pipe(
+    intercalateNewline([header, description, '---\n', tableOfContents(content), '---\n', content]),
+    prettifyString
+  )
 }
 
-const prettierOptions: prettier.Options = {
+const prettierOptions: Prettier.Options = {
   parser: 'markdown',
   semi: false,
   singleQuote: true,
   printWidth: 120
 }
 
-const prettify = (s: string): string => prettier.format(s, prettierOptions)
-
 const canonicalizeMarkdown: (m: ReadonlyArray<Markdown>) => Array<Markdown> = ReadonlyArray.filterMap(
   (markdown: Markdown) =>
     pipe(
       markdown,
-      fold({
+      match({
         Bold: () => Option.some(markdown),
         Header: () => Option.some(markdown),
         Fence: () => Option.some(markdown),
         Newline: () => Option.some(markdown),
         Paragraph: () => Option.some(markdown),
         PlainText: (content) => (content.length > 0 ? Option.some(markdown) : Option.none()),
-        PlainTexts: (content) => Option.some(PlainTexts(canonicalizeMarkdown(content))),
+        PlainTexts: (content) => Option.some(createPlainTexts(canonicalizeMarkdown(content))),
         Strikethrough: () => Option.some(markdown)
       })
     )
 )
 
-const markdownToString: (markdown: Markdown) => string = fold({
+const markdownToString: (markdown: Markdown) => string = match({
   Bold: (content) => String.Monoid.combineAll(['**', markdownToString(content), '**']),
   Header: (level, content) =>
     String.Monoid.combineAll([
@@ -612,8 +613,10 @@ const markdownToString: (markdown: Markdown) => string = fold({
   Strikethrough: (content) => String.Monoid.combineAll(['~~', markdownToString(content), '~~'])
 })
 
+const prettifyString = (s: string): string => Prettier.format(s, prettierOptions)
+
 /**
  * @category instances
  * @since 0.9.0
  */
-export const showMarkdown = flow(markdownToString, prettify)
+export const prettify = (s: Markdown) => prettifyString(markdownToString(s))

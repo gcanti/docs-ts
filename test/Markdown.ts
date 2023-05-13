@@ -16,7 +16,7 @@ import {
   createTypeAlias
 } from '../src/Module'
 
-const content = _.PlainText('a')
+const content = _.createPlainText('a')
 
 const testCases = {
   class: createClass(
@@ -80,14 +80,14 @@ const testCases = {
 describe.concurrent('Markdown', () => {
   describe.concurrent('constructors', () => {
     it('Bold', () => {
-      assert.deepStrictEqual(_.Bold(content), {
+      assert.deepStrictEqual(_.createBold(content), {
         _tag: 'Bold',
         content
       })
     })
 
     it('Fence', () => {
-      assert.deepStrictEqual(_.Fence('ts', content), {
+      assert.deepStrictEqual(_.createFence('ts', content), {
         _tag: 'Fence',
         language: 'ts',
         content
@@ -95,7 +95,7 @@ describe.concurrent('Markdown', () => {
     })
 
     it('Header', () => {
-      assert.deepStrictEqual(_.Header(1, content), {
+      assert.deepStrictEqual(_.createHeader(1, content), {
         _tag: 'Header',
         level: 1,
         content
@@ -109,28 +109,28 @@ describe.concurrent('Markdown', () => {
     })
 
     it('Paragraph', () => {
-      assert.deepStrictEqual(_.Paragraph(content), {
+      assert.deepStrictEqual(_.createParagraph(content), {
         _tag: 'Paragraph',
         content
       })
     })
 
     it('PlainText', () => {
-      assert.deepStrictEqual(_.PlainText('a'), {
+      assert.deepStrictEqual(_.createPlainText('a'), {
         _tag: 'PlainText',
         content: 'a'
       })
     })
 
     it('PlainTexts', () => {
-      assert.deepStrictEqual(_.PlainTexts([content]), {
+      assert.deepStrictEqual(_.createPlainTexts([content]), {
         _tag: 'PlainTexts',
         content: [content]
       })
     })
 
     it('Strikethrough', () => {
-      assert.deepStrictEqual(_.Strikethrough(content), {
+      assert.deepStrictEqual(_.createStrikethrough(content), {
         _tag: 'Strikethrough',
         content
       })
@@ -138,36 +138,36 @@ describe.concurrent('Markdown', () => {
   })
 
   describe.concurrent('destructors', () => {
-    it('fold', () => {
-      const fold: (markdown: _.Markdown) => string = _.fold({
-        Bold: (c) => `Bold(${fold(c)})`,
-        Fence: (l, c) => `Fence(${l}, ${fold(c)})`,
-        Header: (l, c) => `Header(${l}, ${fold(c)})`,
+    it('match', () => {
+      const match: (markdown: _.Markdown) => string = _.match({
+        Bold: (c) => `Bold(${match(c)})`,
+        Fence: (l, c) => `Fence(${l}, ${match(c)})`,
+        Header: (l, c) => `Header(${l}, ${match(c)})`,
         Newline: () => `Newline`,
-        Paragraph: (c) => `Paragraph(${fold(c)})`,
+        Paragraph: (c) => `Paragraph(${match(c)})`,
         PlainText: (s) => s,
-        PlainTexts: (cs) => `PlainTexts(${RA.getShow({ show: fold }).show(cs)})`,
-        Strikethrough: (c) => `Strikethrough(${fold(c)})`
+        PlainTexts: (cs) => `PlainTexts(${RA.getShow({ show: match }).show(cs)})`,
+        Strikethrough: (c) => `Strikethrough(${match(c)})`
       })
 
-      assert.strictEqual(fold(_.Bold(content)), 'Bold(a)')
-      assert.strictEqual(fold(_.Fence('ts', content)), 'Fence(ts, a)')
-      assert.strictEqual(fold(_.Header(1, content)), 'Header(1, a)')
-      assert.strictEqual(fold(_.Newline), 'Newline')
-      assert.strictEqual(fold(_.Paragraph(content)), 'Paragraph(a)')
-      assert.strictEqual(fold(_.PlainText('a')), 'a')
-      assert.strictEqual(fold(_.PlainTexts([content])), 'PlainTexts([a])')
-      assert.strictEqual(fold(_.Strikethrough(content)), 'Strikethrough(a)')
+      assert.strictEqual(match(_.createBold(content)), 'Bold(a)')
+      assert.strictEqual(match(_.createFence('ts', content)), 'Fence(ts, a)')
+      assert.strictEqual(match(_.createHeader(1, content)), 'Header(1, a)')
+      assert.strictEqual(match(_.Newline), 'Newline')
+      assert.strictEqual(match(_.createParagraph(content)), 'Paragraph(a)')
+      assert.strictEqual(match(_.createPlainText('a')), 'a')
+      assert.strictEqual(match(_.createPlainTexts([content])), 'PlainTexts([a])')
+      assert.strictEqual(match(_.createStrikethrough(content)), 'Strikethrough(a)')
       assert.throws(() => {
         // @ts-expect-error - valid Markdown instance required
-        fold({})
+        match({})
       })
     })
   })
 
   describe.concurrent('instances', () => {
     it('monoidMarkdown', () => {
-      assert.deepStrictEqual(_.monoidMarkdown.combine(_.Bold(content), _.Strikethrough(content)), {
+      assert.deepStrictEqual(_.monoidMarkdown.combine(_.createBold(content), _.createStrikethrough(content)), {
         _tag: 'PlainTexts',
         content: [
           { _tag: 'Bold', content: { _tag: 'PlainText', content: 'a' } },
@@ -179,7 +179,7 @@ describe.concurrent('Markdown', () => {
         content: ''
       })
 
-      assert.deepStrictEqual(_.monoidMarkdown.combine(_.Bold(content), _.Strikethrough(content)), {
+      assert.deepStrictEqual(_.monoidMarkdown.combine(_.createBold(content), _.createStrikethrough(content)), {
         _tag: 'PlainTexts',
         content: [
           { _tag: 'Bold', content: { _tag: 'PlainText', content: 'a' } },
@@ -188,31 +188,31 @@ describe.concurrent('Markdown', () => {
       })
     })
 
-    it('showMarkdown', () => {
+    it('prettify', () => {
       // Prettier will add a trailing newline to the document so `a` becomes `\n`
       // and strips extra trailing newlines so `\n\n` becomes `\n`
-      assert.strictEqual(_.showMarkdown(_.Bold(content)), '**a**\n')
-      assert.strictEqual(_.showMarkdown(_.Header(1, content)), '# a\n')
-      assert.strictEqual(_.showMarkdown(_.Header(2, content)), '## a\n')
-      assert.strictEqual(_.showMarkdown(_.Header(3, content)), '### a\n')
-      assert.strictEqual(_.showMarkdown(_.Fence('ts', content)), '```ts\na\n```\n')
-      assert.strictEqual(_.showMarkdown(_.monoidMarkdown.combine(content, _.Newline)), 'a\n')
-      assert.strictEqual(_.showMarkdown(_.Paragraph(content)), 'a\n')
-      assert.strictEqual(_.showMarkdown(_.PlainText('a')), 'a\n')
-      assert.strictEqual(_.showMarkdown(_.PlainTexts([content, _.Newline, content])), 'a\na\n')
-      assert.strictEqual(_.showMarkdown(_.Strikethrough(content)), '~~a~~\n')
+      assert.strictEqual(_.prettify(_.createBold(content)), '**a**\n')
+      assert.strictEqual(_.prettify(_.createHeader(1, content)), '# a\n')
+      assert.strictEqual(_.prettify(_.createHeader(2, content)), '## a\n')
+      assert.strictEqual(_.prettify(_.createHeader(3, content)), '### a\n')
+      assert.strictEqual(_.prettify(_.createFence('ts', content)), '```ts\na\n```\n')
+      assert.strictEqual(_.prettify(_.monoidMarkdown.combine(content, _.Newline)), 'a\n')
+      assert.strictEqual(_.prettify(_.createParagraph(content)), 'a\n')
+      assert.strictEqual(_.prettify(_.createPlainText('a')), 'a\n')
+      assert.strictEqual(_.prettify(_.createPlainTexts([content, _.Newline, content])), 'a\na\n')
+      assert.strictEqual(_.prettify(_.createStrikethrough(content)), '~~a~~\n')
       assert.strictEqual(
-        _.showMarkdown(
-          _.PlainTexts([
-            _.PlainText(''),
-            _.Bold(content),
-            _.Header(1, content),
-            _.Fence('ts', content),
+        _.prettify(
+          _.createPlainTexts([
+            _.createPlainText(''),
+            _.createBold(content),
+            _.createHeader(1, content),
+            _.createFence('ts', content),
             _.Newline,
-            _.Paragraph(content),
-            _.PlainText('a'),
-            _.PlainTexts([content]),
-            _.Strikethrough(content)
+            _.createParagraph(content),
+            _.createPlainText('a'),
+            _.createPlainTexts([content]),
+            _.createStrikethrough(content)
           ])
         ),
         `**a**

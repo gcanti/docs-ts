@@ -13,19 +13,19 @@ Added in v0.9.0
 <h2 class="text-delta">Table of contents</h2>
 
 - [constructors](#constructors)
-  - [Bold](#bold)
-  - [Fence](#fence)
-  - [Header](#header)
   - [Newline](#newline)
-  - [Paragraph](#paragraph)
-  - [PlainText](#plaintext)
-  - [PlainTexts](#plaintexts)
-  - [Strikethrough](#strikethrough)
+  - [createBold](#createbold)
+  - [createFence](#createfence)
+  - [createHeader](#createheader)
+  - [createParagraph](#createparagraph)
+  - [createPlainText](#createplaintext)
+  - [createPlainTexts](#createplaintexts)
+  - [createStrikethrough](#createstrikethrough)
 - [destructors](#destructors)
-  - [fold](#fold)
+  - [match](#match)
 - [instances](#instances)
   - [monoidMarkdown](#monoidmarkdown)
-  - [showMarkdown](#showmarkdown)
+  - [prettify](#prettify)
 - [model](#model)
   - [Bold (interface)](#bold-interface)
   - [Fence (interface)](#fence-interface)
@@ -50,36 +50,6 @@ Added in v0.9.0
 
 # constructors
 
-## Bold
-
-**Signature**
-
-```ts
-export declare const Bold: (content: Markdown) => Markdown
-```
-
-Added in v0.9.0
-
-## Fence
-
-**Signature**
-
-```ts
-export declare const Fence: (language: string, content: Markdown) => Markdown
-```
-
-Added in v0.9.0
-
-## Header
-
-**Signature**
-
-```ts
-export declare const Header: (level: number, content: Markdown) => Markdown
-```
-
-Added in v0.9.0
-
 ## Newline
 
 **Signature**
@@ -90,54 +60,84 @@ export declare const Newline: Markdown
 
 Added in v0.9.0
 
-## Paragraph
+## createBold
 
 **Signature**
 
 ```ts
-export declare const Paragraph: (content: Markdown) => Markdown
+export declare const createBold: (content: Markdown) => Markdown
 ```
 
 Added in v0.9.0
 
-## PlainText
+## createFence
 
 **Signature**
 
 ```ts
-export declare const PlainText: (content: string) => Markdown
+export declare const createFence: (language: string, content: Markdown) => Markdown
 ```
 
 Added in v0.9.0
 
-## PlainTexts
+## createHeader
 
 **Signature**
 
 ```ts
-export declare const PlainTexts: (content: ReadonlyArray<Markdown>) => Markdown
+export declare const createHeader: (level: number, content: Markdown) => Markdown
 ```
 
 Added in v0.9.0
 
-## Strikethrough
+## createParagraph
 
 **Signature**
 
 ```ts
-export declare const Strikethrough: (content: Markdown) => Markdown
+export declare const createParagraph: (content: Markdown) => Markdown
+```
+
+Added in v0.9.0
+
+## createPlainText
+
+**Signature**
+
+```ts
+export declare const createPlainText: (content: string) => Markdown
+```
+
+Added in v0.9.0
+
+## createPlainTexts
+
+**Signature**
+
+```ts
+export declare const createPlainTexts: (content: ReadonlyArray<Markdown>) => Markdown
+```
+
+Added in v0.9.0
+
+## createStrikethrough
+
+**Signature**
+
+```ts
+export declare const createStrikethrough: (content: Markdown) => Markdown
 ```
 
 Added in v0.9.0
 
 # destructors
 
-## fold
+## match
 
 **Signature**
 
 ```ts
-export declare const fold: <R>(patterns: {
+export declare const match: <R>(patterns: {
   readonly Bold: (content: Markdown) => R
   readonly Fence: (language: string, content: Markdown) => R
   readonly Header: (level: number, content: Markdown) => R
@@ -163,12 +163,12 @@ export declare const monoidMarkdown: Monoid.Monoid<Markdown>
 
 Added in v0.9.0
 
-## showMarkdown
+## prettify
 
 **Signature**
 
 ```ts
-export declare const showMarkdown: (markdown: Markdown) => string
+export declare const prettify: (s: Markdown) => string
 ```
 
 Added in v0.9.0

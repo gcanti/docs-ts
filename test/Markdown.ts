@@ -4,52 +4,56 @@ import * as RA from 'fp-ts/ReadonlyArray'
 
 import * as _ from '../src/Markdown'
 import {
-  Class,
-  Constant,
-  Documentable,
-  Export,
-  Function,
-  Interface,
-  Method,
-  Module,
-  Property,
-  TypeAlias
+  createClass,
+  createConstant,
+  createDocumentable,
+  createExport,
+  createFunction,
+  createInterface,
+  createMethod,
+  createModule,
+  createProperty,
+  createTypeAlias
 } from '../src/Module'
 
 const content = _.PlainText('a')
 
 const testCases = {
-  class: Class(
-    Documentable('A', O.some('a class'), O.some('1.0.0'), false, ['example 1'], O.some('category')),
+  class: createClass(
+    createDocumentable('A', O.some('a class'), O.some('1.0.0'), false, ['example 1'], O.some('category')),
     'declare class A { constructor() }',
     [
-      Method(Documentable('hasOwnProperty', O.none, O.some('1.0.0'), false, RA.empty, O.none), [
+      createMethod(createDocumentable('hasOwnProperty', O.none, O.some('1.0.0'), false, RA.empty, O.none), [
         'hasOwnProperty(): boolean'
       ])
     ],
     [
-      Method(Documentable('staticTest', O.none, O.some('1.0.0'), false, RA.empty, O.none), [
+      createMethod(createDocumentable('staticTest', O.none, O.some('1.0.0'), false, RA.empty, O.none), [
         'static testStatic(): string;'
       ])
     ],
-    [Property(Documentable('foo', O.none, O.some('1.0.0'), false, RA.empty, O.none), 'foo: string')]
+    [createProperty(createDocumentable('foo', O.none, O.some('1.0.0'), false, RA.empty, O.none), 'foo: string')]
   ),
-  constant: Constant(
-    Documentable('test', O.some('the test'), O.some('1.0.0'), false, RA.empty, O.some('constants')),
+  constant: createConstant(
+    createDocumentable('test', O.some('the test'), O.some('1.0.0'), false, RA.empty, O.some('constants')),
     'declare const test: string'
   ),
-  export: Export(
-    Documentable('test', O.none, O.some('1.0.0'), false, RA.empty, O.none),
+  export: createExport(
+    createDocumentable('test', O.none, O.some('1.0.0'), false, RA.empty, O.none),
     'export declare const test: typeof test'
   ),
-  function: Function(Documentable('func', O.some('a function'), O.some('1.0.0'), true, ['example 1'], O.none), [
-    'declare const func: (test: string) => string'
-  ]),
-  interface: Interface(
-    Documentable('A', O.none, O.some('1.0.0'), false, RA.empty, O.none),
+  function: createFunction(
+    createDocumentable('func', O.some('a function'), O.some('1.0.0'), true, ['example 1'], O.none),
+    ['declare const func: (test: string) => string']
+  ),
+  interface: createInterface(
+    createDocumentable('A', O.none, O.some('1.0.0'), false, RA.empty, O.none),
     'export interface A extends Record<string, unknown> {}'
   ),
-  typeAlias: TypeAlias(Documentable('A', O.none, O.some('1.0.0'), false, RA.empty, O.none), 'export type A = number')
+  typeAlias: createTypeAlias(
+    createDocumentable('A', O.none, O.some('1.0.0'), false, RA.empty, O.none),
+    'export type A = number'
+  )
 }
 
 describe.concurrent('Markdown', () => {
@@ -369,8 +373,8 @@ export type A = number
     })
 
     it('printModule', () => {
-      const documentation = Documentable('tests', O.none, O.some('1.0.0'), false, RA.empty, O.none)
-      const m = Module(
+      const documentation = createDocumentable('tests', O.none, O.some('1.0.0'), false, RA.empty, O.none)
+      const m = createModule(
         documentation,
         ['src', 'tests.ts'],
         [testCases.class],
@@ -530,7 +534,7 @@ Added in v1.0.0
 `
       )
 
-      const empty = Module(
+      const empty = createModule(
         documentation,
         ['src', 'tests.ts'],
         RA.empty,
@@ -561,7 +565,7 @@ Added in v1.0.0
 `
       )
 
-      const throws = Module(
+      const throws = createModule(
         documentation,
         ['src', 'tests.ts'],
         // @ts-expect-error - valid Markdown instance required

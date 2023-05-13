@@ -12,7 +12,7 @@ import * as NodePath from 'path'
 
 import * as _ from './internal'
 import { printModule } from './Markdown'
-import { Documentable, Module } from './Module'
+import * as Module from './Module'
 import * as Parser from './Parser'
 import { Config } from './Service'
 
@@ -87,7 +87,7 @@ const getModules = (files: ReadonlyArray<_.File>) =>
 // typeCheckExamples
 // -------------------------------------------------------------------------------------
 
-const typeCheckExamples = (modules: ReadonlyArray<Module>) =>
+const typeCheckExamples = (modules: ReadonlyArray<Module.Module>) =>
   pipe(
     getExampleFiles(modules),
     Effect.flatMap(handleImports),
@@ -105,7 +105,7 @@ const typeCheckExamples = (modules: ReadonlyArray<Module>) =>
 
 const concatAllFiles = Monoid.concatAll(ReadonlyArray.getMonoid<_.File>())
 
-const getExampleFiles = (modules: ReadonlyArray<Module>) =>
+const getExampleFiles = (modules: ReadonlyArray<Module.Module>) =>
   pipe(
     Config,
     Effect.map(({ config }) =>
@@ -116,7 +116,7 @@ const getExampleFiles = (modules: ReadonlyArray<Module>) =>
 
           const getDocumentableExamples =
             (id: string) =>
-            (documentable: Documentable): ReadonlyArray<_.File> =>
+            (documentable: Module.Documentable): ReadonlyArray<_.File> =>
               pipe(
                 documentable.examples,
                 ReadonlyArray.mapWithIndex((i, content) =>
@@ -238,7 +238,7 @@ const writeTsConfigJson = pipe(
 // getMarkdown
 // -------------------------------------------------------------------------------------
 
-const getMarkdown = (modules: ReadonlyArray<Module>) =>
+const getMarkdown = (modules: ReadonlyArray<Module.Module>) =>
   pipe(
     Effect.Do(),
     Effect.bind('home', () => getHome),
@@ -336,13 +336,13 @@ const getConfigYML = pipe(
   })
 )
 
-const getMarkdownOutputPath = (module: Module) =>
+const getMarkdownOutputPath = (module: Module.Module) =>
   pipe(
     Config,
     Effect.map(({ config }) => join(config.outDir, 'modules', `${module.path.slice(1).join(NodePath.sep)}.md`))
   )
 
-const getModuleMarkdownFiles = (modules: ReadonlyArray<Module>) =>
+const getModuleMarkdownFiles = (modules: ReadonlyArray<Module.Module>) =>
   Effect.forEachWithIndex(modules, (module, order) =>
     pipe(
       Effect.Do(),

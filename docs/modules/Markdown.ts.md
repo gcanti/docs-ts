@@ -293,7 +293,13 @@ Added in v0.9.0
 **Signature**
 
 ```ts
-export type Printable = Class | Constant | Export | Function | Interface | TypeAlias
+export type Printable =
+  | Module.Class
+  | Module.Constant
+  | Module.Export
+  | Module.Function
+  | Module.Interface
+  | Module.TypeAlias
 ```
 
 Added in v0.9.0
@@ -318,7 +324,7 @@ Added in v0.9.0
 **Signature**
 
 ```ts
-export declare const printClass: (c: Class) => string
+export declare const printClass: (c: Module.Class) => string
 ```
 
 Added in v0.9.0
@@ -328,7 +334,7 @@ Added in v0.9.0
 **Signature**
 
 ```ts
-export declare const printConstant: (c: Constant) => string
+export declare const printConstant: (c: Module.Constant) => string
 ```
 
 Added in v0.9.0
@@ -338,7 +344,7 @@ Added in v0.9.0
 **Signature**
 
 ```ts
-export declare const printExport: (e: Export) => string
+export declare const printExport: (e: Module.Export) => string
 ```
 
 Added in v0.9.0
@@ -348,7 +354,7 @@ Added in v0.9.0
 **Signature**
 
 ```ts
-export declare const printFunction: (f: Function) => string
+export declare const printFunction: (f: Module.Function) => string
 ```
 
 Added in v0.9.0
@@ -358,7 +364,7 @@ Added in v0.9.0
 **Signature**
 
 ```ts
-export declare const printInterface: (i: Interface) => string
+export declare const printInterface: (i: Module.Interface) => string
 ```
 
 Added in v0.9.0
@@ -368,7 +374,7 @@ Added in v0.9.0
 **Signature**
 
 ```ts
-export declare const printModule: (module: Module, order: number) => string
+export declare const printModule: (module: Module.Module, order: number) => string
 ```
 
 Added in v0.9.0
@@ -378,7 +384,7 @@ Added in v0.9.0
 **Signature**
 
 ```ts
-export declare const printTypeAlias: (f: TypeAlias) => string
+export declare const printTypeAlias: (f: Module.TypeAlias) => string
 ```
 
 Added in v0.9.0

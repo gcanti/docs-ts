@@ -13,18 +13,18 @@ Added in v0.9.0
 <h2 class="text-delta">Table of contents</h2>
 
 - [constructors](#constructors)
-  - [Class](#class)
-  - [Constant](#constant)
-  - [Documentable](#documentable)
-  - [Export](#export)
-  - [Function](#function)
-  - [Interface](#interface)
-  - [Method](#method)
-  - [Module](#module)
-  - [Property](#property)
-  - [TypeAlias](#typealias)
+  - [createClass](#createclass)
+  - [createConstant](#createconstant)
+  - [createDocumentable](#createdocumentable)
+  - [createExport](#createexport)
+  - [createFunction](#createfunction)
+  - [createInterface](#createinterface)
+  - [createMethod](#createmethod)
+  - [createModule](#createmodule)
+  - [createProperty](#createproperty)
+  - [createTypeAlias](#createtypealias)
 - [instances](#instances)
-  - [ordModule](#ordmodule)
+  - [Order](#order)
 - [model](#model)
   - [Class (interface)](#class-interface)
   - [Constant (interface)](#constant-interface)
@@ -42,12 +42,12 @@ Added in v0.9.0
 
 # constructors
 
-## Class
+## createClass
 
 **Signature**
 
 ```ts
-export declare const Class: (
+export declare const createClass: (
   documentable: Documentable,
   signature: string,
   methods: ReadonlyArray<Method>,
@@ -58,22 +58,22 @@ export declare const Class: (
 
 Added in v0.9.0
 
-## Constant
+## createConstant
 
 **Signature**
 
 ```ts
-export declare const Constant: (documentable: Documentable, signature: string) => Constant
+export declare const createConstant: (documentable: Documentable, signature: string) => Constant
 ```
 
 Added in v0.9.0
 
-## Documentable
+## createDocumentable
 
 **Signature**
 
 ```ts
-export declare const Documentable: (
+export declare const createDocumentable: (
   name: string,
   description: Option.Option<string>,
   since: Option.Option<string>,
@@ -85,52 +85,52 @@ export declare const Documentable: (
 
 Added in v0.9.0
 
-## Export
+## createExport
 
 **Signature**
 
 ```ts
-export declare const Export: (documentable: Documentable, signature: string) => Export
+export declare const createExport: (documentable: Documentable, signature: string) => Export
 ```
 
 Added in v0.9.0
 
-## Function
+## createFunction
 
 **Signature**
 
 ```ts
-export declare const Function: (documentable: Documentable, signatures: ReadonlyArray<string>) => Function
+export declare const createFunction: (documentable: Documentable, signatures: ReadonlyArray<string>) => Function
 ```
 
 Added in v0.9.0
 
-## Interface
+## createInterface
 
 **Signature**
 
 ```ts
-export declare const Interface: (documentable: Documentable, signature: string) => Interface
+export declare const createInterface: (documentable: Documentable, signature: string) => Interface
 ```
 
 Added in v0.9.0
 
-## Method
+## createMethod
 
 **Signature**
 
 ```ts
-export declare const Method: (documentable: Documentable, signatures: ReadonlyArray<string>) => Method
+export declare const createMethod: (documentable: Documentable, signatures: ReadonlyArray<string>) => Method
 ```
 
 Added in v0.9.0
 
-## Module
+## createModule
 
 **Signature**
 
 ```ts
-export declare const Module: (
+export declare const createModule: (
   documentable: Documentable,
   path: ReadonlyArray<string>,
   classes: ReadonlyArray<Class>,
@@ -144,34 +144,34 @@ export declare const Module: (
 
 Added in v0.9.0
 
-## Property
+## createProperty
 
 **Signature**
 
 ```ts
-export declare const Property: (documentable: Documentable, signature: string) => Property
+export declare const createProperty: (documentable: Documentable, signature: string) => Property
 ```
 
 Added in v0.9.0
 
-## TypeAlias
+## createTypeAlias
 
 **Signature**
 
 ```ts
-export declare const TypeAlias: (documentable: Documentable, signature: string) => TypeAlias
+export declare const createTypeAlias: (documentable: Documentable, signature: string) => TypeAlias
 ```
 
 Added in v0.9.0
 
 # instances
 
-## ordModule
+## Order
 
 **Signature**
 
 ```ts
-export declare const ordModule: Ord.Ord<Module>
+export declare const Order: Ord.Order<Module>
 ```
 
 Added in v0.9.0

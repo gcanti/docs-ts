@@ -1,64 +1,56 @@
+import { pipe } from '@effect/data/Function'
+import * as Option from '@effect/data/Option'
+import * as ReadonlyArray from '@effect/data/ReadonlyArray'
 import * as assert from 'assert'
-import { pipe } from 'fp-ts/function'
-import * as O from 'fp-ts/Option'
-import * as RA from 'fp-ts/ReadonlyArray'
 
-import * as _ from '../src/Module'
+import * as Module from '../src/Module'
 
-const documentable = (name: string) => _.Documentable(name, O.none, O.some('1.0.0'), false, RA.empty, O.none)
+const documentable = (name: string) =>
+  Module.createDocumentable(name, Option.none(), Option.some('1.0.0'), false, [], Option.none())
 
 describe.concurrent('Module', () => {
   describe.concurrent('constructors', () => {
     it('Documentable', () => {
       assert.deepStrictEqual(documentable('A'), {
         name: 'A',
-        description: O.none,
-        since: O.some('1.0.0'),
+        description: Option.none(),
+        since: Option.some('1.0.0'),
         deprecated: false,
-        examples: RA.empty,
-        category: O.none
+        examples: [],
+        category: Option.none()
       })
     })
 
     it('Module', () => {
-      const m = _.Module(
-        documentable('test'),
-        ['src', 'index.ts'],
-        RA.empty,
-        RA.empty,
-        RA.empty,
-        RA.empty,
-        RA.empty,
-        RA.empty
-      )
+      const m = Module.createModule(documentable('test'), ['src', 'index.ts'], [], [], [], [], [], [])
 
       assert.deepStrictEqual(m, {
         ...documentable('test'),
         path: ['src', 'index.ts'],
-        classes: RA.empty,
-        interfaces: RA.empty,
-        functions: RA.empty,
-        typeAliases: RA.empty,
-        constants: RA.empty,
-        exports: RA.empty
+        classes: [],
+        interfaces: [],
+        functions: [],
+        typeAliases: [],
+        constants: [],
+        exports: []
       })
     })
 
     it('Class', () => {
-      const c = _.Class(documentable('A'), 'declare class A { constructor() }', RA.empty, RA.empty, RA.empty)
+      const c = Module.createClass(documentable('A'), 'declare class A { constructor() }', [], [], [])
 
       assert.deepStrictEqual(c, {
         _tag: 'Class',
         ...documentable('A'),
         signature: 'declare class A { constructor() }',
-        methods: RA.empty,
-        staticMethods: RA.empty,
-        properties: RA.empty
+        methods: [],
+        staticMethods: [],
+        properties: []
       })
     })
 
     it('Constant', () => {
-      const c = _.Constant(documentable('foo'), 'declare const foo: string')
+      const c = Module.createConstant(documentable('foo'), 'declare const foo: string')
 
       assert.deepStrictEqual(c, {
         _tag: 'Constant',
@@ -68,7 +60,7 @@ describe.concurrent('Module', () => {
     })
 
     it('Method', () => {
-      const m = _.Method(documentable('foo'), ['foo(): string'])
+      const m = Module.createMethod(documentable('foo'), ['foo(): string'])
 
       assert.deepStrictEqual(m, {
         ...documentable('foo'),
@@ -77,7 +69,7 @@ describe.concurrent('Module', () => {
     })
 
     it('Property', () => {
-      const p = _.Property(documentable('foo'), 'foo: string')
+      const p = Module.createProperty(documentable('foo'), 'foo: string')
 
       assert.deepStrictEqual(p, {
         ...documentable('foo'),
@@ -86,7 +78,7 @@ describe.concurrent('Module', () => {
     })
 
     it('Interface', () => {
-      const i = _.Interface(documentable('A'), 'interface A {}')
+      const i = Module.createInterface(documentable('A'), 'interface A {}')
 
       assert.deepStrictEqual(i, {
         _tag: 'Interface',
@@ -96,7 +88,7 @@ describe.concurrent('Module', () => {
     })
 
     it('Function', () => {
-      const f = _.Function(documentable('func'), ['declare function func(): string'])
+      const f = Module.createFunction(documentable('func'), ['declare function func(): string'])
 
       assert.deepStrictEqual(f, {
         _tag: 'Function',
@@ -106,7 +98,7 @@ describe.concurrent('Module', () => {
     })
 
     it('TypeAlias', () => {
-      const ta = _.TypeAlias(documentable('A'), 'type A = string')
+      const ta = Module.createTypeAlias(documentable('A'), 'type A = string')
 
       assert.deepStrictEqual(ta, {
         _tag: 'TypeAlias',
@@ -116,7 +108,7 @@ describe.concurrent('Module', () => {
     })
 
     it('Export', () => {
-      const e = _.Export(documentable('foo'), 'export declare const foo: string')
+      const e = Module.createExport(documentable('foo'), 'export declare const foo: string')
 
       assert.deepStrictEqual(e, {
         _tag: 'Export',
@@ -128,29 +120,11 @@ describe.concurrent('Module', () => {
 
   describe.concurrent('instances', () => {
     it('ordModule', () => {
-      const m1 = _.Module(
-        documentable('test1'),
-        ['src', 'test1.ts'],
-        RA.empty,
-        RA.empty,
-        RA.empty,
-        RA.empty,
-        RA.empty,
-        RA.empty
-      )
+      const m1 = Module.createModule(documentable('test1'), ['src', 'test1.ts'], [], [], [], [], [], [])
 
-      const m2 = _.Module(
-        documentable('test1'),
-        ['src', 'test1.ts'],
-        RA.empty,
-        RA.empty,
-        RA.empty,
-        RA.empty,
-        RA.empty,
-        RA.empty
-      )
+      const m2 = Module.createModule(documentable('test1'), ['src', 'test1.ts'], [], [], [], [], [], [])
 
-      const sorted = pipe([m2, m1], RA.sort(_.ordModule))
+      const sorted = pipe([m2, m1], ReadonlyArray.sort(Module.Order))
 
       assert.deepStrictEqual(sorted, [m1, m2])
     })

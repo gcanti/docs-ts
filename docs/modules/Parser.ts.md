@@ -60,7 +60,7 @@ Added in v0.9.0
 **Signature**
 
 ```ts
-export declare const parseClasses: ParserEffect<Class[]>
+export declare const parseClasses: ParserEffect<Module.Class[]>
 ```
 
 Added in v0.9.0
@@ -70,7 +70,7 @@ Added in v0.9.0
 **Signature**
 
 ```ts
-export declare const parseConstants: ParserEffect<Constant[]>
+export declare const parseConstants: ParserEffect<Module.Constant[]>
 ```
 
 Added in v0.9.0
@@ -80,7 +80,7 @@ Added in v0.9.0
 **Signature**
 
 ```ts
-export declare const parseExports: ParserEffect<Export[]>
+export declare const parseExports: ParserEffect<Module.Export[]>
 ```
 
 Added in v0.9.0
@@ -90,7 +90,7 @@ Added in v0.9.0
 **Signature**
 
 ```ts
-export declare const parseFiles: (files: ReadonlyArray<_.File>) => Effect.Effect<Config, string[][], readonly Module[]>
+export declare const parseFiles: (files: ReadonlyArray<_.File>) => Effect.Effect<Config, string[][], Module.Module[]>
 ```
 
 Added in v0.9.0
@@ -100,7 +100,7 @@ Added in v0.9.0
 **Signature**
 
 ```ts
-export declare const parseFunctions: ParserEffect<Function[]>
+export declare const parseFunctions: ParserEffect<Module.Function[]>
 ```
 
 Added in v0.9.0
@@ -110,7 +110,7 @@ Added in v0.9.0
 **Signature**
 
 ```ts
-export declare const parseInterfaces: ParserEffect<Interface[]>
+export declare const parseInterfaces: ParserEffect<Module.Interface[]>
 ```
 
 Added in v0.9.0
@@ -120,7 +120,7 @@ Added in v0.9.0
 **Signature**
 
 ```ts
-export declare const parseModule: ParserEffect<Module>
+export declare const parseModule: ParserEffect<Module.Module>
 ```
 
 Added in v0.9.0
@@ -130,7 +130,7 @@ Added in v0.9.0
 **Signature**
 
 ```ts
-export declare const parseTypeAliases: ParserEffect<TypeAlias[]>
+export declare const parseTypeAliases: ParserEffect<Module.TypeAlias[]>
 ```
 
 Added in v0.9.0

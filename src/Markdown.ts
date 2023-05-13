@@ -14,7 +14,7 @@ import { Show } from 'fp-ts/Show'
 import * as S from 'fp-ts/string'
 import * as prettier from 'prettier'
 
-import { Class, Constant, Export, Function, Interface, Method, Module, Property, TypeAlias } from './Module'
+import * as Module from './Module'
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const toc = require('markdown-toc')
@@ -27,7 +27,13 @@ const toc = require('markdown-toc')
  * @category model
  * @since 0.9.0
  */
-export type Printable = Class | Constant | Export | Function | Interface | TypeAlias
+export type Printable =
+  | Module.Class
+  | Module.Constant
+  | Module.Export
+  | Module.Function
+  | Module.Interface
+  | Module.TypeAlias
 
 /**
  * @category model
@@ -282,7 +288,7 @@ const examples: (es: ReadonlyArray<string>) => Markdown = flow(
   intercalateCRLF
 )
 
-const staticMethod = (m: Method): Markdown =>
+const staticMethod = (m: Module.Method): Markdown =>
   Paragraph(
     foldMarkdown([
       h3(title(m.name, m.deprecated, '(static method)')),
@@ -293,7 +299,7 @@ const staticMethod = (m: Method): Markdown =>
     ])
   )
 
-const method = (m: Method): Markdown =>
+const method = (m: Module.Method): Markdown =>
   Paragraph(
     foldMarkdown([
       h3(title(m.name, m.deprecated, '(method)')),
@@ -304,7 +310,7 @@ const method = (m: Method): Markdown =>
     ])
   )
 
-const propertyToMarkdown = (p: Property): Markdown =>
+const propertyToMarkdown = (p: Module.Property): Markdown =>
   Paragraph(
     foldMarkdown([
       h3(title(p.name, p.deprecated, '(property)')),
@@ -315,13 +321,16 @@ const propertyToMarkdown = (p: Property): Markdown =>
     ])
   )
 
-const staticMethods: (ms: ReadonlyArray<Method>) => Markdown = flow(RA.map(staticMethod), intercalateCRLF)
+const staticMethods: (ms: ReadonlyArray<Module.Method>) => Markdown = flow(RA.map(staticMethod), intercalateCRLF)
 
-const methods: (methods: ReadonlyArray<Method>) => Markdown = flow(RA.map(method), intercalateCRLF)
+const methods: (methods: ReadonlyArray<Module.Method>) => Markdown = flow(RA.map(method), intercalateCRLF)
 
-const properties: (properties: ReadonlyArray<Property>) => Markdown = flow(RA.map(propertyToMarkdown), intercalateCRLF)
+const properties: (properties: ReadonlyArray<Module.Property>) => Markdown = flow(
+  RA.map(propertyToMarkdown),
+  intercalateCRLF
+)
 
-const moduleDescription = (m: Module): Markdown =>
+const moduleDescription = (m: Module.Module): Markdown =>
   Paragraph(
     foldMarkdown([
       Paragraph(h2(title(m.name, m.deprecated, 'overview'))),
@@ -346,7 +355,7 @@ const meta = (title: string, order: number): Markdown =>
     ])
   )
 
-const fromClass = (c: Class): Markdown =>
+const fromClass = (c: Module.Class): Markdown =>
   Paragraph(
     foldMarkdown([
       Paragraph(
@@ -364,7 +373,7 @@ const fromClass = (c: Class): Markdown =>
     ])
   )
 
-const fromConstant = (c: Constant): Markdown =>
+const fromConstant = (c: Module.Constant): Markdown =>
   Paragraph(
     foldMarkdown([
       h2(title(c.name, c.deprecated)),
@@ -375,7 +384,7 @@ const fromConstant = (c: Constant): Markdown =>
     ])
   )
 
-const fromExport = (e: Export): Markdown =>
+const fromExport = (e: Module.Export): Markdown =>
   Paragraph(
     foldMarkdown([
       h2(title(e.name, e.deprecated)),
@@ -386,7 +395,7 @@ const fromExport = (e: Export): Markdown =>
     ])
   )
 
-const fromFunction = (f: Function): Markdown =>
+const fromFunction = (f: Module.Function): Markdown =>
   Paragraph(
     foldMarkdown([
       h2(title(f.name, f.deprecated)),
@@ -397,7 +406,7 @@ const fromFunction = (f: Function): Markdown =>
     ])
   )
 
-const fromInterface = (i: Interface): Markdown =>
+const fromInterface = (i: Module.Interface): Markdown =>
   Paragraph(
     foldMarkdown([
       h2(title(i.name, i.deprecated, '(interface)')),
@@ -408,7 +417,7 @@ const fromInterface = (i: Interface): Markdown =>
     ])
   )
 
-const fromTypeAlias = (ta: TypeAlias): Markdown =>
+const fromTypeAlias = (ta: Module.TypeAlias): Markdown =>
   Paragraph(
     foldMarkdown([
       h2(title(ta.name, ta.deprecated, '(type alias)')),
@@ -442,7 +451,7 @@ const fromPrintable = (p: Printable): Markdown => {
 // printers
 // -------------------------------------------------------------------------------------
 
-const getPrintables = (module: Module): Option.Option<RNEA.ReadonlyNonEmptyArray<Printable>> =>
+const getPrintables = (module: Module.Module): Option.Option<RNEA.ReadonlyNonEmptyArray<Printable>> =>
   pipe(
     M.concatAll(RA.getMonoid<Printable>())([
       module.classes,
@@ -461,43 +470,43 @@ const getPrintables = (module: Module): Option.Option<RNEA.ReadonlyNonEmptyArray
  * @category printers
  * @since 0.9.0
  */
-export const printClass = (c: Class): string => pipe(fromClass(c), showMarkdown.show)
+export const printClass = (c: Module.Class): string => pipe(fromClass(c), showMarkdown.show)
 
 /**
  * @category printers
  * @since 0.9.0
  */
-export const printConstant = (c: Constant): string => pipe(fromConstant(c), showMarkdown.show)
+export const printConstant = (c: Module.Constant): string => pipe(fromConstant(c), showMarkdown.show)
 
 /**
  * @category printers
  * @since 0.9.0
  */
-export const printExport = (e: Export): string => pipe(fromExport(e), showMarkdown.show)
+export const printExport = (e: Module.Export): string => pipe(fromExport(e), showMarkdown.show)
 
 /**
  * @category printers
  * @since 0.9.0
  */
-export const printFunction = (f: Function): string => pipe(fromFunction(f), showMarkdown.show)
+export const printFunction = (f: Module.Function): string => pipe(fromFunction(f), showMarkdown.show)
 
 /**
  * @category printers
  * @since 0.9.0
  */
-export const printInterface = (i: Interface): string => pipe(fromInterface(i), showMarkdown.show)
+export const printInterface = (i: Module.Interface): string => pipe(fromInterface(i), showMarkdown.show)
 
 /**
  * @category printers
  * @since 0.9.0
  */
-export const printTypeAlias = (f: TypeAlias): string => pipe(fromTypeAlias(f), showMarkdown.show)
+export const printTypeAlias = (f: Module.TypeAlias): string => pipe(fromTypeAlias(f), showMarkdown.show)
 
 /**
  * @category printers
  * @since 0.9.0
  */
-export const printModule = (module: Module, order: number): string => {
+export const printModule = (module: Module.Module, order: number): string => {
   const DEFAULT_CATEGORY = 'utils'
 
   const header = pipe(meta(module.path.slice(1).join('/'), order), showMarkdown.show)

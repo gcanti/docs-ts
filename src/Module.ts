@@ -3,8 +3,8 @@
  */
 import { pipe } from '@effect/data/Function'
 import * as Option from '@effect/data/Option'
-import * as Ord from 'fp-ts/Ord'
-import * as S from 'fp-ts/string'
+import * as S from '@effect/data/String'
+import * as Ord from '@effect/data/typeclass/Order'
 
 // -------------------------------------------------------------------------------------
 // model
@@ -124,7 +124,7 @@ export type Example = string
  * @category constructors
  * @since 0.9.0
  */
-export const Documentable = (
+export const createDocumentable = (
   name: string,
   description: Option.Option<string>,
   since: Option.Option<string>,
@@ -137,7 +137,7 @@ export const Documentable = (
  * @category constructors
  * @since 0.9.0
  */
-export const Module = (
+export const createModule = (
   documentable: Documentable,
   path: ReadonlyArray<string>,
   classes: ReadonlyArray<Class>,
@@ -161,7 +161,7 @@ export const Module = (
  * @category constructors
  * @since 0.9.0
  */
-export const Class = (
+export const createClass = (
   documentable: Documentable,
   signature: string,
   methods: ReadonlyArray<Method>,
@@ -180,7 +180,7 @@ export const Class = (
  * @category constructors
  * @since 0.9.0
  */
-export const Constant = (documentable: Documentable, signature: string): Constant => ({
+export const createConstant = (documentable: Documentable, signature: string): Constant => ({
   _tag: 'Constant',
   ...documentable,
   signature
@@ -190,7 +190,7 @@ export const Constant = (documentable: Documentable, signature: string): Constan
  * @category constructors
  * @since 0.9.0
  */
-export const Method = (documentable: Documentable, signatures: ReadonlyArray<string>): Method => ({
+export const createMethod = (documentable: Documentable, signatures: ReadonlyArray<string>): Method => ({
   ...documentable,
   signatures
 })
@@ -199,7 +199,7 @@ export const Method = (documentable: Documentable, signatures: ReadonlyArray<str
  * @category constructors
  * @since 0.9.0
  */
-export const Property = (documentable: Documentable, signature: string): Property => ({
+export const createProperty = (documentable: Documentable, signature: string): Property => ({
   ...documentable,
   signature
 })
@@ -208,7 +208,7 @@ export const Property = (documentable: Documentable, signature: string): Propert
  * @category constructors
  * @since 0.9.0
  */
-export const Interface = (documentable: Documentable, signature: string): Interface => ({
+export const createInterface = (documentable: Documentable, signature: string): Interface => ({
   _tag: 'Interface',
   ...documentable,
   signature
@@ -218,7 +218,7 @@ export const Interface = (documentable: Documentable, signature: string): Interf
  * @category constructors
  * @since 0.9.0
  */
-export const Function = (documentable: Documentable, signatures: ReadonlyArray<string>): Function => ({
+export const createFunction = (documentable: Documentable, signatures: ReadonlyArray<string>): Function => ({
   _tag: 'Function',
   ...documentable,
   signatures
@@ -228,7 +228,7 @@ export const Function = (documentable: Documentable, signatures: ReadonlyArray<s
  * @category constructors
  * @since 0.9.0
  */
-export const TypeAlias = (documentable: Documentable, signature: string): TypeAlias => ({
+export const createTypeAlias = (documentable: Documentable, signature: string): TypeAlias => ({
   _tag: 'TypeAlias',
   ...documentable,
   signature
@@ -238,7 +238,7 @@ export const TypeAlias = (documentable: Documentable, signature: string): TypeAl
  * @category constructors
  * @since 0.9.0
  */
-export const Export = (documentable: Documentable, signature: string): Export => ({
+export const createExport = (documentable: Documentable, signature: string): Export => ({
   _tag: 'Export',
   ...documentable,
   signature
@@ -252,7 +252,7 @@ export const Export = (documentable: Documentable, signature: string): Export =>
  * @category instances
  * @since 0.9.0
  */
-export const ordModule: Ord.Ord<Module> = pipe(
-  S.Ord,
+export const Order: Ord.Order<Module> = pipe(
+  S.Order,
   Ord.contramap((module: Module) => module.path.join('/').toLowerCase())
 )

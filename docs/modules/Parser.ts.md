@@ -90,7 +90,7 @@ Added in v0.9.0
 **Signature**
 
 ```ts
-export declare const parseFiles: (files: ReadonlyArray<File>) => Effect.Effect<Config, string[], readonly Module[]>
+export declare const parseFiles: (files: ReadonlyArray<_.File>) => Effect.Effect<Config, string[], readonly Module[]>
 ```
 
 Added in v0.9.0

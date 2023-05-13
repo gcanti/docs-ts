@@ -8,10 +8,12 @@ import * as Either from '@effect/data/Either'
 import { flow, pipe } from '@effect/data/Function'
 import * as Option from '@effect/data/Option'
 import { not, Predicate } from '@effect/data/Predicate'
+import * as ReadonlyArray from '@effect/data/ReadonlyArray'
 import * as ReadonlyRecord from '@effect/data/ReadonlyRecord'
+import * as String from '@effect/data/String'
+import * as Order from '@effect/data/typeclass/Order'
 import * as Effect from '@effect/io/Effect'
 import * as doctrine from 'doctrine'
-import * as Ord from 'fp-ts/Ord'
 import * as RE from 'fp-ts/ReaderEither'
 import * as RA from 'fp-ts/ReadonlyArray'
 import * as RNEA from 'fp-ts/ReadonlyNonEmptyArray'
@@ -20,7 +22,6 @@ import * as S from 'fp-ts/string'
 import * as ast from 'ts-morph'
 
 import * as _ from './internal'
-import { File } from './internal'
 import {
   Class,
   Constant,
@@ -100,9 +101,9 @@ const some =
   (a: A): boolean =>
     predicates.some((p) => p(a))
 
-const ordByName = pipe(
-  S.Ord,
-  Ord.contramap(({ name }: { name: string }) => name)
+const byName = pipe(
+  String.Order,
+  Order.contramap(({ name }: { name: string }) => name)
 )
 
 const sortModules = RA.sort(ordModule)
@@ -277,7 +278,7 @@ export const parseInterfaces: ParserEffect<ReadonlyArray<Interface>> = pipe(
       )
     )
   ),
-  RE.flatMap(flow(traverse(parseInterfaceDeclaration), RE.map(RA.sort(ordByName))))
+  RE.flatMap(flow(traverse(parseInterfaceDeclaration), RE.map(ReadonlyArray.sort(byName))))
 )
 
 // -------------------------------------------------------------------------------------
@@ -456,7 +457,7 @@ export const parseTypeAliases: ParserEffect<ReadonlyArray<TypeAlias>> = pipe(
     )
   ),
   RE.flatMap(traverse(parseTypeAliasDeclaration)),
-  RE.map(RA.sort(ordByName))
+  RE.map(ReadonlyArray.sort(byName))
 )
 
 // -------------------------------------------------------------------------------------
@@ -742,7 +743,7 @@ const getClasses: ParserEffect<ReadonlyArray<ast.ClassDeclaration>> = RE.asks((e
 export const parseClasses: ParserEffect<ReadonlyArray<Class>> = pipe(
   getClasses,
   RE.flatMap(traverse(parseClass)),
-  RE.map(RA.sort(ordByName))
+  RE.map(ReadonlyArray.sort(byName))
 )
 
 // -------------------------------------------------------------------------------------
@@ -818,7 +819,7 @@ export const parseModule: ParserEffect<Module> = pipe(
  */
 export const parseFile =
   (project: ast.Project) =>
-  (file: File): Effect.Effect<Config, string, Module> =>
+  (file: _.File): Effect.Effect<Config, string, Module> =>
     pipe(
       Config,
       Effect.flatMap(({ config }) => {
@@ -833,7 +834,7 @@ export const parseFile =
       })
     )
 
-const createProject = (files: ReadonlyArray<File>) =>
+const createProject = (files: ReadonlyArray<_.File>) =>
   pipe(
     Config,
     Effect.map(({ config }) => {
@@ -855,7 +856,7 @@ const createProject = (files: ReadonlyArray<File>) =>
  * @category parsers
  * @since 0.9.0
  */
-export const parseFiles = (files: ReadonlyArray<File>) =>
+export const parseFiles = (files: ReadonlyArray<_.File>) =>
   pipe(
     createProject(files),
     Effect.flatMap((project) =>

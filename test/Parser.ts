@@ -1,16 +1,14 @@
 import * as Either from '@effect/data/Either'
+import { pipe } from '@effect/data/Function'
 import * as Option from '@effect/data/Option'
 import * as Effect from '@effect/io/Effect'
 import * as assert from 'assert'
 import * as E from 'fp-ts/Either'
-import { pipe } from 'fp-ts/function'
-import * as RA from 'fp-ts/ReadonlyArray'
 import * as ast from 'ts-morph'
 
 import * as _ from '../src/internal'
 import * as Parser from '../src/Parser'
 import { Config } from '../src/Service'
-import { assertLeft, assertRight } from './util'
 
 let testCounter = 0
 
@@ -29,7 +27,7 @@ const config: _.Config = {
   enforceDescriptions: false,
   enforceExamples: false,
   enforceVersion: true,
-  exclude: RA.empty,
+  exclude: [],
   parseCompilerOptions: {},
   examplesCompilerOptions: {}
 }
@@ -40,19 +38,37 @@ const getTestEnv = (sourceText: string): Parser.ParserEnv => ({
   config
 })
 
+const expectLeft = <A>(sourceText: string, eff: Parser.ParserEffect<A>, left: Array<string>) => {
+  const actual = eff(getTestEnv(sourceText))
+  if (Either.isEither(actual)) {
+    expect(actual).toEqual(Either.left(left))
+  } else {
+    expect(actual).toEqual(E.left(left))
+  }
+}
+
+const expectRight = <A>(sourceText: string, eff: Parser.ParserEffect<A>, a: A) => {
+  const actual = eff(getTestEnv(sourceText))
+  if (Either.isEither(actual)) {
+    expect(actual).toEqual(Either.right(a))
+  } else {
+    expect(actual).toEqual(E.right(a))
+  }
+}
+
 describe.concurrent('Parser', () => {
   describe.concurrent('parsers', () => {
     describe.concurrent('parseInterfaces', () => {
       it('should return no `Interface`s if the file is empty', () => {
         const env = getTestEnv('')
 
-        assert.deepStrictEqual(Parser.parseInterfaces(env), E.right(RA.empty))
+        assert.deepStrictEqual(Parser.parseInterfaces(env), E.right([]))
       })
 
       it('should return no `Interface`s if there are no exported interfaces', () => {
         const env = getTestEnv('interface A {}')
 
-        assert.deepStrictEqual(Parser.parseInterfaces(env), E.right(RA.empty))
+        assert.deepStrictEqual(Parser.parseInterfaces(env), E.right([]))
       })
 
       it('should return an `Interface`', () => {
@@ -74,7 +90,7 @@ describe.concurrent('Parser', () => {
               name: 'A',
               signature: 'export interface A {}',
               since: Option.some('1.0.0'),
-              examples: RA.empty,
+              examples: [],
               category: Option.none()
             }
           ])
@@ -104,7 +120,7 @@ describe.concurrent('Parser', () => {
               since: Option.some('1.0.0'),
               deprecated: false,
               category: Option.none(),
-              examples: RA.empty,
+              examples: [],
               signature: 'export interface A {}'
             },
             {
@@ -114,7 +130,7 @@ describe.concurrent('Parser', () => {
               since: Option.some('1.0.0'),
               deprecated: false,
               category: Option.none(),
-              examples: RA.empty,
+              examples: [],
               signature: 'export interface B {}'
             }
           ])
@@ -124,16 +140,15 @@ describe.concurrent('Parser', () => {
 
     describe.concurrent('parseFunctions', () => {
       it('should raise an error if the function is anonymous', () => {
-        const env = getTestEnv(`export function(a: number, b: number): number { return a + b }`)
-        const expected = ['Missing function name in module test']
-
-        assertLeft(pipe(env, Parser.parseFunctions), (error) => assert.deepStrictEqual(error, expected))
+        expectLeft(`export function(a: number, b: number): number { return a + b }`, Parser.parseFunctions, [
+          'Missing function name in module test'
+        ])
       })
 
       it('should not return private function declarations', () => {
         const env = getTestEnv(`function sum(a: number, b: number): number { return a + b }`)
 
-        assert.deepStrictEqual(Parser.parseFunctions(env), E.right(RA.empty))
+        expect(Parser.parseFunctions(env)).toEqual(E.right([]))
       })
 
       it('should not return ignored function declarations', () => {
@@ -144,7 +159,7 @@ describe.concurrent('Parser', () => {
             export function sum(a: number, b: number): number { return a + b }`
         )
 
-        assert.deepStrictEqual(Parser.parseFunctions(env), E.right(RA.empty))
+        expect(Parser.parseFunctions(env)).toEqual(E.right([]))
       })
 
       it('should not return ignored function declarations with overloads', () => {
@@ -156,7 +171,7 @@ describe.concurrent('Parser', () => {
             export function sum(a: number, b: number): number { return a + b }`
         )
 
-        assert.deepStrictEqual(Parser.parseFunctions(env), E.right(RA.empty))
+        expect(Parser.parseFunctions(env)).toEqual(E.right([]))
       })
 
       it('should not return internal function declarations', () => {
@@ -167,7 +182,7 @@ describe.concurrent('Parser', () => {
             export function sum(a: number, b: number): number { return a + b }`
         )
 
-        assert.deepStrictEqual(Parser.parseFunctions(env), E.right(RA.empty))
+        expect(Parser.parseFunctions(env)).toEqual(E.right([]))
       })
 
       it('should not return internal function declarations even with overloads', () => {
@@ -179,13 +194,13 @@ describe.concurrent('Parser', () => {
             export function sum(a: number, b: number): number { return a + b }`
         )
 
-        assert.deepStrictEqual(Parser.parseFunctions(env), E.right(RA.empty))
+        expect(Parser.parseFunctions(env)).toEqual(E.right([]))
       })
 
       it('should not return private const function declarations', () => {
         const env = getTestEnv(`const sum = (a: number, b: number): number => a + b `)
 
-        assertRight(pipe(env, Parser.parseFunctions), (actual) => assert.deepStrictEqual(actual, RA.empty))
+        expect(Parser.parseFunctions(env)).toEqual(E.right([]))
       })
 
       it('should not return internal const function declarations', () => {
@@ -196,7 +211,7 @@ describe.concurrent('Parser', () => {
             export const sum = (a: number, b: number): number => a + b `
         )
 
-        assert.deepStrictEqual(Parser.parseFunctions(env), E.right(RA.empty))
+        expect(Parser.parseFunctions(env)).toEqual(E.right([]))
       })
 
       it('should account for nullable polymorphic return types', () => {
@@ -207,8 +222,7 @@ describe.concurrent('Parser', () => {
            export const toNullable = <A>(ma: A | null): A | null => ma`
         )
 
-        assert.deepStrictEqual(
-          Parser.parseFunctions(env),
+        expect(Parser.parseFunctions(env)).toEqual(
           E.right([
             {
               _tag: 'Function',
@@ -238,8 +252,7 @@ describe.concurrent('Parser', () => {
             export const f = (a: number, b: number): { [key: string]: number } => ({ a, b })`
         )
 
-        assert.deepStrictEqual(
-          Parser.parseFunctions(env),
+        expect(Parser.parseFunctions(env)).toEqual(
           E.right([
             {
               _tag: 'Function',
@@ -266,8 +279,7 @@ describe.concurrent('Parser', () => {
             export function f(a: number, b: number): { [key: string]: number } { return { a, b } }`
         )
 
-        assert.deepStrictEqual(
-          Parser.parseFunctions(env),
+        expect(Parser.parseFunctions(env)).toEqual(
           E.right([
             {
               _tag: 'Function',
@@ -276,7 +288,7 @@ describe.concurrent('Parser', () => {
               name: 'f',
               signatures: ['export declare function f(a: number, b: number): { [key: string]: number }'],
               since: Option.some('1.0.0'),
-              examples: RA.empty,
+              examples: [],
               category: Option.none()
             }
           ])
@@ -293,8 +305,7 @@ describe.concurrent('Parser', () => {
             export function f(a: number, b: number): { [key: string]: number } { return { a, b } }`
         )
 
-        assert.deepStrictEqual(
-          Parser.parseFunctions(env),
+        expect(Parser.parseFunctions(env)).toEqual(
           E.right([
             {
               _tag: 'Function',
@@ -303,7 +314,7 @@ describe.concurrent('Parser', () => {
               name: 'f',
               signatures: ['export declare function f(a: number, b: number): { [key: string]: number }'],
               since: Option.some('1.0.0'),
-              examples: RA.empty,
+              examples: [],
               category: Option.none()
             }
           ])
@@ -322,8 +333,7 @@ describe.concurrent('Parser', () => {
             export function f(a: any, b: any): { [key: string]: number } { return { a, b } }`
         )
 
-        assert.deepStrictEqual(
-          Parser.parseFunctions(env),
+        expect(Parser.parseFunctions(env)).toEqual(
           E.right([
             {
               _tag: 'Function',
@@ -332,7 +342,7 @@ describe.concurrent('Parser', () => {
               since: Option.some('1.0.0'),
               deprecated: true,
               category: Option.none(),
-              examples: RA.empty,
+              examples: [],
               signatures: [
                 'export declare function f(a: Int, b: Int): { [key: string]: number }',
                 'export declare function f(a: number, b: number): { [key: string]: number }'
@@ -354,8 +364,8 @@ describe.concurrent('Parser', () => {
             export type Option<A> = None<A> | Some<A>`
         )
 
-        assertRight(pipe(env, Parser.parseTypeAliases), (actual) =>
-          assert.deepStrictEqual(actual, [
+        expect(Parser.parseTypeAliases(env)).toEqual(
+          E.right([
             {
               _tag: 'TypeAlias',
               name: 'Option',
@@ -364,7 +374,7 @@ describe.concurrent('Parser', () => {
               deprecated: true,
               category: Option.none(),
               signature: 'export type Option<A> = None<A> | Some<A>',
-              examples: RA.empty
+              examples: []
             }
           ])
         )
@@ -382,8 +392,8 @@ describe.concurrent('Parser', () => {
             export const s: string = ''`
         )
 
-        assertRight(pipe(env, Parser.parseConstants), (actual) =>
-          assert.deepStrictEqual(actual, [
+        expect(Parser.parseConstants(env)).toEqual(
+          E.right([
             {
               _tag: 'Constant',
               name: 's',
@@ -392,7 +402,7 @@ describe.concurrent('Parser', () => {
               deprecated: true,
               category: Option.none(),
               signature: 'export declare const s: string',
-              examples: RA.empty
+              examples: []
             }
           ])
         )
@@ -406,8 +416,8 @@ describe.concurrent('Parser', () => {
             export const left: <E = never, A = never>(l: E) => string = T.left`
         )
 
-        assertRight(pipe(env, Parser.parseConstants), (actual) =>
-          assert.deepStrictEqual(actual, [
+        expect(Parser.parseConstants(env)).toEqual(
+          E.right([
             {
               _tag: 'Constant',
               name: 'left',
@@ -416,24 +426,22 @@ describe.concurrent('Parser', () => {
               deprecated: false,
               category: Option.none(),
               signature: 'export declare const left: <E = never, A = never>(l: E) => string',
-              examples: RA.empty
+              examples: []
             }
           ])
         )
       })
 
       it('should support untyped constants', () => {
-        const env = getTestEnv(
+        expectRight(
           `
-            class A {}
-          /**
-            * @since 1.0.0
-            */
-            export const empty = new A()`
-        )
-
-        assertRight(pipe(env, Parser.parseConstants), (actual) =>
-          assert.deepStrictEqual(actual, [
+        class A {}
+      /**
+        * @since 1.0.0
+        */
+        export const empty = new A()`,
+          Parser.parseConstants,
+          [
             {
               _tag: 'Constant',
               name: 'empty',
@@ -442,28 +450,26 @@ describe.concurrent('Parser', () => {
               deprecated: false,
               category: Option.none(),
               signature: 'export declare const empty: A',
-              examples: RA.empty
+              examples: []
             }
-          ])
+          ]
         )
       })
 
       it('should handle constants with typeof annotations', () => {
-        const env = getTestEnv(
+        expectRight(
           ` const task: { a: number } = {
-              a: 1
-            }
-            /**
-            * @since 1.0.0
-            */
-            export const taskSeq: typeof task = {
-              ...task,
-              ap: (mab, ma) => () => mab().then(f => ma().then(a => f(a)))
-            }`
-        )
-
-        assertRight(pipe(env, Parser.parseConstants), (actual) =>
-          assert.deepStrictEqual(actual, [
+          a: 1
+        }
+        /**
+        * @since 1.0.0
+        */
+        export const taskSeq: typeof task = {
+          ...task,
+          ap: (mab, ma) => () => mab().then(f => ma().then(a => f(a)))
+        }`,
+          Parser.parseConstants,
+          [
             {
               _tag: 'Constant',
               deprecated: false,
@@ -471,73 +477,61 @@ describe.concurrent('Parser', () => {
               name: 'taskSeq',
               signature: 'export declare const taskSeq: { a: number; }',
               since: Option.some('1.0.0'),
-              examples: RA.empty,
+              examples: [],
               category: Option.none()
             }
-          ])
+          ]
         )
       })
 
       it('should not include variables declared in for loops', () => {
-        const env = getTestEnv(
+        expectRight(
           ` const object = { a: 1, b: 2, c: 3 };
 
-            for (const property in object) {
-              console.log(property);
-            }`
+        for (const property in object) {
+          console.log(property);
+        }`,
+          Parser.parseConstants,
+          []
         )
-
-        assertRight(pipe(env, Parser.parseConstants), (actual) => assert.deepStrictEqual(actual, []))
       })
     })
 
     describe.concurrent('parseClasses', () => {
       it('should raise an error if the class is anonymous', () => {
-        const env = getTestEnv(`export class {}`)
-
-        assertLeft(pipe(env, Parser.parseClasses), (error) =>
-          assert.deepStrictEqual(error, ['Missing class name in module test'])
-        )
+        expectLeft(`export class {}`, Parser.parseClasses, ['Missing class name in module test'])
       })
 
       it('should raise an error if an `@since` tag is missing in a module', () => {
-        const env = getTestEnv(`export class MyClass {}`)
-
-        assertLeft(pipe(env, Parser.parseClasses), (error) =>
-          assert.deepStrictEqual(error, ['Missing @since tag in test#MyClass documentation'])
-        )
+        expectLeft(`export class MyClass {}`, Parser.parseClasses, ['Missing @since tag in test#MyClass documentation'])
       })
 
       it('should raise an error if `@since` is missing in a property', () => {
-        const env = getTestEnv(
+        expectLeft(
           `/**
             * @since 1.0.0
             */
             export class MyClass<A> {
               readonly _A!: A
-            }`
-        )
-
-        assertLeft(pipe(env, Parser.parseClasses), (error) =>
-          assert.deepStrictEqual(error, ['Missing @since tag in test#MyClass#_A documentation'])
+            }`,
+          Parser.parseClasses,
+          ['Missing @since tag in test#MyClass#_A documentation']
         )
       })
 
       it('should skip ignored properties', () => {
-        const env = getTestEnv(
+        expectRight(
           `/**
-            * @since 1.0.0
-            */
-            export class MyClass<A> {
-              /**
-               * @ignore
-               */
-              readonly _A!: A
-            }`
-        )
-
-        assertRight(pipe(env, Parser.parseClasses), (actual) =>
-          assert.deepStrictEqual(actual, [
+        * @since 1.0.0
+        */
+        export class MyClass<A> {
+          /**
+           * @ignore
+           */
+          readonly _A!: A
+        }`,
+          Parser.parseClasses,
+          [
             {
               _tag: 'Class',
               name: 'MyClass',
@@ -545,27 +539,25 @@ describe.concurrent('Parser', () => {
               since: Option.some('1.0.0'),
               deprecated: false,
               category: Option.none(),
-              examples: RA.empty,
+              examples: [],
               signature: 'export declare class MyClass<A>',
-              methods: RA.empty,
-              staticMethods: RA.empty,
-              properties: RA.empty
+              methods: [],
+              staticMethods: [],
+              properties: []
             }
-          ])
+          ]
         )
       })
 
       it('should skip the constructor body', () => {
-        const env = getTestEnv(
+        expectRight(
           `/**
-            * description
-            * @since 1.0.0
-            */
-            export class C { constructor() {} }`
-        )
-
-        assertRight(pipe(env, Parser.parseClasses), (actual) =>
-          assert.deepStrictEqual(actual, [
+        * description
+        * @since 1.0.0
+        */
+        export class C { constructor() {} }`,
+          Parser.parseClasses,
+          [
             {
               _tag: 'Class',
               name: 'C',
@@ -573,13 +565,13 @@ describe.concurrent('Parser', () => {
               since: Option.some('1.0.0'),
               deprecated: false,
               category: Option.none(),
-              examples: RA.empty,
+              examples: [],
               signature: 'export declare class C { constructor() }',
-              methods: RA.empty,
-              staticMethods: RA.empty,
-              properties: RA.empty
+              methods: [],
+              staticMethods: [],
+              properties: []
             }
-          ])
+          ]
         )
       })
 
@@ -599,21 +591,19 @@ describe.concurrent('Parser', () => {
       })
 
       it('should handle non-readonly properties', () => {
-        const env = getTestEnv(
+        expectRight(
           `/**
-            * description
-            * @since 1.0.0
-            */
-            export class C {
-              /**
-               * @since 1.0.0
-               */
-              a: string
-            }`
-        )
-
-        assertRight(pipe(env, Parser.parseClasses), (actual) =>
-          assert.deepStrictEqual(actual, [
+        * description
+        * @since 1.0.0
+        */
+        export class C {
+          /**
+           * @since 1.0.0
+           */
+          a: string
+        }`,
+          Parser.parseClasses,
+          [
             {
               _tag: 'Class',
               name: 'C',
@@ -621,10 +611,10 @@ describe.concurrent('Parser', () => {
               since: Option.some('1.0.0'),
               deprecated: false,
               category: Option.none(),
-              examples: RA.empty,
+              examples: [],
               signature: 'export declare class C',
-              methods: RA.empty,
-              staticMethods: RA.empty,
+              methods: [],
+              staticMethods: [],
               properties: [
                 {
                   name: 'a',
@@ -632,50 +622,48 @@ describe.concurrent('Parser', () => {
                   since: Option.some('1.0.0'),
                   deprecated: false,
                   category: Option.none(),
-                  examples: RA.empty,
+                  examples: [],
                   signature: 'a: string'
                 }
               ]
             }
-          ])
+          ]
         )
       })
 
       it('should return a `Class`', () => {
-        const env = getTestEnv(
+        expectRight(
           `/**
-            * a class description...
-            * @since 1.0.0
-            * @deprecated
-            */
-            export class Test {
-              /**
-               * a property...
-               * @since 1.1.0
-               * @deprecated
-               */
-              readonly a: string
-              private readonly b: number
-              /**
-               * a static method description...
-               * @since 1.1.0
-               * @deprecated
-               */
-              static f(): void {}
-              constructor(readonly value: string) { }
-              /**
-               * a method description...
-               * @since 1.1.0
-               * @deprecated
-               */
-              g(a: number, b: number): { [key: string]: number } {
-                return { a, b }
-              }
-            }`
-        )
-
-        assertRight(pipe(env, Parser.parseClasses), (actual) =>
-          assert.deepStrictEqual(actual, [
+        * a class description...
+        * @since 1.0.0
+        * @deprecated
+        */
+        export class Test {
+          /**
+           * a property...
+           * @since 1.1.0
+           * @deprecated
+           */
+          readonly a: string
+          private readonly b: number
+          /**
+           * a static method description...
+           * @since 1.1.0
+           * @deprecated
+           */
+          static f(): void {}
+          constructor(readonly value: string) { }
+          /**
+           * a method description...
+           * @since 1.1.0
+           * @deprecated
+           */
+          g(a: number, b: number): { [key: string]: number } {
+            return { a, b }
+          }
+        }`,
+          Parser.parseClasses,
+          [
             {
               _tag: 'Class',
               name: 'Test',
@@ -683,7 +671,7 @@ describe.concurrent('Parser', () => {
               since: Option.some('1.0.0'),
               deprecated: true,
               category: Option.none(),
-              examples: RA.empty,
+              examples: [],
               signature: 'export declare class Test { constructor(readonly value: string) }',
               methods: [
                 {
@@ -692,7 +680,7 @@ describe.concurrent('Parser', () => {
                   since: Option.some('1.1.0'),
                   deprecated: true,
                   category: Option.none(),
-                  examples: RA.empty,
+                  examples: [],
                   signatures: ['g(a: number, b: number): { [key: string]: number }']
                 }
               ],
@@ -703,7 +691,7 @@ describe.concurrent('Parser', () => {
                   since: Option.some('1.1.0'),
                   deprecated: true,
                   category: Option.none(),
-                  examples: RA.empty,
+                  examples: [],
                   signatures: ['static f(): void']
                 }
               ],
@@ -715,46 +703,44 @@ describe.concurrent('Parser', () => {
                   deprecated: true,
                   category: Option.none(),
                   signature: 'readonly a: string',
-                  examples: RA.empty
+                  examples: []
                 }
               ]
             }
-          ])
+          ]
         )
       })
 
       it('should handle method overloadings', () => {
-        const env = getTestEnv(
+        expectRight(
           `/**
-            * a class description...
-            * @since 1.0.0
-            * @deprecated
-            */
-            export class Test<A> {
-              /**
-               * a static method description...
-               * @since 1.1.0
-               * @deprecated
-               */
-              static f(x: number): number
-              static f(x: string): string
-              static f(x: any): any {}
-              constructor(readonly value: A) { }
-              /**
-               * a method description...
-               * @since 1.1.0
-               * @deprecated
-               */
-              map(f: (a: number) => number): Test
-              map(f: (a: string) => string): Test
-              map(f: (a: any) => any): any {
-                return new Test(f(this.value))
-              }
-            }`
-        )
-
-        assertRight(pipe(env, Parser.parseClasses), (actual) =>
-          assert.deepStrictEqual(actual, [
+        * a class description...
+        * @since 1.0.0
+        * @deprecated
+        */
+        export class Test<A> {
+          /**
+           * a static method description...
+           * @since 1.1.0
+           * @deprecated
+           */
+          static f(x: number): number
+          static f(x: string): string
+          static f(x: any): any {}
+          constructor(readonly value: A) { }
+          /**
+           * a method description...
+           * @since 1.1.0
+           * @deprecated
+           */
+          map(f: (a: number) => number): Test
+          map(f: (a: string) => string): Test
+          map(f: (a: any) => any): any {
+            return new Test(f(this.value))
+          }
+        }`,
+          Parser.parseClasses,
+          [
             {
               _tag: 'Class',
               name: 'Test',
@@ -762,7 +748,7 @@ describe.concurrent('Parser', () => {
               since: Option.some('1.0.0'),
               deprecated: true,
               category: Option.none(),
-              examples: RA.empty,
+              examples: [],
               signature: 'export declare class Test<A> { constructor(readonly value: A) }',
               methods: [
                 {
@@ -771,7 +757,7 @@ describe.concurrent('Parser', () => {
                   since: Option.some('1.1.0'),
                   deprecated: true,
                   category: Option.none(),
-                  examples: RA.empty,
+                  examples: [],
                   signatures: ['map(f: (a: number) => number): Test', 'map(f: (a: string) => string): Test']
                 }
               ],
@@ -782,38 +768,36 @@ describe.concurrent('Parser', () => {
                   since: Option.some('1.1.0'),
                   deprecated: true,
                   category: Option.none(),
-                  examples: RA.empty,
+                  examples: [],
                   signatures: ['static f(x: number): number', 'static f(x: string): string']
                 }
               ],
-              properties: RA.empty
+              properties: []
             }
-          ])
+          ]
         )
       })
 
       it('should ignore internal/ignored methods (#42)', () => {
-        const env = getTestEnv(
+        expectRight(
           `/**
-            * a class description...
-            * @since 1.0.0
-            */
-            export class Test<A> {
-              /**
-               * @since 0.0.1
-               * @internal
-               **/
-              private foo(): void {}
-              /**
-               * @since 0.0.1
-               * @ignore
-               **/
-              private bar(): void {}
-            }`
-        )
-
-        assertRight(pipe(env, Parser.parseClasses), (actual) =>
-          assert.deepStrictEqual(actual, [
+        * a class description...
+        * @since 1.0.0
+        */
+        export class Test<A> {
+          /**
+           * @since 0.0.1
+           * @internal
+           **/
+          private foo(): void {}
+          /**
+           * @since 0.0.1
+           * @ignore
+           **/
+          private bar(): void {}
+        }`,
+          Parser.parseClasses,
+          [
             {
               _tag: 'Class',
               name: 'Test',
@@ -821,20 +805,20 @@ describe.concurrent('Parser', () => {
               since: Option.some('1.0.0'),
               deprecated: false,
               category: Option.none(),
-              examples: RA.empty,
+              examples: [],
               signature: 'export declare class Test<A>',
-              methods: RA.empty,
-              staticMethods: RA.empty,
-              properties: RA.empty
+              methods: [],
+              staticMethods: [],
+              properties: []
             }
-          ])
+          ]
         )
       })
     })
 
     describe.concurrent('parseModuleDocumentation', () => {
       it('should return a description field and a deprecated field', () => {
-        const env = getTestEnv(
+        expectRight(
           `/**
             * Manages the configuration settings for the widget
             * @deprecated
@@ -843,27 +827,23 @@ describe.concurrent('Parser', () => {
             /**
              * @since 1.2.0
              */
-            export const a: number = 1`
-        )
-
-        assertRight(pipe(env, Parser.parseModuleDocumentation), (actual) =>
-          assert.deepStrictEqual(actual, {
+            export const a: number = 1`,
+          Parser.parseModuleDocumentation,
+          {
             name: 'test',
             description: Option.some('Manages the configuration settings for the widget'),
             since: Option.some('1.0.0'),
             deprecated: true,
             category: Option.none(),
-            examples: RA.empty
-          })
+            examples: []
+          }
         )
       })
 
       it('should return an error when documentation is enforced but no documentation is provided', () => {
-        const env = getTestEnv('export const a: number = 1')
-
-        assertLeft(pipe(env, Parser.parseModuleDocumentation), (actual) =>
-          assert.deepStrictEqual(actual, ['Missing documentation in test module'])
-        )
+        expectLeft('export const a: number = 1', Parser.parseModuleDocumentation, [
+          'Missing documentation in test module'
+        ])
       })
 
       it('should support absence of module documentation when no documentation is enforced', () => {
@@ -878,7 +858,7 @@ describe.concurrent('Parser', () => {
             since: Option.none(),
             deprecated: false,
             category: Option.none(),
-            examples: RA.empty
+            examples: []
           })
         )
       })
@@ -886,24 +866,20 @@ describe.concurrent('Parser', () => {
 
     describe.concurrent('parseExports', () => {
       it('should return no `Export`s if the file is empty', () => {
-        const env = getTestEnv('')
-
-        assertRight(pipe(env, Parser.parseExports), (actual) => assert.deepStrictEqual(actual, RA.empty))
+        expectRight('', Parser.parseExports, [])
       })
 
       it('should handle renamimg', () => {
-        const env = getTestEnv(
+        expectRight(
           `const a = 1;
           export {
             /**
              * @since 1.0.0
              */
             a as b
-          }`
-        )
-
-        assertRight(pipe(env, Parser.parseExports), (actual) =>
-          assert.deepStrictEqual(actual, [
+          }`,
+          Parser.parseExports,
+          [
             {
               _tag: 'Export',
               name: 'b',
@@ -911,15 +887,15 @@ describe.concurrent('Parser', () => {
               deprecated: false,
               since: Option.some('1.0.0'),
               category: Option.none(),
-              examples: RA.empty,
+              examples: [],
               signature: 'export declare const b: 1'
             }
-          ])
+          ]
         )
       })
 
       it('should return an `Export`', () => {
-        const env = getTestEnv(
+        expectRight(
           `export {
             /**
              * description_of_a
@@ -931,11 +907,9 @@ describe.concurrent('Parser', () => {
              * @since 2.0.0
              */
             b
-          }`
-        )
-
-        assertRight(pipe(env, Parser.parseExports), (actual) =>
-          assert.deepStrictEqual(actual, [
+          }`,
+          Parser.parseExports,
+          [
             {
               _tag: 'Export',
               name: 'a',
@@ -944,7 +918,7 @@ describe.concurrent('Parser', () => {
               deprecated: false,
               category: Option.none(),
               signature: 'export declare const a: any',
-              examples: RA.empty
+              examples: []
             },
             {
               _tag: 'Export',
@@ -954,18 +928,14 @@ describe.concurrent('Parser', () => {
               deprecated: false,
               category: Option.none(),
               signature: 'export declare const b: any',
-              examples: RA.empty
+              examples: []
             }
-          ])
+          ]
         )
       })
 
       it('should raise an error if `@since` tag is missing in export', () => {
-        const env = getTestEnv('export { a }')
-
-        assertLeft(pipe(env, Parser.parseExports), (error) =>
-          assert.deepStrictEqual(error, ['Missing a documentation in test'])
-        )
+        expectLeft('export { a }', Parser.parseExports, ['Missing a documentation in test'])
       })
 
       it('should retrieve an export signature', () => {
@@ -982,7 +952,7 @@ describe.concurrent('Parser', () => {
           }`
         )
 
-        assertRight(
+        expect(
           pipe(
             {
               path: ['test'],
@@ -990,31 +960,27 @@ describe.concurrent('Parser', () => {
               config
             },
             Parser.parseExports
-          ),
-          (actual) =>
-            assert.deepStrictEqual(actual, [
-              {
-                _tag: 'Export',
-                name: 'b',
-                description: Option.none(),
-                since: Option.some('1.0.0'),
-                deprecated: false,
-                signature: 'export declare const b: 1',
-                category: Option.none(),
-                examples: RA.empty
-              }
-            ])
+          )
+        ).toEqual(
+          E.right([
+            {
+              _tag: 'Export',
+              name: 'b',
+              description: Option.none(),
+              since: Option.some('1.0.0'),
+              deprecated: false,
+              signature: 'export declare const b: 1',
+              category: Option.none(),
+              examples: []
+            }
+          ])
         )
       })
     })
 
     describe.concurrent('parseModule', () => {
       it('should raise an error if `@since` tag is missing', async () => {
-        const env = getTestEnv(`import * as assert from 'assert'`)
-
-        assertLeft(pipe(env, Parser.parseModule), (error) =>
-          assert.deepStrictEqual(error, ['Missing documentation in test module'])
-        )
+        expectLeft(`import * as assert from 'assert'`, Parser.parseModule, ['Missing documentation in test module'])
       })
 
       it('should not require an example for modules when `enforceExamples` is set to true (#38)', () => {
@@ -1038,19 +1004,19 @@ import * as assert from 'assert'
  */
 export const foo = 'foo'`)
 
-        assertRight(pipe({ ...env, config: { ...env.config, enforceExamples: true } }, Parser.parseModule), (actual) =>
-          assert.deepStrictEqual(actual, {
+        expect(pipe({ ...env, config: { ...env.config, enforceExamples: true } }, Parser.parseModule)).toEqual(
+          E.right({
             name: 'test',
             description: Option.some('This is the assert module.'),
             since: Option.some('1.0.0'),
             deprecated: false,
-            examples: RA.empty,
+            examples: [],
             category: Option.none(),
             path: ['test'],
-            classes: RA.empty,
-            interfaces: RA.empty,
-            functions: RA.empty,
-            typeAliases: RA.empty,
+            classes: [],
+            interfaces: [],
+            functions: [],
+            typeAliases: [],
             constants: [
               {
                 _tag: 'Constant',
@@ -1063,7 +1029,7 @@ export const foo = 'foo'`)
                 signature: 'export declare const foo: "foo"'
               }
             ],
-            exports: RA.empty
+            exports: []
           })
         )
       })
@@ -1093,13 +1059,13 @@ export const foo = 'foo'`)
 * @since 1.0.0
 */`
 
-        assertRight(pipe(env, Parser.getCommentInfo('name')(text)), (actual) =>
-          assert.deepStrictEqual(actual, {
+        expect(pipe(env, Parser.getCommentInfo('name')(text))).toEqual(
+          E.right({
             description: Option.some('description'),
             since: Option.some('1.0.0'),
             category: Option.some('instances'),
             deprecated: false,
-            examples: RA.empty
+            examples: []
           })
         )
       })
@@ -1112,8 +1078,8 @@ export const foo = 'foo'`)
 * @since 1.0.0
 */`
 
-        assertLeft(pipe(env, Parser.getCommentInfo('name')(text)), (error) =>
-          assert.deepStrictEqual(error, ['Missing @category tag in test#name documentation'])
+        expect(pipe(env, Parser.getCommentInfo('name')(text))).toEqual(
+          Either.left(['Missing @category tag in test#name documentation'])
         )
       })
 
@@ -1125,10 +1091,9 @@ export const foo = 'foo'`)
 * @since 1.0.0
 */`
 
-        assertLeft(
-          pipe({ ...env, config: { ...env.config, enforceDescriptions: true } }, Parser.getCommentInfo('name')(text)),
-          (error) => assert.deepStrictEqual(error, ['Missing description in test#name documentation'])
-        )
+        expect(
+          pipe({ ...env, config: { ...env.config, enforceDescriptions: true } }, Parser.getCommentInfo('name')(text))
+        ).toEqual(Either.left(['Missing description in test#name documentation']))
       })
 
       it('should require at least one example if `enforceExamples` is set to true', () => {
@@ -1140,10 +1105,9 @@ export const foo = 'foo'`)
 * @since 1.0.0
 */`
 
-        assertLeft(
-          pipe({ ...env, config: { ...env.config, enforceExamples: true } }, Parser.getCommentInfo('name')(text)),
-          (error) => assert.deepStrictEqual(error, ['Missing @example tag in test#name documentation'])
-        )
+        expect(
+          pipe({ ...env, config: { ...env.config, enforceExamples: true } }, Parser.getCommentInfo('name')(text))
+        ).toEqual(Either.left(['Missing @example tag in test#name documentation']))
       })
 
       it('should require at least one non-empty example if `enforceExamples` is set to true', () => {
@@ -1156,10 +1120,9 @@ export const foo = 'foo'`)
 * @since 1.0.0
 */`
 
-        assertLeft(
-          pipe({ ...env, config: { ...env.config, enforceExamples: true } }, Parser.getCommentInfo('name')(text)),
-          (error) => assert.deepStrictEqual(error, ['Missing @example tag in test#name documentation'])
-        )
+        expect(
+          pipe({ ...env, config: { ...env.config, enforceExamples: true } }, Parser.getCommentInfo('name')(text))
+        ).toEqual(Either.left(['Missing @example tag in test#name documentation']))
       })
 
       it('should allow no since tag if `enforceVersion` is set to false', () => {
@@ -1170,16 +1133,16 @@ export const foo = 'foo'`)
 * @category instances
 */`
 
-        assertRight(
-          pipe({ ...env, config: { ...env.config, enforceVersion: false } }, Parser.getCommentInfo('name')(text)),
-          (actual) =>
-            assert.deepStrictEqual(actual, {
-              description: Option.some('description'),
-              since: Option.none(),
-              category: Option.some('instances'),
-              deprecated: false,
-              examples: RA.empty
-            })
+        expect(
+          pipe({ ...env, config: { ...env.config, enforceVersion: false } }, Parser.getCommentInfo('name')(text))
+        ).toEqual(
+          E.right({
+            description: Option.some('description'),
+            since: Option.none(),
+            category: Option.some('instances'),
+            deprecated: false,
+            examples: []
+          })
         )
       })
     })

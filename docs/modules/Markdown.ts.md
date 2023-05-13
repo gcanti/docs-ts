@@ -25,7 +25,6 @@ Added in v0.9.0
   - [fold](#fold)
 - [instances](#instances)
   - [monoidMarkdown](#monoidmarkdown)
-  - [semigroupMarkdown](#semigroupmarkdown)
   - [showMarkdown](#showmarkdown)
 - [model](#model)
   - [Bold (interface)](#bold-interface)
@@ -159,17 +158,7 @@ Added in v0.9.0
 **Signature**
 
 ```ts
-export declare const monoidMarkdown: M.Monoid<Markdown>
-```
-
-Added in v0.9.0
-
-## semigroupMarkdown
-
-**Signature**
-
-```ts
-export declare const semigroupMarkdown: Semigroup<Markdown>
+export declare const monoidMarkdown: Monoid.Monoid<Markdown>
 ```
 
 Added in v0.9.0
@@ -179,7 +168,7 @@ Added in v0.9.0
 **Signature**
 
 ```ts
-export declare const showMarkdown: Show<Markdown>
+export declare const showMarkdown: (markdown: Markdown) => string
 ```
 
 Added in v0.9.0

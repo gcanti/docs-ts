@@ -1,5 +1,5 @@
+import * as Option from '@effect/data/Option'
 import * as assert from 'assert'
-import * as O from 'fp-ts/Option'
 import * as RA from 'fp-ts/ReadonlyArray'
 
 import * as _ from '../src/Markdown'
@@ -20,38 +20,59 @@ const content = _.PlainText('a')
 
 const testCases = {
   class: createClass(
-    createDocumentable('A', O.some('a class'), O.some('1.0.0'), false, ['example 1'], O.some('category')),
+    createDocumentable(
+      'A',
+      Option.some('a class'),
+      Option.some('1.0.0'),
+      false,
+      ['example 1'],
+      Option.some('category')
+    ),
     'declare class A { constructor() }',
     [
-      createMethod(createDocumentable('hasOwnProperty', O.none, O.some('1.0.0'), false, RA.empty, O.none), [
-        'hasOwnProperty(): boolean'
-      ])
+      createMethod(
+        createDocumentable('hasOwnProperty', Option.none(), Option.some('1.0.0'), false, RA.empty, Option.none()),
+        ['hasOwnProperty(): boolean']
+      )
     ],
     [
-      createMethod(createDocumentable('staticTest', O.none, O.some('1.0.0'), false, RA.empty, O.none), [
-        'static testStatic(): string;'
-      ])
+      createMethod(
+        createDocumentable('staticTest', Option.none(), Option.some('1.0.0'), false, RA.empty, Option.none()),
+        ['static testStatic(): string;']
+      )
     ],
-    [createProperty(createDocumentable('foo', O.none, O.some('1.0.0'), false, RA.empty, O.none), 'foo: string')]
+    [
+      createProperty(
+        createDocumentable('foo', Option.none(), Option.some('1.0.0'), false, RA.empty, Option.none()),
+        'foo: string'
+      )
+    ]
   ),
   constant: createConstant(
-    createDocumentable('test', O.some('the test'), O.some('1.0.0'), false, RA.empty, O.some('constants')),
+    createDocumentable(
+      'test',
+      Option.some('the test'),
+      Option.some('1.0.0'),
+      false,
+      RA.empty,
+      Option.some('constants')
+    ),
     'declare const test: string'
   ),
   export: createExport(
-    createDocumentable('test', O.none, O.some('1.0.0'), false, RA.empty, O.none),
+    createDocumentable('test', Option.none(), Option.some('1.0.0'), false, RA.empty, Option.none()),
     'export declare const test: typeof test'
   ),
   function: createFunction(
-    createDocumentable('func', O.some('a function'), O.some('1.0.0'), true, ['example 1'], O.none),
+    createDocumentable('func', Option.some('a function'), Option.some('1.0.0'), true, ['example 1'], Option.none()),
     ['declare const func: (test: string) => string']
   ),
   interface: createInterface(
-    createDocumentable('A', O.none, O.some('1.0.0'), false, RA.empty, O.none),
+    createDocumentable('A', Option.none(), Option.some('1.0.0'), false, RA.empty, Option.none()),
     'export interface A extends Record<string, unknown> {}'
   ),
   typeAlias: createTypeAlias(
-    createDocumentable('A', O.none, O.some('1.0.0'), false, RA.empty, O.none),
+    createDocumentable('A', Option.none(), Option.some('1.0.0'), false, RA.empty, Option.none()),
     'export type A = number'
   )
 }
@@ -145,23 +166,20 @@ describe.concurrent('Markdown', () => {
   })
 
   describe.concurrent('instances', () => {
-    it('semigroupMarkdown', () => {
-      assert.deepStrictEqual(_.semigroupMarkdown.concat(_.Bold(content), _.Strikethrough(content)), {
+    it('monoidMarkdown', () => {
+      assert.deepStrictEqual(_.monoidMarkdown.combine(_.Bold(content), _.Strikethrough(content)), {
         _tag: 'PlainTexts',
         content: [
           { _tag: 'Bold', content: { _tag: 'PlainText', content: 'a' } },
           { _tag: 'Strikethrough', content: { _tag: 'PlainText', content: 'a' } }
         ]
       })
-    })
-
-    it('monoidMarkdown', () => {
       assert.deepStrictEqual(_.monoidMarkdown.empty, {
         _tag: 'PlainText',
         content: ''
       })
 
-      assert.deepStrictEqual(_.monoidMarkdown.concat(_.Bold(content), _.Strikethrough(content)), {
+      assert.deepStrictEqual(_.monoidMarkdown.combine(_.Bold(content), _.Strikethrough(content)), {
         _tag: 'PlainTexts',
         content: [
           { _tag: 'Bold', content: { _tag: 'PlainText', content: 'a' } },
@@ -173,18 +191,18 @@ describe.concurrent('Markdown', () => {
     it('showMarkdown', () => {
       // Prettier will add a trailing newline to the document so `a` becomes `\n`
       // and strips extra trailing newlines so `\n\n` becomes `\n`
-      assert.strictEqual(_.showMarkdown.show(_.Bold(content)), '**a**\n')
-      assert.strictEqual(_.showMarkdown.show(_.Header(1, content)), '# a\n')
-      assert.strictEqual(_.showMarkdown.show(_.Header(2, content)), '## a\n')
-      assert.strictEqual(_.showMarkdown.show(_.Header(3, content)), '### a\n')
-      assert.strictEqual(_.showMarkdown.show(_.Fence('ts', content)), '```ts\na\n```\n')
-      assert.strictEqual(_.showMarkdown.show(_.monoidMarkdown.concat(content, _.Newline)), 'a\n')
-      assert.strictEqual(_.showMarkdown.show(_.Paragraph(content)), 'a\n')
-      assert.strictEqual(_.showMarkdown.show(_.PlainText('a')), 'a\n')
-      assert.strictEqual(_.showMarkdown.show(_.PlainTexts([content, _.Newline, content])), 'a\na\n')
-      assert.strictEqual(_.showMarkdown.show(_.Strikethrough(content)), '~~a~~\n')
+      assert.strictEqual(_.showMarkdown(_.Bold(content)), '**a**\n')
+      assert.strictEqual(_.showMarkdown(_.Header(1, content)), '# a\n')
+      assert.strictEqual(_.showMarkdown(_.Header(2, content)), '## a\n')
+      assert.strictEqual(_.showMarkdown(_.Header(3, content)), '### a\n')
+      assert.strictEqual(_.showMarkdown(_.Fence('ts', content)), '```ts\na\n```\n')
+      assert.strictEqual(_.showMarkdown(_.monoidMarkdown.combine(content, _.Newline)), 'a\n')
+      assert.strictEqual(_.showMarkdown(_.Paragraph(content)), 'a\n')
+      assert.strictEqual(_.showMarkdown(_.PlainText('a')), 'a\n')
+      assert.strictEqual(_.showMarkdown(_.PlainTexts([content, _.Newline, content])), 'a\na\n')
+      assert.strictEqual(_.showMarkdown(_.Strikethrough(content)), '~~a~~\n')
       assert.strictEqual(
-        _.showMarkdown.show(
+        _.showMarkdown(
           _.PlainTexts([
             _.PlainText(''),
             _.Bold(content),
@@ -360,7 +378,7 @@ Added in v1.0.0
       )
 
       assert.strictEqual(
-        _.printTypeAlias({ ...testCases.typeAlias, since: O.none }),
+        _.printTypeAlias({ ...testCases.typeAlias, since: Option.none() }),
         `## A (type alias)
 
 **Signature**
@@ -373,7 +391,14 @@ export type A = number
     })
 
     it('printModule', () => {
-      const documentation = createDocumentable('tests', O.none, O.some('1.0.0'), false, RA.empty, O.none)
+      const documentation = createDocumentable(
+        'tests',
+        Option.none(),
+        Option.some('1.0.0'),
+        false,
+        RA.empty,
+        Option.none()
+      )
       const m = createModule(
         documentation,
         ['src', 'tests.ts'],

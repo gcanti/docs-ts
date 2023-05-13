@@ -24,7 +24,7 @@ Added in v0.9.0
 **Signature**
 
 ```ts
-export declare const main: Effect.Effect<any, never, never>
+export declare const main: Effect.Effect<never, never, never>
 ```
 
 Added in v0.9.0

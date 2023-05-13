@@ -31,7 +31,7 @@ Added in v0.9.0
 **Signature**
 
 ```ts
-export declare const parseClasses: Effect.Effect<any, unknown[], Module.Class[]>
+export declare const parseClasses: Effect.Effect<Service.Config | Service.Source, string[], Module.Class[]>
 ```
 
 Added in v0.9.0
@@ -41,7 +41,7 @@ Added in v0.9.0
 **Signature**
 
 ```ts
-export declare const parseConstants: Effect.Effect<any, unknown[], Module.Constant[]>
+export declare const parseConstants: Effect.Effect<Service.Config | Service.Source, string[], Module.Constant[]>
 ```
 
 Added in v0.9.0
@@ -51,7 +51,7 @@ Added in v0.9.0
 **Signature**
 
 ```ts
-export declare const parseExports: Effect.Effect<any, unknown[], Module.Export[]>
+export declare const parseExports: Effect.Effect<Service.Config | Service.Source, string[], Module.Export[]>
 ```
 
 Added in v0.9.0
@@ -73,7 +73,7 @@ Added in v0.9.0
 **Signature**
 
 ```ts
-export declare const parseFunctions: Effect.Effect<any, unknown[], Module.Function[]>
+export declare const parseFunctions: Effect.Effect<Service.Config | Service.Source, string[], Module.Function[]>
 ```
 
 Added in v0.9.0
@@ -83,7 +83,7 @@ Added in v0.9.0
 **Signature**
 
 ```ts
-export declare const parseInterfaces: Effect.Effect<any, unknown[], Module.Interface[]>
+export declare const parseInterfaces: Effect.Effect<Service.Config | Service.Source, string[], Module.Interface[]>
 ```
 
 Added in v0.9.0
@@ -93,7 +93,7 @@ Added in v0.9.0
 **Signature**
 
 ```ts
-export declare const parseModule: Effect.Effect<any, any, Module.Module>
+export declare const parseModule: Effect.Effect<Service.Config | Service.Source, string[], Module.Module>
 ```
 
 Added in v0.9.0
@@ -103,7 +103,7 @@ Added in v0.9.0
 **Signature**
 
 ```ts
-export declare const parseTypeAliases: Effect.Effect<any, unknown[], Module.TypeAlias[]>
+export declare const parseTypeAliases: Effect.Effect<Service.Config | Service.Source, string[], Module.TypeAlias[]>
 ```
 
 Added in v0.9.0

@@ -3,11 +3,10 @@
  */
 
 import { pipe } from '@effect/data/Function'
+import * as ReadonlyArray from '@effect/data/ReadonlyArray'
+import * as String from '@effect/data/String'
 import * as Effect from '@effect/io/Effect'
 import chalk from 'chalk'
-import * as Monoid from 'fp-ts/Monoid'
-import * as ReadonlyArray from 'fp-ts/ReadonlyArray'
-import * as S from 'fp-ts/string'
 import * as NodePath from 'path'
 
 import * as _ from './internal'
@@ -103,7 +102,7 @@ const typeCheckExamples = (modules: ReadonlyArray<Module.Module>) =>
     )
   )
 
-const concatAllFiles = Monoid.concatAll(ReadonlyArray.getMonoid<_.File>())
+const combineAllFiles = ReadonlyArray.getMonoid<_.File>().combineAll
 
 const getExampleFiles = (modules: ReadonlyArray<Module.Module>) =>
   pipe(
@@ -119,7 +118,7 @@ const getExampleFiles = (modules: ReadonlyArray<Module.Module>) =>
             (documentable: Module.Documentable): ReadonlyArray<_.File> =>
               pipe(
                 documentable.examples,
-                ReadonlyArray.mapWithIndex((i, content) =>
+                ReadonlyArray.map((content, i) =>
                   _.createFile(
                     join(config.outDir, 'examples', `${prefix}-${id}-${documentable.name}-${i}.ts`),
                     `${content}\n`,
@@ -132,7 +131,7 @@ const getExampleFiles = (modules: ReadonlyArray<Module.Module>) =>
           const methods = pipe(
             module.classes,
             ReadonlyArray.flatMap((c) =>
-              concatAllFiles([
+              combineAllFiles([
                 pipe(c.methods, ReadonlyArray.flatMap(getDocumentableExamples(`${c.name}-method`))),
                 pipe(c.staticMethods, ReadonlyArray.flatMap(getDocumentableExamples(`${c.name}-staticmethod`)))
               ])
@@ -143,7 +142,7 @@ const getExampleFiles = (modules: ReadonlyArray<Module.Module>) =>
           const constants = pipe(module.constants, ReadonlyArray.flatMap(getDocumentableExamples('constant')))
           const functions = pipe(module.functions, ReadonlyArray.flatMap(getDocumentableExamples('function')))
 
-          return concatAllFiles([moduleExamples, methods, interfaces, typeAliases, constants, functions])
+          return combineAllFiles([moduleExamples, methods, interfaces, typeAliases, constants, functions])
         })
       )
     )
@@ -180,7 +179,7 @@ const handleImports = (files: ReadonlyArray<_.File>) =>
 const getExampleIndex = (examples: ReadonlyArray<_.File>) => {
   const content = pipe(
     examples,
-    ReadonlyArray.foldMap(S.Monoid)((example) => `import './${NodePath.basename(example.path, '.ts')}'\n`)
+    ReadonlyArray.combineMap(String.Monoid)((example) => `import './${NodePath.basename(example.path, '.ts')}'\n`)
   )
   return pipe(
     Config,

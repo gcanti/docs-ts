@@ -125,9 +125,9 @@ describe.concurrent('Parser', () => {
     describe.concurrent('parseFunctions', () => {
       it('should raise an error if the function is anonymous', () => {
         const env = getTestEnv(`export function(a: number, b: number): number { return a + b }`)
-        const expected = 'Missing function name in module test'
+        const expected = ['Missing function name in module test']
 
-        assertLeft(pipe(env, Parser.parseFunctions), (error) => assert.strictEqual(error, expected))
+        assertLeft(pipe(env, Parser.parseFunctions), (error) => assert.deepStrictEqual(error, expected))
       })
 
       it('should not return private function declarations', () => {
@@ -496,7 +496,7 @@ describe.concurrent('Parser', () => {
         const env = getTestEnv(`export class {}`)
 
         assertLeft(pipe(env, Parser.parseClasses), (error) =>
-          assert.strictEqual(error, 'Missing class name in module test')
+          assert.deepStrictEqual(error, ['Missing class name in module test'])
         )
       })
 
@@ -504,7 +504,7 @@ describe.concurrent('Parser', () => {
         const env = getTestEnv(`export class MyClass {}`)
 
         assertLeft(pipe(env, Parser.parseClasses), (error) =>
-          assert.strictEqual(error, 'Missing "@since" tag in test#MyClass documentation')
+          assert.deepStrictEqual(error, ['Missing @since tag in test#MyClass documentation'])
         )
       })
 
@@ -519,7 +519,7 @@ describe.concurrent('Parser', () => {
         )
 
         assertLeft(pipe(env, Parser.parseClasses), (error) =>
-          assert.strictEqual(error, 'Missing "@since" tag in test#MyClass#_A documentation')
+          assert.deepStrictEqual(error, ['Missing @since tag in test#MyClass#_A documentation'])
         )
       })
 
@@ -862,7 +862,7 @@ describe.concurrent('Parser', () => {
         const env = getTestEnv('export const a: number = 1')
 
         assertLeft(pipe(env, Parser.parseModuleDocumentation), (actual) =>
-          assert.strictEqual(actual, 'Missing documentation in test module')
+          assert.deepStrictEqual(actual, ['Missing documentation in test module'])
         )
       })
 
@@ -964,7 +964,7 @@ describe.concurrent('Parser', () => {
         const env = getTestEnv('export { a }')
 
         assertLeft(pipe(env, Parser.parseExports), (error) =>
-          assert.strictEqual(error, 'Missing a documentation in test')
+          assert.deepStrictEqual(error, ['Missing a documentation in test'])
         )
       })
 
@@ -1013,7 +1013,7 @@ describe.concurrent('Parser', () => {
         const env = getTestEnv(`import * as assert from 'assert'`)
 
         assertLeft(pipe(env, Parser.parseModule), (error) =>
-          assert.strictEqual(error, 'Missing documentation in test module')
+          assert.deepStrictEqual(error, ['Missing documentation in test module'])
         )
       })
 
@@ -1076,7 +1076,7 @@ export const foo = 'foo'`)
 
         assert.deepStrictEqual(
           pipe(Parser.parseFile(project)(file), Effect.provideService(Config, { config }), Effect.runSyncEither),
-          Either.left('Unable to locate file: non-existent.ts')
+          Either.left(['Unable to locate file: non-existent.ts'])
         )
       })
     })
@@ -1113,7 +1113,7 @@ export const foo = 'foo'`)
 */`
 
         assertLeft(pipe(env, Parser.getCommentInfo('name')(text)), (error) =>
-          assert.strictEqual(error, 'Missing @category value in test#name documentation')
+          assert.deepStrictEqual(error, ['Missing @category tag in test#name documentation'])
         )
       })
 
@@ -1127,7 +1127,7 @@ export const foo = 'foo'`)
 
         assertLeft(
           pipe({ ...env, config: { ...env.config, enforceDescriptions: true } }, Parser.getCommentInfo('name')(text)),
-          (error) => assert.strictEqual(error, 'Missing description in test#name documentation')
+          (error) => assert.deepStrictEqual(error, ['Missing description in test#name documentation'])
         )
       })
 
@@ -1142,7 +1142,7 @@ export const foo = 'foo'`)
 
         assertLeft(
           pipe({ ...env, config: { ...env.config, enforceExamples: true } }, Parser.getCommentInfo('name')(text)),
-          (error) => assert.strictEqual(error, 'Missing examples in test#name documentation')
+          (error) => assert.deepStrictEqual(error, ['Missing @example tag in test#name documentation'])
         )
       })
 
@@ -1158,7 +1158,7 @@ export const foo = 'foo'`)
 
         assertLeft(
           pipe({ ...env, config: { ...env.config, enforceExamples: true } }, Parser.getCommentInfo('name')(text)),
-          (error) => assert.strictEqual(error, 'Missing examples in test#name documentation')
+          (error) => assert.deepStrictEqual(error, ['Missing @example tag in test#name documentation'])
         )
       })
 
@@ -1218,13 +1218,13 @@ export const foo = 'foo'`)
     })
 
     it('stripImportTypes', () => {
-      assert.strictEqual(
+      assert.deepStrictEqual(
         Parser.stripImportTypes(
           '{ <E, A, B>(refinement: import("/Users/giulio/Documents/Projects/github/fp-ts/src/function").Refinement<A, B>, onFalse: (a: A) => E): (ma: Either<E, A>) => Either<E, B>; <E, A>(predicate: Predicate<A>, onFalse: (a: A) => E): (ma: Either<E, A>) => Either<E, A>; }'
         ),
         '{ <E, A, B>(refinement: Refinement<A, B>, onFalse: (a: A) => E): (ma: Either<E, A>) => Either<E, B>; <E, A>(predicate: Predicate<A>, onFalse: (a: A) => E): (ma: Either<E, A>) => Either<E, A>; }'
       )
-      assert.strictEqual(
+      assert.deepStrictEqual(
         Parser.stripImportTypes(
           '{ <A, B>(refinementWithIndex: import("/Users/giulio/Documents/Projects/github/fp-ts/src/FilterableWithIndex").RefinementWithIndex<number, A, B>): (fa: A[]) => B[]; <A>(predicateWithIndex: import("/Users/giulio/Documents/Projects/github/fp-ts/src/FilterableWithIndex").PredicateWithIndex<number, A>): (fa: A[]) => A[]; }'
         ),

@@ -13,12 +13,11 @@ import * as ReadonlyRecord from '@effect/data/ReadonlyRecord'
 import * as String from '@effect/data/String'
 import * as Order from '@effect/data/typeclass/Order'
 import * as Effect from '@effect/io/Effect'
+import chalk from 'chalk'
 import * as doctrine from 'doctrine'
 import * as RE from 'fp-ts/ReaderEither'
 import * as RA from 'fp-ts/ReadonlyArray'
 import * as RNEA from 'fp-ts/ReadonlyNonEmptyArray'
-import * as Semigroup from 'fp-ts/Semigroup'
-import * as S from 'fp-ts/string'
 import * as ast from 'ts-morph'
 
 import * as _ from './internal'
@@ -52,7 +51,7 @@ export interface ParserEnv {
  * @category model
  * @since 0.9.0
  */
-export interface ParserEffect<A> extends RE.ReaderEither<ParserEnv, string, A> {}
+export interface ParserEffect<A> extends RE.ReaderEither<ParserEnv, ReadonlyArray<string>, A> {}
 
 interface Comment {
   readonly description: Option.Option<string>
@@ -85,9 +84,7 @@ const CommentInfo = (
   category
 })
 
-const semigroupError = pipe(S.Semigroup, Semigroup.intercalate('\n'))
-
-const applicativeParser = RE.getApplicativeReaderValidation(semigroupError)
+const applicativeParser = RE.getApplicativeReaderValidation(RA.getSemigroup<string>())
 
 const traverse = RA.traverse(applicativeParser)
 
@@ -137,6 +134,12 @@ const isVariableStatement = (
 // comments
 // -------------------------------------------------------------------------------------
 
+const missing = (what: string, path: ReadonlyArray<string>, name: string): string =>
+  `Missing ${chalk.bold(what)} in ${chalk.bold(path.join('/') + '#' + name)} documentation`
+
+const missingTag = (tag: string, path: ReadonlyArray<string>, name: string): string =>
+  `Missing ${chalk.bold(tag)} tag in ${chalk.bold(path.join('/') + '#' + name)} documentation`
+
 const getSinceTag = (name: string, comment: Comment): ParserEffect<Option.Option<string>> =>
   pipe(
     RE.ask<ParserEnv>(),
@@ -148,7 +151,7 @@ const getSinceTag = (name: string, comment: Comment): ParserEffect<Option.Option
         Option.match(
           () =>
             env.config.enforceVersion
-              ? Either.left(`Missing "@since" tag in ${env.path.join('/')}#${name} documentation`)
+              ? Either.left([missingTag('@since', env.path, name)])
               : Either.right(Option.none()),
           (since) => Either.right(Option.some(since))
         )
@@ -164,10 +167,9 @@ const getCategoryTag = (name: string, comment: Comment): ParserEffect<Option.Opt
         comment.tags,
         ReadonlyRecord.get('category'),
         Option.flatMap(RNEA.head),
-        Either.liftPredicate(
-          not(every([Option.isNone, () => ReadonlyRecord.has(comment.tags, 'category')])),
-          () => `Missing @category value in ${env.path.join('/')}#${name} documentation`
-        )
+        Either.liftPredicate(not(every([Option.isNone, () => ReadonlyRecord.has(comment.tags, 'category')])), () => [
+          missingTag('@category', env.path, name)
+        ])
       )
     )
   )
@@ -181,7 +183,7 @@ const getDescription = (name: string, comment: Comment): ParserEffect<Option.Opt
         Option.match(
           () =>
             env.config.enforceDescriptions
-              ? Either.left(`Missing description in ${env.path.join('/')}#${name} documentation`)
+              ? Either.left([missing('description', env.path, name)])
               : Either.right(Option.none()),
           (description) => Either.right(Option.some(description))
         )
@@ -200,11 +202,11 @@ const getExamples = (name: string, comment: Comment, isModule: boolean): ParserE
         Option.match(
           () =>
             Boolean.MonoidEvery.combineAll([env.config.enforceExamples, !isModule])
-              ? Either.left(`Missing examples in ${env.path.join('/')}#${name} documentation`)
+              ? Either.left([missingTag('@example', env.path, name)])
               : Either.right(RA.empty),
           (examples) =>
             Boolean.MonoidEvery.combineAll([env.config.enforceExamples, RA.isEmpty(examples), !isModule])
-              ? Either.left(`Missing examples in ${env.path.join('/')}#${name} documentation`)
+              ? Either.left([missingTag('@example', env.path, name)])
               : Either.right(examples)
         )
       )
@@ -218,8 +220,8 @@ export const getCommentInfo =
   (name: string, isModule = false) =>
   (text: string): ParserEffect<CommentInfo> =>
     pipe(
-      RE.right<ParserEnv, string, Comment>(parseComment(text)),
-      RE.bindTo('comment'),
+      RE.Do,
+      RE.bind('comment', () => RE.right(parseComment(text))),
       RE.bind('since', ({ comment }) => getSinceTag(name, comment)),
       RE.bind('category', ({ comment }) => getCategoryTag(name, comment)),
       RE.bind('description', ({ comment }) => getDescription(name, comment)),
@@ -267,7 +269,7 @@ const parseInterfaceDeclaration = (id: ast.InterfaceDeclaration): ParserEffect<I
  * @since 0.9.0
  */
 export const parseInterfaces: ParserEffect<ReadonlyArray<Interface>> = pipe(
-  RE.asks<ParserEnv, ReadonlyArray<ast.InterfaceDeclaration>, string>((env) =>
+  RE.asks((env: ParserEnv) =>
     pipe(
       env.sourceFile.getInterfaces(),
       RA.filter(
@@ -311,11 +313,11 @@ const getFunctionDeclarationJSDocs = (fd: ast.FunctionDeclaration): ReadonlyArra
 const parseFunctionDeclaration = (fd: ast.FunctionDeclaration): ParserEffect<Function> =>
   pipe(
     RE.ask<ParserEnv>(),
-    RE.chain<ParserEnv, string, ParserEnv, string>((env) =>
+    RE.flatMap((env: ParserEnv) =>
       pipe(
         Option.fromNullable(fd.getName()),
         Option.flatMap(Option.liftPredicate((name) => name.length > 0)),
-        RE.fromOption(() => `Missing function name in module ${env.path.join('/')}`)
+        RE.fromOption(() => [`Missing function name in module ${env.path.join('/')}`])
       )
     ),
     RE.flatMap((name) =>
@@ -358,7 +360,7 @@ const parseFunctionVariableDeclaration = (vd: ast.VariableDeclaration): ParserEf
 
 const getFunctionDeclarations: RE.ReaderEither<
   ParserEnv,
-  string,
+  ReadonlyArray<string>,
   {
     functions: ReadonlyArray<ast.FunctionDeclaration>
     arrows: ReadonlyArray<ast.VariableDeclaration>
@@ -425,7 +427,7 @@ export const parseFunctions: ParserEffect<ReadonlyArray<Function>> = pipe(
 
 const parseTypeAliasDeclaration = (ta: ast.TypeAliasDeclaration): ParserEffect<TypeAlias> =>
   pipe(
-    RE.of<ParserEnv, string, string>(ta.getName()),
+    RE.of<ParserEnv, ReadonlyArray<string>, string>(ta.getName()),
     RE.flatMap((name) =>
       pipe(
         getJSDocText(ta.getJsDocs()),
@@ -526,7 +528,7 @@ const parseExportSpecifier = (es: ast.ExportSpecifier): ParserEffect<Export> =>
     RE.ask<ParserEnv>(),
     RE.flatMap((env) =>
       pipe(
-        RE.of<ParserEnv, string, string>(es.compilerNode.name.text),
+        RE.of<ParserEnv, ReadonlyArray<string>, string>(es.compilerNode.name.text),
         RE.bindTo('name'),
         RE.bind('type', () => RE.of(stripImportTypes(es.getType().getText(es)))),
         RE.bind('signature', ({ name, type }) => RE.of(`export declare const ${name}: ${type}`)),
@@ -534,7 +536,7 @@ const parseExportSpecifier = (es: ast.ExportSpecifier): ParserEffect<Export> =>
           pipe(
             es.getLeadingCommentRanges(),
             RA.head,
-            RE.fromOption(() => `Missing ${name} documentation in ${env.path.join('/')}`),
+            RE.fromOption(() => [`Missing ${name} documentation in ${env.path.join('/')}`]),
             RE.flatMap((commentRange) => pipe(commentRange.getText(), getCommentInfo(name))),
             RE.map((info) =>
               Export(
@@ -582,7 +584,7 @@ const getMethodSignature = (md: ast.MethodDeclaration): string =>
 
 const parseMethod = (md: ast.MethodDeclaration): ParserEffect<Option.Option<Method>> =>
   pipe(
-    RE.of<ParserEnv, string, string>(md.getName()),
+    RE.of<ParserEnv, ReadonlyArray<string>, string>(md.getName()),
     RE.bindTo('name'),
     RE.bind('overloads', () => RE.of(md.getOverloads())),
     RE.bind('jsdocs', ({ overloads }) =>
@@ -683,10 +685,10 @@ export const getConstructorDeclarationSignature = (c: ast.ConstructorDeclaration
 const getClassName = (c: ast.ClassDeclaration): ParserEffect<string> =>
   pipe(
     RE.ask<ParserEnv>(),
-    RE.chain<ParserEnv, string, ParserEnv, string>((env) =>
+    RE.flatMap((env) =>
       pipe(
         Option.fromNullable(c.getName()),
-        RE.fromOption(() => `Missing class name in module ${env.path.join('/')}`)
+        RE.fromOption(() => [`Missing class name in module ${env.path.join('/')}`])
       )
     )
   )
@@ -767,7 +769,7 @@ export const parseModuleDocumentation: ParserEffect<Documentable> = pipe(
     ])
     const onMissingDocumentation = () =>
       isDocumentationRequired
-        ? Either.left(`Missing documentation in ${env.path.join('/')} module`)
+        ? Either.left([`Missing documentation in ${env.path.join('/')} module`])
         : Either.right(Documentable(name, Option.none(), Option.none(), false, RA.empty, Option.none()))
     return pipe(
       env.sourceFile.getStatements(),
@@ -778,7 +780,7 @@ export const parseModuleDocumentation: ParserEffect<Documentable> = pipe(
             pipe(
               getCommentInfo(name, true)(commentRange.getText())(env),
               // TODO
-              (e): Either.Either<string, CommentInfo> =>
+              (e): Either.Either<ReadonlyArray<string>, CommentInfo> =>
                 e._tag === 'Left' ? Either.left(e.left) : Either.right(e.right),
               Either.map((info) =>
                 Documentable(name, info.description, info.since, info.deprecated, info.examples, info.category)
@@ -819,7 +821,7 @@ export const parseModule: ParserEffect<Module> = pipe(
  */
 export const parseFile =
   (project: ast.Project) =>
-  (file: _.File): Effect.Effect<Config, string, Module> =>
+  (file: _.File): Effect.Effect<Config, ReadonlyArray<string>, Module> =>
     pipe(
       Config,
       Effect.flatMap(({ config }) => {
@@ -830,7 +832,7 @@ export const parseFile =
           // TODO
           return x._tag === 'Left' ? Either.left(x.left) : Either.right(x.right)
         }
-        return Either.left(`Unable to locate file: ${file.path}`)
+        return Either.left([`Unable to locate file: ${file.path}`])
       })
     )
 

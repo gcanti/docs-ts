@@ -21,7 +21,7 @@ export const main = pipe(
   ),
   Effect.catchAll((error) =>
     Effect.sync(() => {
-      console.error(chalk.bold.red(error.message))
+      console.error(chalk.red(error.message))
       process.exit(1)
     })
   )

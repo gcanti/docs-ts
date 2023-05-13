@@ -80,7 +80,7 @@ const writeFile = (file: _.File): Effect.Effect<Config, Error, void> =>
 const getModules = (files: ReadonlyArray<_.File>) =>
   pipe(
     Parser.parseFiles(files),
-    Effect.mapError((errors) => new Error(`[PARSE ERROR] ${errors.join('\n')}`))
+    Effect.mapError((errors) => new Error(`[PARSE ERROR] ${errors.map((errors) => errors.join('\n')).join('\n')}`))
   )
 
 // -------------------------------------------------------------------------------------

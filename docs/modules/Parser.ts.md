@@ -34,7 +34,7 @@ Added in v0.9.0
 **Signature**
 
 ```ts
-export interface ParserEffect<A> extends RE.ReaderEither<ParserEnv, string, A> {}
+export interface ParserEffect<A> extends RE.ReaderEither<ParserEnv, ReadonlyArray<string>, A> {}
 ```
 
 Added in v0.9.0
@@ -90,7 +90,9 @@ Added in v0.9.0
 **Signature**
 
 ```ts
-export declare const parseFiles: (files: ReadonlyArray<_.File>) => Effect.Effect<Config, string[], readonly Module[]>
+export declare const parseFiles: (
+  files: ReadonlyArray<_.File>
+) => Effect.Effect<Config, (readonly string[])[], readonly Module[]>
 ```
 
 Added in v0.9.0

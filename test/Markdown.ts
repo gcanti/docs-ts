@@ -68,7 +68,7 @@ const testCases = {
 }
 
 describe.concurrent('Markdown', () => {
-  const print = flow(_.fromPrintable, _.render, _.prettify)
+  const print = flow(_.fromPrintable, _.prettify)
 
   it('fromClass', () => {
     assert.strictEqual(

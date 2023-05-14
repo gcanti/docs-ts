@@ -1,14 +1,12 @@
 /**
  * @since 0.9.0
  */
-import { flow, pipe } from '@effect/data/Function'
+import { pipe } from '@effect/data/Function'
 import * as Option from '@effect/data/Option'
 import * as ReadonlyArray from '@effect/data/ReadonlyArray'
 import * as ReadonlyRecord from '@effect/data/ReadonlyRecord'
 import * as String from '@effect/data/String'
-import * as Monoid from '@effect/data/typeclass/Monoid'
 import * as Order from '@effect/data/typeclass/Order'
-import * as Semigroup from '@effect/data/typeclass/Semigroup'
 import * as Prettier from 'prettier'
 
 import * as Module from './Module'
@@ -18,134 +16,18 @@ const toc = require('markdown-toc')
 
 type Printable = Module.Class | Module.Constant | Module.Export | Module.Function | Module.Interface | Module.TypeAlias
 
-type Markdown = Bold | Fence | Header | Newline | Paragraph | PlainText | PlainTexts | Strikethrough
+const bold = (s: string) => `**${s}**`
 
-interface Bold {
-  readonly _tag: 'Bold'
-  readonly content: Markdown
-}
+const fence = (language: string, content: string) => '```' + language + '\n' + content + '\n' + '```\n\n'
 
-interface Fence {
-  readonly _tag: 'Fence'
-  readonly language: string
-  readonly content: Markdown
-}
+const paragraph = (...content: ReadonlyArray<string>) => '\n' + content.join('') + '\n\n'
 
-interface Header {
-  readonly _tag: 'Header'
-  readonly level: number
-  readonly content: Markdown
-}
-
-interface Newline {
-  readonly _tag: 'Newline'
-}
-
-interface Paragraph {
-  readonly _tag: 'Paragraph'
-  readonly content: Markdown
-}
-
-interface PlainText {
-  readonly _tag: 'PlainText'
-  readonly content: string
-}
-
-interface PlainTexts {
-  readonly _tag: 'PlainTexts'
-  readonly content: ReadonlyArray<Markdown>
-}
-
-interface Strikethrough {
-  readonly _tag: 'Strikethrough'
-  readonly content: Markdown
-}
-
-const createBold = (content: Markdown): Markdown => ({
-  _tag: 'Bold',
-  content
-})
-
-const createFence = (language: string, content: Markdown): Markdown => ({
-  _tag: 'Fence',
-  language,
-  content
-})
+const strikethrough = (content: string) => `~~${content}~~`
 
 const createHeader =
   (level: number) =>
-  (content: Markdown): Markdown => ({
-    _tag: 'Header',
-    level,
-    content
-  })
-
-const Newline: Markdown = {
-  _tag: 'Newline'
-}
-
-const createParagraph = (...contents: ReadonlyArray<Markdown>): Markdown => ({
-  _tag: 'Paragraph',
-  content: monoidMarkdown.combineAll(contents)
-})
-
-const createPlainText = (content: string): Markdown => ({
-  _tag: 'PlainText',
-  content
-})
-
-const createPlainTexts = (content: ReadonlyArray<Markdown>): Markdown => ({
-  _tag: 'PlainTexts',
-  content
-})
-
-const createStrikethrough = (content: Markdown): Markdown => ({
-  _tag: 'Strikethrough',
-  content
-})
-
-const isEmpty = (markdown: Markdown) => markdown._tag === 'PlainText' && markdown.content === ''
-
-const monoidMarkdown: Monoid.Monoid<Markdown> = Monoid.fromSemigroup(
-  Semigroup.make((x, y) => (isEmpty(x) ? y : isEmpty(y) ? x : createPlainTexts([x, y]))),
-  createPlainText('')
-)
-
-const match =
-  <R>(patterns: {
-    readonly Bold: (content: Markdown) => R
-    readonly Fence: (language: string, content: Markdown) => R
-    readonly Header: (level: number, content: Markdown) => R
-    readonly Newline: () => R
-    readonly Paragraph: (content: Markdown) => R
-    readonly PlainText: (content: string) => R
-    readonly PlainTexts: (content: ReadonlyArray<Markdown>) => R
-    readonly Strikethrough: (content: Markdown) => R
-  }) =>
-  (markdown: Markdown): R => {
-    switch (markdown._tag) {
-      case 'Bold':
-        return patterns.Bold(markdown.content)
-      case 'Fence':
-        return patterns.Fence(markdown.language, markdown.content)
-      case 'Header':
-        return patterns.Header(markdown.level, markdown.content)
-      case 'Newline':
-        return patterns.Newline()
-      case 'Paragraph':
-        return patterns.Paragraph(markdown.content)
-      case 'PlainText':
-        return patterns.PlainText(markdown.content)
-      case 'PlainTexts':
-        return patterns.PlainTexts(markdown.content)
-      case 'Strikethrough':
-        return patterns.Strikethrough(markdown.content)
-    }
-  }
-
-const CRLF: Markdown = createPlainTexts(ReadonlyArray.replicate(Newline, 2))
-
-const intercalateCRLF: (xs: ReadonlyArray<Markdown>) => Markdown = ReadonlyArray.intercalate(monoidMarkdown)(CRLF)
+  (content: string): string =>
+    '#'.repeat(level) + ' ' + content + '\n\n'
 
 const h1 = createHeader(1)
 
@@ -153,53 +35,35 @@ const h2 = createHeader(2)
 
 const h3 = createHeader(3)
 
-const ts = (code: string) => createFence('ts', createPlainText(code))
-
-const getSince: (v: Option.Option<string>) => Markdown = Option.match(
-  () => monoidMarkdown.empty,
-  (v) => monoidMarkdown.combineAll([CRLF, createPlainText(`Added in v${v}`)])
+const getSince: (v: Option.Option<string>) => string = Option.match(
+  () => '',
+  (v) => paragraph(`Added in v${v}`)
 )
 
-const getTitle = (s: string, deprecated: boolean, type?: string): Markdown => {
-  const title = s.trim() === 'hasOwnProperty' ? `${s} (function)` : s
-  const markdownTitle = deprecated ? createStrikethrough(createPlainText(title)) : createPlainText(title)
+const getTitle = (s: string, deprecated: boolean, type?: string): string => {
+  const name = s.trim() === 'hasOwnProperty' ? `${s} (function)` : s
+  const title = deprecated ? strikethrough(name) : name
   return pipe(
     Option.fromNullable(type),
     Option.match(
-      () => markdownTitle,
-      (t) => monoidMarkdown.combineAll([markdownTitle, createPlainText(` ${t}`)])
+      () => title,
+      (t) => title + ` ${t}`
     )
   )
 }
 
-const getDescription: (d: Option.Option<string>) => Markdown = flow(
-  Option.match(() => monoidMarkdown.empty, createPlainText),
-  createParagraph
-)
+const getDescription = (d: Option.Option<string>): string => paragraph(Option.getOrElse(d, () => ''))
 
-const getSignature = (s: string): Markdown =>
-  pipe(
-    ReadonlyArray.of(ts(s)),
-    ReadonlyArray.prepend(createParagraph(createBold(createPlainText('Signature')))),
-    monoidMarkdown.combineAll
-  )
+const getSignature = (s: string): string => paragraph(bold('Signature')) + paragraph(fence('ts', s))
 
-const getSignatures = (ss: ReadonlyArray<string>): Markdown =>
-  pipe(
-    ReadonlyArray.of(ts(ss.join('\n'))),
-    ReadonlyArray.prepend(createParagraph(createBold(createPlainText('Signature')))),
-    monoidMarkdown.combineAll
-  )
+const getSignatures = (ss: ReadonlyArray<string>): string =>
+  paragraph(bold('Signature')) + paragraph(fence('ts', ss.join('\n')))
 
-const getExamples: (es: ReadonlyArray<string>) => Markdown = flow(
-  ReadonlyArray.map((code) =>
-    pipe(ReadonlyArray.of(ts(code)), ReadonlyArray.prepend(createBold(createPlainText('Example'))), intercalateCRLF)
-  ),
-  intercalateCRLF
-)
+const getExamples = (es: ReadonlyArray<string>): string =>
+  es.map((code) => paragraph(bold('Example')) + paragraph(fence('ts', code))).join('\n\n')
 
-const getStaticMethod = (m: Module.Method): Markdown =>
-  createParagraph(
+const getStaticMethod = (m: Module.Method): string =>
+  paragraph(
     h3(getTitle(m.name, m.deprecated, '(static method)')),
     getDescription(m.description),
     getSignatures(m.signatures),
@@ -207,8 +71,8 @@ const getStaticMethod = (m: Module.Method): Markdown =>
     getSince(m.since)
   )
 
-const getMethod = (m: Module.Method): Markdown =>
-  createParagraph(
+const getMethod = (m: Module.Method): string =>
+  paragraph(
     h3(getTitle(m.name, m.deprecated, '(method)')),
     getDescription(m.description),
     getSignatures(m.signatures),
@@ -216,8 +80,8 @@ const getMethod = (m: Module.Method): Markdown =>
     getSince(m.since)
   )
 
-const getProperty = (p: Module.Property): Markdown =>
-  createParagraph(
+const getProperty = (p: Module.Property): string =>
+  paragraph(
     h3(getTitle(p.name, p.deprecated, '(property)')),
     getDescription(p.description),
     getSignature(p.signature),
@@ -225,45 +89,29 @@ const getProperty = (p: Module.Property): Markdown =>
     getSince(p.since)
   )
 
-const getStaticMethods: (ms: ReadonlyArray<Module.Method>) => Markdown = flow(
-  ReadonlyArray.map(getStaticMethod),
-  intercalateCRLF
-)
+const getStaticMethods = (methods: ReadonlyArray<Module.Method>): string =>
+  ReadonlyArray.map(methods, (method) => getStaticMethod(method) + '\n\n').join('')
 
-const getMethods: (methods: ReadonlyArray<Module.Method>) => Markdown = flow(
-  ReadonlyArray.map(getMethod),
-  intercalateCRLF
-)
+const getMethods = (methods: ReadonlyArray<Module.Method>): string =>
+  ReadonlyArray.map(methods, (method) => getMethod(method) + '\n\n').join('')
 
-const getProperties: (properties: ReadonlyArray<Module.Property>) => Markdown = flow(
-  ReadonlyArray.map(getProperty),
-  intercalateCRLF
-)
+const getProperties = (properties: ReadonlyArray<Module.Property>): string =>
+  ReadonlyArray.map(properties, (property) => getProperty(property) + '\n\n').join('')
 
-const getModuleDescription = (module: Module.Module): Markdown =>
-  createParagraph(
-    createParagraph(h2(getTitle(module.name, module.deprecated, 'overview'))),
+const getModuleDescription = (module: Module.Module): string =>
+  paragraph(
+    h2(getTitle(module.name, module.deprecated, 'overview')),
     getDescription(module.description),
     getExamples(module.examples),
     getSince(module.since)
   )
 
-const getMeta = (title: string, order: number): Markdown =>
-  createParagraph(
-    createPlainText('---'),
-    Newline,
-    createPlainText(`title: ${title}`),
-    Newline,
-    createPlainText(`nav_order: ${order}`),
-    Newline,
-    createPlainText(`parent: Modules`),
-    Newline,
-    createPlainText('---')
-  )
+const getMeta = (title: string, order: number): string =>
+  paragraph('---', `\n`, `title: ${title}`, `\n`, `nav_order: ${order}`, `\n`, `parent: Modules`, `\n`, '---')
 
-const fromClass = (c: Module.Class): Markdown =>
-  createParagraph(
-    createParagraph(
+const fromClass = (c: Module.Class): string =>
+  paragraph(
+    paragraph(
       h2(getTitle(c.name, c.deprecated, '(class)')),
       getDescription(c.description),
       getSignature(c.signature),
@@ -275,8 +123,8 @@ const fromClass = (c: Module.Class): Markdown =>
     getProperties(c.properties)
   )
 
-const fromConstant = (c: Module.Constant): Markdown =>
-  createParagraph(
+const fromConstant = (c: Module.Constant): string =>
+  paragraph(
     h2(getTitle(c.name, c.deprecated)),
     getDescription(c.description),
     getSignature(c.signature),
@@ -284,8 +132,8 @@ const fromConstant = (c: Module.Constant): Markdown =>
     getSince(c.since)
   )
 
-const fromExport = (e: Module.Export): Markdown =>
-  createParagraph(
+const fromExport = (e: Module.Export): string =>
+  paragraph(
     h2(getTitle(e.name, e.deprecated)),
     getDescription(e.description),
     getSignature(e.signature),
@@ -293,8 +141,8 @@ const fromExport = (e: Module.Export): Markdown =>
     getSince(e.since)
   )
 
-const fromFunction = (f: Module.Function): Markdown =>
-  createParagraph(
+const fromFunction = (f: Module.Function): string =>
+  paragraph(
     h2(getTitle(f.name, f.deprecated)),
     getDescription(f.description),
     getSignatures(f.signatures),
@@ -302,8 +150,8 @@ const fromFunction = (f: Module.Function): Markdown =>
     getSince(f.since)
   )
 
-const fromInterface = (i: Module.Interface): Markdown =>
-  createParagraph(
+const fromInterface = (i: Module.Interface): string =>
+  paragraph(
     h2(getTitle(i.name, i.deprecated, '(interface)')),
     getDescription(i.description),
     getSignature(i.signature),
@@ -311,8 +159,8 @@ const fromInterface = (i: Module.Interface): Markdown =>
     getSince(i.since)
   )
 
-const fromTypeAlias = (ta: Module.TypeAlias): Markdown =>
-  createParagraph(
+const fromTypeAlias = (ta: Module.TypeAlias): string =>
+  paragraph(
     h2(getTitle(ta.name, ta.deprecated, '(type alias)')),
     getDescription(ta.description),
     getSignature(ta.signature),
@@ -321,7 +169,7 @@ const fromTypeAlias = (ta: Module.TypeAlias): Markdown =>
   )
 
 /** @internal */
-export const fromPrintable = (p: Printable): Markdown => {
+export const fromPrintable = (p: Printable): string => {
   switch (p._tag) {
     case 'Class':
       return fromClass(p)
@@ -355,9 +203,9 @@ const getPrintables = (module: Module.Module): ReadonlyArray<Printable> =>
 export const printModule = (module: Module.Module, order: number): string => {
   const DEFAULT_CATEGORY = 'utils'
 
-  const header = render(getMeta(module.path.slice(1).join('/'), order))
+  const header = getMeta(module.path.slice(1).join('/'), order)
 
-  const description = render(createParagraph(getModuleDescription(module)))
+  const description = paragraph(getModuleDescription(module))
 
   const content = pipe(
     getPrintables(module),
@@ -371,15 +219,13 @@ export const printModule = (module: Module.Module, order: number): string => {
     ReadonlyArray.sort(Order.contramap(String.Order, ([category]: [string, unknown]) => category)),
     ReadonlyArray.map(([category, printables]) =>
       [
-        h1(createPlainText(category)),
+        h1(category),
         ...pipe(
           printables,
           ReadonlyArray.sort(Order.contramap(String.Order, (printable: Printable) => printable.name)),
           ReadonlyArray.map(fromPrintable)
         )
-      ]
-        .map(render)
-        .join('\n')
+      ].join('\n')
     )
   ).join('\n')
 
@@ -388,28 +234,6 @@ export const printModule = (module: Module.Module, order: number): string => {
 
   return prettify([header, description, '---\n', tableOfContents(content), '---\n', content].join('\n'))
 }
-
-const bold = (s: string) => `**${s}**`
-
-const header = (level: number, content: string) => `\n${'#'.repeat(level)} ${content}\n\n`
-
-const fence = (language: string, content: string) => '```' + language + '\n' + content + '\n' + '```\n\n'
-
-const paragraph = (content: string) => '\n' + content + '\n\n'
-
-const strikethrough = (content: string) => `~~${content}~~`
-
-/** @internal */
-export const render: (markdown: Markdown) => string = match({
-  Bold: (content) => bold(render(content)),
-  Header: (level, content) => header(level, render(content)),
-  Fence: (language, content) => fence(language, render(content)),
-  Newline: () => '\n',
-  Paragraph: (content) => paragraph(render(content)),
-  PlainText: (content) => content,
-  PlainTexts: ReadonlyArray.combineMap(String.Monoid)((markdown) => render(markdown)),
-  Strikethrough: (content) => strikethrough(render(content))
-})
 
 const defaultPrettierOptions: Prettier.Options = {
   parser: 'markdown',

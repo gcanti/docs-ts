@@ -1,3 +1,4 @@
+import { flow } from '@effect/data/Function'
 import * as Option from '@effect/data/Option'
 import * as assert from 'assert'
 
@@ -86,7 +87,7 @@ describe.concurrent('Markdown', () => {
     })
 
     it('Header', () => {
-      assert.deepStrictEqual(_.createHeader(1, content), {
+      assert.deepStrictEqual(_.createHeader(1)(content), {
         _tag: 'Header',
         level: 1,
         content
@@ -144,16 +145,12 @@ describe.concurrent('Markdown', () => {
 
       assert.strictEqual(match(_.createBold(content)), 'Bold(a)')
       assert.strictEqual(match(_.createFence('ts', content)), 'Fence(ts, a)')
-      assert.strictEqual(match(_.createHeader(1, content)), 'Header(1, a)')
+      assert.strictEqual(match(_.createHeader(1)(content)), 'Header(1, a)')
       assert.strictEqual(match(_.Newline), 'Newline')
       assert.strictEqual(match(_.createParagraph(content)), 'Paragraph(a)')
       assert.strictEqual(match(_.createPlainText('a')), 'a')
       assert.strictEqual(match(_.createPlainTexts([content])), 'PlainTexts([a])')
       assert.strictEqual(match(_.createStrikethrough(content)), 'Strikethrough(a)')
-      assert.throws(() => {
-        // @ts-expect-error - valid Markdown instance required
-        match({})
-      })
     })
   })
 
@@ -179,54 +176,14 @@ describe.concurrent('Markdown', () => {
         ]
       })
     })
-
-    it('prettify', () => {
-      // Prettier will add a trailing newline to the document so `a` becomes `\n`
-      // and strips extra trailing newlines so `\n\n` becomes `\n`
-      assert.strictEqual(_.prettify(_.createBold(content)), '**a**\n')
-      assert.strictEqual(_.prettify(_.createHeader(1, content)), '# a\n')
-      assert.strictEqual(_.prettify(_.createHeader(2, content)), '## a\n')
-      assert.strictEqual(_.prettify(_.createHeader(3, content)), '### a\n')
-      assert.strictEqual(_.prettify(_.createFence('ts', content)), '```ts\na\n```\n')
-      assert.strictEqual(_.prettify(_.monoidMarkdown.combine(content, _.Newline)), 'a\n')
-      assert.strictEqual(_.prettify(_.createParagraph(content)), 'a\n')
-      assert.strictEqual(_.prettify(_.createPlainText('a')), 'a\n')
-      assert.strictEqual(_.prettify(_.createPlainTexts([content, _.Newline, content])), 'a\na\n')
-      assert.strictEqual(_.prettify(_.createStrikethrough(content)), '~~a~~\n')
-      assert.strictEqual(
-        _.prettify(
-          _.createPlainTexts([
-            _.createPlainText(''),
-            _.createBold(content),
-            _.createHeader(1, content),
-            _.createFence('ts', content),
-            _.Newline,
-            _.createParagraph(content),
-            _.createPlainText('a'),
-            _.createPlainTexts([content]),
-            _.createStrikethrough(content)
-          ])
-        ),
-        `**a**
-
-# a
-
-\`\`\`ts
-a
-\`\`\`
-
-a
-
-aa~~a~~
-`
-      )
-    })
   })
 
   describe.concurrent('printers', () => {
-    it('printClass', () => {
+    const print = flow(_.fromPrintable, _.render, _.prettify)
+
+    it('fromClass', () => {
       assert.strictEqual(
-        _.printClass(testCases.class),
+        print(testCases.class),
         `## A (class)
 
 a class
@@ -282,7 +239,7 @@ Added in v1.0.0
 
     it('printConstant', () => {
       assert.strictEqual(
-        _.printConstant(testCases.constant),
+        print(testCases.constant),
         `## test
 
 the test
@@ -300,7 +257,7 @@ Added in v1.0.0
 
     it('printExport', () => {
       assert.strictEqual(
-        _.printExport(testCases.export),
+        print(testCases.export),
         `## test
 
 **Signature**
@@ -316,7 +273,7 @@ Added in v1.0.0
 
     it('printFunction', () => {
       assert.strictEqual(
-        _.printFunction(testCases.function),
+        print(testCases.function),
         `## ~~func~~
 
 a function
@@ -340,7 +297,7 @@ Added in v1.0.0
 
     it('printInterface', () => {
       assert.strictEqual(
-        _.printInterface(testCases.interface),
+        print(testCases.interface),
         `## A (interface)
 
 **Signature**
@@ -356,7 +313,7 @@ Added in v1.0.0
 
     it('printTypeAlias', () => {
       assert.strictEqual(
-        _.printTypeAlias(testCases.typeAlias),
+        print(testCases.typeAlias),
         `## A (type alias)
 
 **Signature**
@@ -370,7 +327,7 @@ Added in v1.0.0
       )
 
       assert.strictEqual(
-        _.printTypeAlias({ ...testCases.typeAlias, since: Option.none() }),
+        print({ ...testCases.typeAlias, since: Option.none() }),
         `## A (type alias)
 
 **Signature**
@@ -384,19 +341,20 @@ export type A = number
 
     it('printModule', () => {
       const documentation = createDocumentable('tests', Option.none(), Option.some('1.0.0'), false, [], Option.none())
-      const m = createModule(
-        documentation,
-        ['src', 'tests.ts'],
-        [testCases.class],
-        [testCases.interface],
-        [testCases.function],
-        [testCases.typeAlias],
-        [testCases.constant],
-        [testCases.export]
-      )
-
       assert.strictEqual(
-        _.printModule(m, 1),
+        _.printModule(
+          createModule(
+            documentation,
+            ['src', 'tests.ts'],
+            [testCases.class],
+            [testCases.interface],
+            [testCases.function],
+            [testCases.typeAlias],
+            [testCases.constant],
+            [testCases.export]
+          ),
+          1
+        ),
         `---
 title: tests.ts
 nav_order: 1
@@ -421,8 +379,8 @@ Added in v1.0.0
 - [utils](#utils)
   - [A (interface)](#a-interface)
   - [A (type alias)](#a-type-alias)
-  - [test](#test-1)
   - [~~func~~](#func)
+  - [test](#test-1)
 
 ---
 
@@ -514,16 +472,6 @@ export type A = number
 
 Added in v1.0.0
 
-## test
-
-**Signature**
-
-\`\`\`ts
-export declare const test: typeof test
-\`\`\`
-
-Added in v1.0.0
-
 ## ~~func~~
 
 a function
@@ -538,6 +486,16 @@ declare const func: (test: string) => string
 
 \`\`\`ts
 example 1
+\`\`\`
+
+Added in v1.0.0
+
+## test
+
+**Signature**
+
+\`\`\`ts
+export declare const test: typeof test
 \`\`\`
 
 Added in v1.0.0

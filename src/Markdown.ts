@@ -16,17 +16,9 @@ import * as Module from './Module'
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const toc = require('markdown-toc')
 
-/** @internal */
-export type Printable =
-  | Module.Class
-  | Module.Constant
-  | Module.Export
-  | Module.Function
-  | Module.Interface
-  | Module.TypeAlias
+type Printable = Module.Class | Module.Constant | Module.Export | Module.Function | Module.Interface | Module.TypeAlias
 
-/** @internal */
-export type Markdown = Bold | Fence | Header | Newline | Paragraph | PlainText | PlainTexts | Strikethrough
+type Markdown = Bold | Fence | Header | Newline | Paragraph | PlainText | PlainTexts | Strikethrough
 
 interface Bold {
   readonly _tag: 'Bold'
@@ -69,21 +61,18 @@ interface Strikethrough {
   readonly content: Markdown
 }
 
-/** @internal */
-export const createBold = (content: Markdown): Markdown => ({
+const createBold = (content: Markdown): Markdown => ({
   _tag: 'Bold',
   content
 })
 
-/** @internal */
-export const createFence = (language: string, content: Markdown): Markdown => ({
+const createFence = (language: string, content: Markdown): Markdown => ({
   _tag: 'Fence',
   language,
   content
 })
 
-/** @internal */
-export const createHeader =
+const createHeader =
   (level: number) =>
   (content: Markdown): Markdown => ({
     _tag: 'Header',
@@ -91,45 +80,38 @@ export const createHeader =
     content
   })
 
-/** @internal */
-export const Newline: Markdown = {
+const Newline: Markdown = {
   _tag: 'Newline'
 }
 
-/** @internal */
-export const createParagraph = (...contents: ReadonlyArray<Markdown>): Markdown => ({
+const createParagraph = (...contents: ReadonlyArray<Markdown>): Markdown => ({
   _tag: 'Paragraph',
   content: monoidMarkdown.combineAll(contents)
 })
 
-/** @internal */
-export const createPlainText = (content: string): Markdown => ({
+const createPlainText = (content: string): Markdown => ({
   _tag: 'PlainText',
   content
 })
 
-/** @internal */
-export const createPlainTexts = (content: ReadonlyArray<Markdown>): Markdown => ({
+const createPlainTexts = (content: ReadonlyArray<Markdown>): Markdown => ({
   _tag: 'PlainTexts',
   content
 })
 
-/** @internal */
-export const createStrikethrough = (content: Markdown): Markdown => ({
+const createStrikethrough = (content: Markdown): Markdown => ({
   _tag: 'Strikethrough',
   content
 })
 
 const isEmpty = (markdown: Markdown) => markdown._tag === 'PlainText' && markdown.content === ''
 
-/** @internal */
-export const monoidMarkdown: Monoid.Monoid<Markdown> = Monoid.fromSemigroup(
+const monoidMarkdown: Monoid.Monoid<Markdown> = Monoid.fromSemigroup(
   Semigroup.make((x, y) => (isEmpty(x) ? y : isEmpty(y) ? x : createPlainTexts([x, y]))),
   createPlainText('')
 )
 
-/** @internal */
-export const match =
+const match =
   <R>(patterns: {
     readonly Bold: (content: Markdown) => R
     readonly Fence: (language: string, content: Markdown) => R

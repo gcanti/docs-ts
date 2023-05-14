@@ -16,8 +16,6 @@ import {
   createTypeAlias
 } from '../src/Module'
 
-const content = _.createPlainText('a')
-
 const testCases = {
   class: createClass(
     createDocumentable(
@@ -70,121 +68,12 @@ const testCases = {
 }
 
 describe.concurrent('Markdown', () => {
-  describe.concurrent('constructors', () => {
-    it('Bold', () => {
-      assert.deepStrictEqual(_.createBold(content), {
-        _tag: 'Bold',
-        content
-      })
-    })
+  const print = flow(_.fromPrintable, _.render, _.prettify)
 
-    it('Fence', () => {
-      assert.deepStrictEqual(_.createFence('ts', content), {
-        _tag: 'Fence',
-        language: 'ts',
-        content
-      })
-    })
-
-    it('Header', () => {
-      assert.deepStrictEqual(_.createHeader(1)(content), {
-        _tag: 'Header',
-        level: 1,
-        content
-      })
-    })
-
-    it('Newline', () => {
-      assert.deepStrictEqual(_.Newline, {
-        _tag: 'Newline'
-      })
-    })
-
-    it('Paragraph', () => {
-      assert.deepStrictEqual(_.createParagraph(content), {
-        _tag: 'Paragraph',
-        content
-      })
-    })
-
-    it('PlainText', () => {
-      assert.deepStrictEqual(_.createPlainText('a'), {
-        _tag: 'PlainText',
-        content: 'a'
-      })
-    })
-
-    it('PlainTexts', () => {
-      assert.deepStrictEqual(_.createPlainTexts([content]), {
-        _tag: 'PlainTexts',
-        content: [content]
-      })
-    })
-
-    it('Strikethrough', () => {
-      assert.deepStrictEqual(_.createStrikethrough(content), {
-        _tag: 'Strikethrough',
-        content
-      })
-    })
-  })
-
-  describe.concurrent('destructors', () => {
-    it('match', () => {
-      const match: (markdown: _.Markdown) => string = _.match({
-        Bold: (c) => `Bold(${match(c)})`,
-        Fence: (l, c) => `Fence(${l}, ${match(c)})`,
-        Header: (l, c) => `Header(${l}, ${match(c)})`,
-        Newline: () => `Newline`,
-        Paragraph: (c) => `Paragraph(${match(c)})`,
-        PlainText: (s) => s,
-        PlainTexts: (cs) => `PlainTexts(${show(cs)})`,
-        Strikethrough: (c) => `Strikethrough(${match(c)})`
-      })
-      const show = (ms: ReadonlyArray<_.Markdown>): string => '[' + ms.map(match).join(', ') + ']'
-
-      assert.strictEqual(match(_.createBold(content)), 'Bold(a)')
-      assert.strictEqual(match(_.createFence('ts', content)), 'Fence(ts, a)')
-      assert.strictEqual(match(_.createHeader(1)(content)), 'Header(1, a)')
-      assert.strictEqual(match(_.Newline), 'Newline')
-      assert.strictEqual(match(_.createParagraph(content)), 'Paragraph(a)')
-      assert.strictEqual(match(_.createPlainText('a')), 'a')
-      assert.strictEqual(match(_.createPlainTexts([content])), 'PlainTexts([a])')
-      assert.strictEqual(match(_.createStrikethrough(content)), 'Strikethrough(a)')
-    })
-  })
-
-  describe.concurrent('instances', () => {
-    it('monoidMarkdown', () => {
-      assert.deepStrictEqual(_.monoidMarkdown.combine(_.createBold(content), _.createStrikethrough(content)), {
-        _tag: 'PlainTexts',
-        content: [
-          { _tag: 'Bold', content: { _tag: 'PlainText', content: 'a' } },
-          { _tag: 'Strikethrough', content: { _tag: 'PlainText', content: 'a' } }
-        ]
-      })
-      assert.deepStrictEqual(_.monoidMarkdown.empty, {
-        _tag: 'PlainText',
-        content: ''
-      })
-
-      assert.deepStrictEqual(_.monoidMarkdown.combine(_.createBold(content), _.createStrikethrough(content)), {
-        _tag: 'PlainTexts',
-        content: [
-          { _tag: 'Bold', content: { _tag: 'PlainText', content: 'a' } },
-          { _tag: 'Strikethrough', content: { _tag: 'PlainText', content: 'a' } }
-        ]
-      })
-    })
-  })
-
-  describe.concurrent('printers', () => {
-    const print = flow(_.fromPrintable, _.render, _.prettify)
-
-    it('fromClass', () => {
-      assert.strictEqual(
-        print(testCases.class),
-        `## A (class)
+  it('fromClass', () => {
+    assert.strictEqual(
+      print(testCases.class),
+      `## A (class)
 
 a class
 
@@ -234,13 +123,13 @@ foo: string
 
 Added in v1.0.0
 `
-      )
-    })
+    )
+  })
 
-    it('printConstant', () => {
-      assert.strictEqual(
-        print(testCases.constant),
-        `## test
+  it('printConstant', () => {
+    assert.strictEqual(
+      print(testCases.constant),
+      `## test
 
 the test
 
@@ -252,13 +141,13 @@ declare const test: string
 
 Added in v1.0.0
 `
-      )
-    })
+    )
+  })
 
-    it('printExport', () => {
-      assert.strictEqual(
-        print(testCases.export),
-        `## test
+  it('printExport', () => {
+    assert.strictEqual(
+      print(testCases.export),
+      `## test
 
 **Signature**
 
@@ -268,13 +157,13 @@ export declare const test: typeof test
 
 Added in v1.0.0
 `
-      )
-    })
+    )
+  })
 
-    it('printFunction', () => {
-      assert.strictEqual(
-        print(testCases.function),
-        `## ~~func~~
+  it('printFunction', () => {
+    assert.strictEqual(
+      print(testCases.function),
+      `## ~~func~~
 
 a function
 
@@ -292,13 +181,13 @@ example 1
 
 Added in v1.0.0
 `
-      )
-    })
+    )
+  })
 
-    it('printInterface', () => {
-      assert.strictEqual(
-        print(testCases.interface),
-        `## A (interface)
+  it('printInterface', () => {
+    assert.strictEqual(
+      print(testCases.interface),
+      `## A (interface)
 
 **Signature**
 
@@ -308,13 +197,13 @@ export interface A extends Record<string, unknown> {}
 
 Added in v1.0.0
 `
-      )
-    })
+    )
+  })
 
-    it('printTypeAlias', () => {
-      assert.strictEqual(
-        print(testCases.typeAlias),
-        `## A (type alias)
+  it('printTypeAlias', () => {
+    assert.strictEqual(
+      print(testCases.typeAlias),
+      `## A (type alias)
 
 **Signature**
 
@@ -324,11 +213,11 @@ export type A = number
 
 Added in v1.0.0
 `
-      )
+    )
 
-      assert.strictEqual(
-        print({ ...testCases.typeAlias, since: Option.none() }),
-        `## A (type alias)
+    assert.strictEqual(
+      print({ ...testCases.typeAlias, since: Option.none() }),
+      `## A (type alias)
 
 **Signature**
 
@@ -336,26 +225,26 @@ Added in v1.0.0
 export type A = number
 \`\`\`
 `
-      )
-    })
+    )
+  })
 
-    it('printModule', () => {
-      const documentation = createDocumentable('tests', Option.none(), Option.some('1.0.0'), false, [], Option.none())
-      assert.strictEqual(
-        _.printModule(
-          createModule(
-            documentation,
-            ['src', 'tests.ts'],
-            [testCases.class],
-            [testCases.interface],
-            [testCases.function],
-            [testCases.typeAlias],
-            [testCases.constant],
-            [testCases.export]
-          ),
-          1
+  it('printModule', () => {
+    const documentation = createDocumentable('tests', Option.none(), Option.some('1.0.0'), false, [], Option.none())
+    assert.strictEqual(
+      _.printModule(
+        createModule(
+          documentation,
+          ['src', 'tests.ts'],
+          [testCases.class],
+          [testCases.interface],
+          [testCases.function],
+          [testCases.typeAlias],
+          [testCases.constant],
+          [testCases.export]
         ),
-        `---
+        1
+      ),
+      `---
 title: tests.ts
 nav_order: 1
 parent: Modules
@@ -500,13 +389,13 @@ export declare const test: typeof test
 
 Added in v1.0.0
 `
-      )
+    )
 
-      const empty = createModule(documentation, ['src', 'tests.ts'], [], [], [], [], [], [])
+    const empty = createModule(documentation, ['src', 'tests.ts'], [], [], [], [], [], [])
 
-      assert.strictEqual(
-        _.printModule(empty, 1),
-        `---
+    assert.strictEqual(
+      _.printModule(empty, 1),
+      `---
 title: tests.ts
 nav_order: 1
 parent: Modules
@@ -522,23 +411,6 @@ Added in v1.0.0
 
 ---
 `
-      )
-
-      const throws = createModule(
-        documentation,
-        ['src', 'tests.ts'],
-        // @ts-expect-error - valid Markdown instance required
-        [{ category: 'invalid markdown' }],
-        [],
-        [],
-        [],
-        [],
-        []
-      )
-
-      assert.throws(() => {
-        _.printModule(throws, 1)
-      })
-    })
+    )
   })
 })

@@ -12,6 +12,7 @@ import * as NodePath from 'path'
 import * as Domain from './Domain'
 import * as _ from './internal'
 import { printModule } from './Markdown'
+import * as NodeChildProcess from './NodeChildProcess'
 import * as Parser from './Parser'
 import * as Process from './Process'
 import { Config } from './Service'
@@ -176,7 +177,7 @@ const spawnTsNode = pipe(
   Effect.flatMap(([Config, cwd]) => {
     const command = process.platform === 'win32' ? 'ts-node.cmd' : 'ts-node'
     const executable = join(cwd, Config.config.outDir, 'examples', 'index.ts')
-    return _.spawn(command, executable)
+    return NodeChildProcess.spawn(command, executable)
   })
 )
 

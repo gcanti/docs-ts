@@ -5,6 +5,7 @@ import * as Effect from '@effect/io/Effect'
 import * as assert from 'assert'
 import * as ast from 'ts-morph'
 
+import * as FileSystem from '../src/FileSystem'
 import * as _ from '../src/internal'
 import * as Parser from '../src/Parser'
 import * as Service from '../src/Service'
@@ -1023,7 +1024,7 @@ export const foo = 'foo'`,
 
     describe.concurrent('parseFile', () => {
       it('should not parse a non-existent file', async () => {
-        const file = _.createFile('non-existent.ts', '')
+        const file = FileSystem.createFile('non-existent.ts', '')
         const project = new ast.Project({ useInMemoryFileSystem: true })
 
         assert.deepStrictEqual(

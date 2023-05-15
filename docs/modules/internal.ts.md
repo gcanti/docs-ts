@@ -1,6 +1,6 @@
 ---
 title: internal.ts
-nav_order: 5
+nav_order: 6
 parent: Modules
 ---
 
@@ -14,10 +14,6 @@ Added in v0.9.0
 
 - [Config](#config)
   - [Config (interface)](#config-interface)
-- [constructors](#constructors)
-  - [createFile](#createfile)
-- [model](#model)
-  - [File (interface)](#file-interface)
 
 ---
 
@@ -30,38 +26,6 @@ Added in v0.9.0
 ```ts
 export interface Config extends Schema.To<typeof ConfigSchema> {
   readonly projectName: string
-}
-```
-
-Added in v0.9.0
-
-# constructors
-
-## createFile
-
-By default files are readonly (`overwrite = false`).
-
-**Signature**
-
-```ts
-export declare const createFile: (path: string, content: string, overwrite?: boolean) => File
-```
-
-Added in v0.9.0
-
-# model
-
-## File (interface)
-
-Represents a file which can be optionally overwriteable.
-
-**Signature**
-
-```ts
-export interface File {
-  readonly path: string
-  readonly content: string
-  readonly overwrite: boolean
 }
 ```
 

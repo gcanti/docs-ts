@@ -18,7 +18,7 @@ import * as doctrine from 'doctrine'
 import * as ast from 'ts-morph'
 
 import * as Domain from './Domain'
-import * as _ from './internal'
+import * as FileSystem from './FileSystem'
 import * as Service from './Service'
 
 interface Comment {
@@ -866,7 +866,7 @@ export const parseModule = pipe(
  */
 export const parseFile =
   (project: ast.Project) =>
-  (file: _.File): Effect.Effect<Service.Config, Array<string>, Domain.Module> => {
+  (file: FileSystem.File): Effect.Effect<Service.Config, Array<string>, Domain.Module> => {
     const path = file.path.split(NodePath.sep) as any as ReadonlyArray.NonEmptyReadonlyArray<string>
     const sourceFile = project.getSourceFile(file.path)
     if (sourceFile !== undefined) {
@@ -881,7 +881,7 @@ export const parseFile =
     return Either.left([`Unable to locate file: ${file.path}`])
   }
 
-const createProject = (files: ReadonlyArray<_.File>) =>
+const createProject = (files: ReadonlyArray<FileSystem.File>) =>
   pipe(
     Service.Config,
     Effect.map(({ config }) => {
@@ -903,7 +903,7 @@ const createProject = (files: ReadonlyArray<_.File>) =>
  * @category parsers
  * @since 0.9.0
  */
-export const parseFiles = (files: ReadonlyArray<_.File>) =>
+export const parseFiles = (files: ReadonlyArray<FileSystem.File>) =>
   pipe(
     createProject(files),
     Effect.flatMap((project) =>

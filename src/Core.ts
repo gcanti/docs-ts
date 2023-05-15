@@ -10,6 +10,7 @@ import chalk from 'chalk'
 import * as NodePath from 'path'
 
 import * as Domain from './Domain'
+import * as FileSystem from './FileSystem'
 import * as _ from './internal'
 import * as Logger from './Logger'
 import { printModule } from './Markdown'
@@ -26,14 +27,16 @@ const join = (...paths: Array<string>): string => NodePath.normalize(NodePath.jo
 
 const readFiles = pipe(
   Config,
-  Effect.flatMap(({ config }) => _.glob(join(config.srcDir, '**', '*.ts'), config.exclude)),
+  Effect.flatMap(({ config }) => FileSystem.glob(join(config.srcDir, '**', '*.ts'), config.exclude)),
   Effect.tap((paths) => Logger.info(chalk.bold(`${paths.length} module(s) found`))),
   Effect.flatMap(
-    Effect.forEachPar((path) => Effect.map(_.readFile(path), (content) => _.createFile(path, content, false)))
+    Effect.forEachPar((path) =>
+      Effect.map(FileSystem.readFile(path), (content) => FileSystem.createFile(path, content, false))
+    )
   )
 )
 
-const writeFile = (file: _.File): Effect.Effect<Config, Error, void> =>
+const writeFile = (file: FileSystem.File): Effect.Effect<Config, Error, void> =>
   pipe(
     Effect.all(Config, Process.cwd),
     Effect.flatMap(([Config, cwd]) => {
@@ -41,14 +44,14 @@ const writeFile = (file: _.File): Effect.Effect<Config, Error, void> =>
 
       const overwrite = pipe(
         Logger.debug(`overwriting file ${chalk.black(fileName)}`),
-        Effect.flatMap(() => _.writeFile(file.path, file.content))
+        Effect.flatMap(() => FileSystem.writeFile(file.path, file.content))
       )
 
       const skip = Logger.debug(`file ${chalk.black(fileName)} already exists, skipping creation`)
 
-      const write = _.writeFile(file.path, file.content)
+      const write = FileSystem.writeFile(file.path, file.content)
 
-      return Effect.ifEffect(_.exists(file.path), file.overwrite ? overwrite : skip, write)
+      return Effect.ifEffect(FileSystem.exists(file.path), file.overwrite ? overwrite : skip, write)
     })
   )
 
@@ -56,7 +59,7 @@ const writeFile = (file: _.File): Effect.Effect<Config, Error, void> =>
 // parse
 // -------------------------------------------------------------------------------------
 
-const getModules = (files: ReadonlyArray<_.File>) =>
+const getModules = (files: ReadonlyArray<FileSystem.File>) =>
   pipe(
     Parser.parseFiles(files),
     Effect.mapError((errors) => new Error(`[PARSE ERROR] ${errors.map((errors) => errors.join('\n')).join('\n')}`))
@@ -82,7 +85,7 @@ const typeCheckExamples = (modules: ReadonlyArray<Domain.Module>) =>
     )
   )
 
-const combineAllFiles = ReadonlyArray.getMonoid<_.File>().combineAll
+const combineAllFiles = ReadonlyArray.getMonoid<FileSystem.File>().combineAll
 
 const getExampleFiles = (modules: ReadonlyArray<Domain.Module>) =>
   pipe(
@@ -95,11 +98,11 @@ const getExampleFiles = (modules: ReadonlyArray<Domain.Module>) =>
 
           const getDocumentableExamples =
             (id: string) =>
-            (documentable: Domain.Documentable): ReadonlyArray<_.File> =>
+            (documentable: Domain.Documentable): ReadonlyArray<FileSystem.File> =>
               pipe(
                 documentable.examples,
                 ReadonlyArray.map((content, i) =>
-                  _.createFile(
+                  FileSystem.createFile(
                     join(config.outDir, 'examples', `${prefix}-${id}-${documentable.name}-${i}.ts`),
                     `${content}\n`,
                     true
@@ -147,29 +150,29 @@ const replaceProjectName = (source: string) =>
     })
   )
 
-const handleImports = (files: ReadonlyArray<_.File>) =>
+const handleImports = (files: ReadonlyArray<FileSystem.File>) =>
   Effect.forEach(files, (file) =>
     pipe(
       replaceProjectName(file.content),
       Effect.map(addAssertImport),
-      Effect.map((content) => _.createFile(file.path, content, file.overwrite))
+      Effect.map((content) => FileSystem.createFile(file.path, content, file.overwrite))
     )
   )
 
-const getExampleIndex = (examples: ReadonlyArray<_.File>) => {
+const getExampleIndex = (examples: ReadonlyArray<FileSystem.File>) => {
   const content = pipe(
     examples,
     ReadonlyArray.combineMap(String.Monoid)((example) => `import './${NodePath.basename(example.path, '.ts')}'\n`)
   )
   return pipe(
     Config,
-    Effect.map(({ config }) => _.createFile(join(config.outDir, 'examples', 'index.ts'), `${content}\n`, true))
+    Effect.map(({ config }) => FileSystem.createFile(join(config.outDir, 'examples', 'index.ts'), `${content}\n`, true))
   )
 }
 
 const cleanExamples = pipe(
   Config,
-  Effect.flatMap(({ config }) => _.remove(join(config.outDir, 'examples')))
+  Effect.flatMap(({ config }) => FileSystem.remove(join(config.outDir, 'examples')))
 )
 
 const spawnTsNode = pipe(
@@ -182,10 +185,10 @@ const spawnTsNode = pipe(
   })
 )
 
-const writeFiles = (files: ReadonlyArray<_.File>): Effect.Effect<Config, Error, void> =>
+const writeFiles = (files: ReadonlyArray<FileSystem.File>): Effect.Effect<Config, Error, void> =>
   Effect.forEachDiscard(files, writeFile)
 
-const writeExamples = (examples: ReadonlyArray<_.File>) =>
+const writeExamples = (examples: ReadonlyArray<FileSystem.File>) =>
   pipe(
     Logger.debug('Writing examples...'),
     Effect.flatMap(() => getExampleIndex(examples)),
@@ -198,7 +201,7 @@ const writeTsConfigJson = pipe(
   Effect.flatMap(() => Effect.all(Config, Process.cwd)),
   Effect.flatMap(([Config, cwd]) =>
     writeFile(
-      _.createFile(
+      FileSystem.createFile(
         join(cwd, Config.config.outDir, 'examples', 'tsconfig.json'),
         JSON.stringify(
           {
@@ -234,7 +237,7 @@ const getMarkdown = (modules: ReadonlyArray<Domain.Module>) =>
 const getHome = pipe(
   Effect.all(Config, Process.cwd),
   Effect.map(([Config, cwd]) =>
-    _.createFile(
+    FileSystem.createFile(
       join(cwd, Config.config.outDir, 'index.md'),
       `---
 title: Home
@@ -249,7 +252,7 @@ nav_order: 1
 const getModulesIndex = pipe(
   Effect.all(Config, Process.cwd),
   Effect.map(([Config, cwd]) =>
-    _.createFile(
+    FileSystem.createFile(
       join(cwd, Config.config.outDir, 'modules', 'index.md'),
       `---
 title: Modules
@@ -288,15 +291,15 @@ const getConfigYML = pipe(
   Effect.flatMap(([Config, cwd]) => {
     const filePath = join(cwd, Config.config.outDir, '_config.yml')
     return pipe(
-      _.exists(filePath),
+      FileSystem.exists(filePath),
       Effect.flatMap((exists) =>
         exists
           ? pipe(
-              _.readFile(filePath),
-              Effect.map((content) => _.createFile(filePath, resolveConfigYML(content, Config.config), true))
+              FileSystem.readFile(filePath),
+              Effect.map((content) => FileSystem.createFile(filePath, resolveConfigYML(content, Config.config), true))
             )
           : Effect.succeed(
-              _.createFile(
+              FileSystem.createFile(
                 filePath,
                 `remote_theme: ${Config.config.theme}
 
@@ -327,7 +330,7 @@ const getModuleMarkdownFiles = (modules: ReadonlyArray<Domain.Module>) =>
       Effect.Do(),
       Effect.bind('outputPath', () => getMarkdownOutputPath(module)),
       Effect.bind('content', () => Effect.succeed(printModule(module, order + 1))),
-      Effect.map(({ content, outputPath }) => _.createFile(outputPath, content, true))
+      Effect.map(({ content, outputPath }) => FileSystem.createFile(outputPath, content, true))
     )
   )
 
@@ -335,12 +338,12 @@ const getModuleMarkdownFiles = (modules: ReadonlyArray<Domain.Module>) =>
 // writeMarkdown
 // -------------------------------------------------------------------------------------
 
-const writeMarkdown = (files: ReadonlyArray<_.File>) =>
+const writeMarkdown = (files: ReadonlyArray<FileSystem.File>) =>
   pipe(
     Config,
     Effect.map(({ config }) => join(config.outDir, '**/*.ts.md')),
     Effect.tap((pattern) => Logger.debug(`deleting ${chalk.black(pattern)}`)),
-    Effect.flatMap((pattern) => _.remove(pattern)),
+    Effect.flatMap((pattern) => FileSystem.remove(pattern)),
     Effect.flatMap(() => writeFiles(files))
   )
 

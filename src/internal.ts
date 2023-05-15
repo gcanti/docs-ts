@@ -10,106 +10,16 @@ import * as Effect from '@effect/io/Effect'
 import * as Schema from '@effect/schema/Schema'
 import * as TreeFormatter from '@effect/schema/TreeFormatter'
 import chalk from 'chalk'
-import * as fs from 'fs-extra'
-import * as Glob from 'glob'
-import * as rimraf from 'rimraf'
 
+import * as FileSystem from './FileSystem'
 import * as Logger from './Logger'
 import * as Process from './Process'
 import * as Service from './Service'
 
-// -------------------------------------------------------------------------------------
-// FileSystem
-// -------------------------------------------------------------------------------------
-
-/**
- * Represents a file which can be optionally overwriteable.
- *
- * @category model
- * @since 0.9.0
- */
-export interface File {
-  readonly path: string
-  readonly content: string
-  readonly overwrite: boolean
-}
-
-/**
- * By default files are readonly (`overwrite = false`).
- *
- * @category constructors
- * @since 0.9.0
- */
-export const createFile = (path: string, content: string, overwrite = false): File => ({
-  path,
-  content,
-  overwrite
-})
-
-/** @internal */
-export const readFile = (path: string): Effect.Effect<never, Error, string> =>
-  Effect.async((resume) =>
-    fs.readFile(path, 'utf8', (error, data) => {
-      if (error) {
-        resume(Effect.fail(error))
-      } else {
-        resume(Effect.succeed(data))
-      }
-    })
-  )
-
-/** @internal */
-export const writeFile = (path: string, content: string): Effect.Effect<never, Error, void> =>
-  Effect.async((resume) =>
-    fs.outputFile(path, content, { encoding: 'utf8' }, (error) => {
-      if (error) {
-        resume(Effect.fail(error))
-      } else {
-        resume(Effect.succeed(undefined))
-      }
-    })
-  )
-
-/** @internal */
-export const remove = (path: string): Effect.Effect<never, Error, void> =>
-  Effect.async((resume) =>
-    rimraf(path, {}, (error) => {
-      if (error) {
-        resume(Effect.fail(error))
-      } else {
-        resume(Effect.succeed(undefined))
-      }
-    })
-  )
-
-/** @internal */
-export const glob = (pattern: string, exclude: ReadonlyArray<string>): Effect.Effect<never, Error, Array<string>> =>
-  Effect.async((resume) =>
-    Glob(pattern, { ignore: exclude }, (error, data) => {
-      if (error) {
-        resume(Effect.fail(error))
-      } else {
-        resume(Effect.succeed(data))
-      }
-    })
-  )
-
-/** @internal */
-export const exists = (path: string): Effect.Effect<never, Error, boolean> =>
-  Effect.async((resume) =>
-    fs.pathExists(path, (error, data) => {
-      if (error) {
-        resume(Effect.fail(error))
-      } else {
-        resume(Effect.succeed(data))
-      }
-    })
-  )
-
 /** read a JSON file and parse the content */
 const readJsonFile = (path: string): Effect.Effect<never, Error, unknown> =>
   pipe(
-    readFile(path),
+    FileSystem.readFile(path),
     Effect.flatMap(Either.liftThrowable(JSON.parse, (e) => (e instanceof Error ? e : new Error(String(e)))))
   )
 
@@ -166,7 +76,7 @@ const getConfigPath = Effect.map(Process.cwd, (cwd) => NodePath.join(cwd, 'docs-
 
 const loadConfig = pipe(
   Effect.ifEffect(
-    Effect.flatMap(getConfigPath, exists),
+    Effect.flatMap(getConfigPath, FileSystem.exists),
     pipe(
       Logger.info(chalk.bold('Configuration file found')),
       Effect.flatMap(() => getConfigPath),

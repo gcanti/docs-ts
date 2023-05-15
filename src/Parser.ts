@@ -77,10 +77,13 @@ const getJSDocText: (jsdocs: ReadonlyArray<ast.JSDoc>) => string = ReadonlyArray
   (_, last) => last.getText()
 )
 
-const shouldIgnore: Predicate<Comment> = some([
-  (comment) => pipe(comment.tags, ReadonlyRecord.get('internal'), Option.isSome),
-  (comment) => pipe(comment.tags, ReadonlyRecord.get('ignore'), Option.isSome)
-])
+const hasTag = (tag: string) => (comment: Comment) => pipe(comment.tags, ReadonlyRecord.get(tag), Option.isSome)
+
+const hasInternalTag = hasTag('internal')
+
+const hasIgnoreTag = hasTag('ignore')
+
+const shouldIgnore: Predicate<Comment> = some([hasInternalTag, hasIgnoreTag])
 
 const isVariableDeclarationList = (
   u: ast.VariableDeclarationList | ast.CatchClause
@@ -90,14 +93,10 @@ const isVariableStatement = (
   u: ast.VariableStatement | ast.ForStatement | ast.ForOfStatement | ast.ForInStatement
 ): u is ast.VariableStatement => u.getKind() === ast.ts.SyntaxKind.VariableStatement
 
-// -------------------------------------------------------------------------------------
-// comments
-// -------------------------------------------------------------------------------------
-
-const missing = (what: string, path: ReadonlyArray<string>, name: string): string =>
+const getMissingError = (what: string, path: ReadonlyArray<string>, name: string): string =>
   `Missing ${chalk.bold(what)} in ${chalk.bold(path.join('/') + '#' + name)} documentation`
 
-const missingTag = (tag: string, path: ReadonlyArray<string>, name: string): string =>
+const getMissingTagError = (tag: string, path: ReadonlyArray<string>, name: string): string =>
   `Missing ${chalk.bold(tag)} tag in ${chalk.bold(path.join('/') + '#' + name)} documentation`
 
 const getSinceTag = (name: string, comment: Comment) =>
@@ -111,7 +110,7 @@ const getSinceTag = (name: string, comment: Comment) =>
         Option.match(
           () =>
             Config.config.enforceVersion
-              ? Either.left([missingTag('@since', Source.path, name)])
+              ? Either.left(getMissingTagError('@since', Source.path, name))
               : Either.right(Option.none()),
           (since) => Either.right(Option.some(since))
         )
@@ -127,9 +126,9 @@ const getCategoryTag = (name: string, comment: Comment) =>
         comment.tags,
         ReadonlyRecord.get('category'),
         Option.flatMap(ReadonlyArray.headNonEmpty),
-        Either.liftPredicate(not(every([Option.isNone, () => ReadonlyRecord.has(comment.tags, 'category')])), () => [
-          missingTag('@category', Source.path, name)
-        ])
+        Either.liftPredicate(not(every([Option.isNone, () => ReadonlyRecord.has(comment.tags, 'category')])), () =>
+          getMissingTagError('@category', Source.path, name)
+        )
       )
     )
   )
@@ -143,7 +142,7 @@ const getDescription = (name: string, comment: Comment) =>
         Option.match(
           () =>
             Config.config.enforceDescriptions
-              ? Either.left([missing('description', Source.path, name)])
+              ? Either.left(getMissingError('description', Source.path, name))
               : Either.right(Option.none()),
           (description) => Either.right(Option.some(description))
         )
@@ -162,7 +161,7 @@ const getExamples = (name: string, comment: Comment, isModule: boolean) =>
         Option.match(
           () =>
             Boolean.MonoidEvery.combineAll([Config.config.enforceExamples, !isModule])
-              ? Either.left([missingTag('@example', Source.path, name)])
+              ? Either.left(getMissingTagError('@example', Source.path, name))
               : Either.right([]),
           (examples) =>
             Boolean.MonoidEvery.combineAll([
@@ -170,7 +169,7 @@ const getExamples = (name: string, comment: Comment, isModule: boolean) =>
               ReadonlyArray.isEmptyArray(examples),
               !isModule
             ])
-              ? Either.left([missingTag('@example', Source.path, name)])
+              ? Either.left(getMissingTagError('@example', Source.path, name))
               : Either.right(examples.slice())
         )
       )
@@ -255,11 +254,7 @@ export const parseInterfaces = pipe(
     )
   ),
   Effect.flatMap((interfaceDeclarations) =>
-    pipe(
-      interfaceDeclarations,
-      Effect.validateAll(parseInterfaceDeclaration),
-      Effect.mapBoth(ReadonlyArray.flatten, ReadonlyArray.sort(byName))
-    )
+    pipe(interfaceDeclarations, Effect.validateAll(parseInterfaceDeclaration), Effect.map(ReadonlyArray.sort(byName)))
   )
 )
 
@@ -297,7 +292,7 @@ const parseFunctionDeclaration = (fd: ast.FunctionDeclaration) =>
       pipe(
         Option.fromNullable(fd.getName()),
         Option.flatMap(Option.liftPredicate((name) => name.length > 0)),
-        Option.toEither(() => [`Missing function name in module ${Source.path.join('/')}`])
+        Option.toEither(() => `Missing function name in module ${Source.path.join('/')}`)
       )
     ),
     Effect.flatMap((name) =>
@@ -397,18 +392,10 @@ export const parseFunctions = pipe(
   Effect.Do(),
   Effect.bind('getFunctionDeclarations', () => getFunctionDeclarations),
   Effect.bind('functionDeclarations', ({ getFunctionDeclarations }) =>
-    pipe(
-      getFunctionDeclarations.functions,
-      Effect.validateAll(parseFunctionDeclaration),
-      Effect.mapError(ReadonlyArray.flatten)
-    )
+    pipe(getFunctionDeclarations.functions, Effect.validateAll(parseFunctionDeclaration))
   ),
   Effect.bind('variableDeclarations', ({ getFunctionDeclarations }) =>
-    pipe(
-      getFunctionDeclarations.arrows,
-      Effect.validateAll(parseFunctionVariableDeclaration),
-      Effect.mapError(ReadonlyArray.flatten)
-    )
+    pipe(getFunctionDeclarations.arrows, Effect.validateAll(parseFunctionVariableDeclaration))
   ),
   Effect.map(({ functionDeclarations, variableDeclarations }) => functionDeclarations.concat(variableDeclarations))
 )
@@ -458,9 +445,7 @@ export const parseTypeAliases = pipe(
       )
     )
   ),
-  Effect.flatMap((typeAliasDeclarations) =>
-    pipe(typeAliasDeclarations, Effect.validateAll(parseTypeAliasDeclaration), Effect.mapError(ReadonlyArray.flatten))
-  ),
+  Effect.flatMap((typeAliasDeclarations) => pipe(typeAliasDeclarations, Effect.validateAll(parseTypeAliasDeclaration))),
   Effect.map(ReadonlyArray.sort(byName))
 )
 
@@ -520,11 +505,7 @@ export const parseConstants = pipe(
     )
   ),
   Effect.flatMap((variableDeclarations) =>
-    pipe(
-      variableDeclarations,
-      Effect.validateAll(parseConstantVariableDeclaration),
-      Effect.mapError(ReadonlyArray.flatten)
-    )
+    pipe(variableDeclarations, Effect.validateAll(parseConstantVariableDeclaration))
   )
 )
 
@@ -545,7 +526,7 @@ const parseExportSpecifier = (es: ast.ExportSpecifier) =>
           pipe(
             es.getLeadingCommentRanges(),
             ReadonlyArray.head,
-            Option.toEither(() => [`Missing ${name} documentation in ${Source.path.join('/')}`]),
+            Option.toEither(() => `Missing ${name} documentation in ${Source.path.join('/')}`),
             Effect.flatMap((commentRange) => pipe(commentRange.getText(), getCommentInfo(name))),
             Effect.map((info) =>
               Domain.createExport(
@@ -567,7 +548,7 @@ const parseExportSpecifier = (es: ast.ExportSpecifier) =>
   )
 
 const parseExportDeclaration = (ed: ast.ExportDeclaration) =>
-  pipe(ed.getNamedExports(), Effect.validateAll(parseExportSpecifier), Effect.mapError(ReadonlyArray.flatten))
+  pipe(ed.getNamedExports(), Effect.validateAll(parseExportSpecifier))
 
 /**
  * @category parsers
@@ -576,10 +557,8 @@ const parseExportDeclaration = (ed: ast.ExportDeclaration) =>
 export const parseExports = pipe(
   Service.Source,
   Effect.map((Source) => Source.sourceFile.getExportDeclarations()),
-  Effect.flatMap((exportDeclarations) =>
-    pipe(exportDeclarations, Effect.validateAll(parseExportDeclaration), Effect.mapError(ReadonlyArray.flatten))
-  ),
-  Effect.map(ReadonlyArray.flatten)
+  Effect.flatMap((exportDeclarations) => pipe(exportDeclarations, Effect.validateAll(parseExportDeclaration))),
+  Effect.mapBoth(ReadonlyArray.flatten, ReadonlyArray.flatten)
 )
 
 // -------------------------------------------------------------------------------------
@@ -687,8 +666,7 @@ const parseProperties = (name: string, c: ast.ClassDeclaration) =>
         (prop) => pipe(prop.getJsDocs(), not(flow(getJSDocText, parseComment, shouldIgnore)))
       ])
     ),
-    (propertyDeclarations) =>
-      pipe(propertyDeclarations, Effect.validateAll(parseProperty(name)), Effect.mapError(ReadonlyArray.flatten))
+    (propertyDeclarations) => pipe(propertyDeclarations, Effect.validateAll(parseProperty(name)))
   )
 
 /**
@@ -712,7 +690,7 @@ const getClassName = (c: ast.ClassDeclaration) =>
     Effect.flatMap((Source) =>
       pipe(
         Option.fromNullable(c.getName()),
-        Option.toEither(() => [`Missing class name in module ${Source.path.join('/')}`])
+        Option.toEither(() => `Missing class name in module ${Source.path.join('/')}`)
       )
     )
   )
@@ -738,22 +716,14 @@ const getClassDeclarationSignature = (name: string, c: ast.ClassDeclaration) =>
 const parseClass = (c: ast.ClassDeclaration) =>
   pipe(
     Effect.Do(),
-    Effect.bind('name', () => getClassName(c)),
-    Effect.bind('info', ({ name }) => getClassCommentInfo(name, c)),
+    Effect.bind('name', () => Effect.mapError(getClassName(c), (e) => [e])),
+    Effect.bind('info', ({ name }) => Effect.mapError(getClassCommentInfo(name, c), (e) => [e])),
     Effect.bind('signature', ({ name }) => getClassDeclarationSignature(name, c)),
     Effect.bind('methods', () =>
-      pipe(
-        c.getInstanceMethods(),
-        Effect.validateAll(parseMethod),
-        Effect.mapBoth(ReadonlyArray.flatten, ReadonlyArray.compact)
-      )
+      pipe(c.getInstanceMethods(), Effect.validateAll(parseMethod), Effect.map(ReadonlyArray.compact))
     ),
     Effect.bind('staticMethods', () =>
-      pipe(
-        c.getStaticMethods(),
-        Effect.validateAll(parseMethod),
-        Effect.mapBoth(ReadonlyArray.flatten, ReadonlyArray.compact)
-      )
+      pipe(c.getStaticMethods(), Effect.validateAll(parseMethod), Effect.map(ReadonlyArray.compact))
     ),
     Effect.bind('properties', ({ name }) => parseProperties(name, c)),
     Effect.map(({ methods, staticMethods, properties, info, name, signature }) =>
@@ -810,7 +780,7 @@ export const parseModuleDocumentation = pipe(
     ])
     const onMissingDocumentation = () =>
       isDocumentationRequired
-        ? Either.left([`Missing documentation in ${Source.path.join('/')} module`])
+        ? Either.left(`Missing documentation in ${Source.path.join('/')} module`)
         : Either.right(Domain.createDocumentable(name, Option.none(), Option.none(), false, [], Option.none()))
     return pipe(
       Source.sourceFile.getStatements(),
@@ -847,7 +817,7 @@ export const parseModule = pipe(
   Effect.flatMap((Source) =>
     pipe(
       Effect.Do(),
-      Effect.bind('documentation', () => parseModuleDocumentation),
+      Effect.bind('documentation', () => Effect.mapError(parseModuleDocumentation, (e) => [e])),
       Effect.bind('interfaces', () => parseInterfaces),
       Effect.bind('functions', () => parseFunctions),
       Effect.bind('typeAliases', () => parseTypeAliases),

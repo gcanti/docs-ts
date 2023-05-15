@@ -40,7 +40,7 @@ const getParser = (sourceText: string): Service.Source => ({
 const expectLeft = <E, A>(
   sourceText: string,
   eff: Effect.Effect<Service.Source | Service.Config, E, A>,
-  left: Array<string>,
+  left: E,
   config?: Partial<_.Config>
 ) => {
   expect(
@@ -829,9 +829,11 @@ describe.concurrent('Parser', () => {
       })
 
       it('should return an error when documentation is enforced but no documentation is provided', () => {
-        expectLeft('export const a: number = 1', Parser.parseModuleDocumentation, [
+        expectLeft(
+          'export const a: number = 1',
+          Parser.parseModuleDocumentation,
           'Missing documentation in test module'
-        ])
+        )
       })
 
       it('should support absence of module documentation when no documentation is enforced', () => {
@@ -1062,7 +1064,7 @@ export const foo = 'foo'`,
 * @since 1.0.0
 */`
 
-        expectLeft('', Parser.getCommentInfo('name')(text), ['Missing @category tag in test#name documentation'])
+        expectLeft('', Parser.getCommentInfo('name')(text), 'Missing @category tag in test#name documentation')
       })
 
       it('should require a description if `enforceDescriptions` is set to true', () => {
@@ -1071,7 +1073,7 @@ export const foo = 'foo'`,
 * @since 1.0.0
 */`
 
-        expectLeft('', Parser.getCommentInfo('name')(text), ['Missing description in test#name documentation'], {
+        expectLeft('', Parser.getCommentInfo('name')(text), 'Missing description in test#name documentation', {
           enforceDescriptions: true
         })
       })
@@ -1083,7 +1085,7 @@ export const foo = 'foo'`,
 * @since 1.0.0
 */`
 
-        expectLeft('', Parser.getCommentInfo('name')(text), ['Missing @example tag in test#name documentation'], {
+        expectLeft('', Parser.getCommentInfo('name')(text), 'Missing @example tag in test#name documentation', {
           enforceExamples: true
         })
       })
@@ -1096,7 +1098,7 @@ export const foo = 'foo'`,
 * @since 1.0.0
 */`
 
-        expectLeft('', Parser.getCommentInfo('name')(text), ['Missing @example tag in test#name documentation'], {
+        expectLeft('', Parser.getCommentInfo('name')(text), 'Missing @example tag in test#name documentation', {
           enforceExamples: true
         })
       })

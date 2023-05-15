@@ -34,10 +34,6 @@ const parseJsonFile = <I, A>(path: string, schema: Schema.Schema<I, A>): Effect.
     )
   )
 
-// -------------------------------------------------------------------------------------
-// Config
-// -------------------------------------------------------------------------------------
-
 const ConfigSchema = Schema.struct({
   projectHomepage: Schema.string,
   srcDir: Schema.string,
@@ -90,7 +86,9 @@ const loadConfig = pipe(
   )
 )
 
-/** @internal */
+/**
+ * @since 0.9.0
+ */
 export const getConfig: Effect.Effect<never, Error, Service.Config> = pipe(
   Effect.all(parsePackageJson, loadConfig),
   Effect.map(([pkg, config]) => {

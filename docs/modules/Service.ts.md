@@ -38,7 +38,7 @@ Added in v0.9.0
 
 ```ts
 export interface Config {
-  readonly config: _.Config
+  readonly config: config.Config
 }
 ```
 

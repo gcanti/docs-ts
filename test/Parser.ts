@@ -5,8 +5,8 @@ import * as Effect from '@effect/io/Effect'
 import * as assert from 'assert'
 import * as ast from 'ts-morph'
 
+import * as _ from '../src/Config'
 import * as FileSystem from '../src/FileSystem'
-import * as _ from '../src/internal'
 import * as Parser from '../src/Parser'
 import * as Service from '../src/Service'
 

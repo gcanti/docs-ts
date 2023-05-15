@@ -5,14 +5,14 @@ import * as Context from '@effect/data/Context'
 import * as ReadonlyArray from '@effect/data/ReadonlyArray'
 import * as ast from 'ts-morph'
 
-import * as _ from './internal'
+import * as config from './Config'
 
 /**
  * @category service
  * @since 0.9.0
  */
 export interface Config {
-  readonly config: _.Config
+  readonly config: config.Config
 }
 
 /**

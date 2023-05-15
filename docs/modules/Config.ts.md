@@ -1,10 +1,10 @@
 ---
-title: internal.ts
-nav_order: 6
+title: Config.ts
+nav_order: 2
 parent: Modules
 ---
 
-## internal overview
+## Config overview
 
 Added in v0.9.0
 
@@ -14,6 +14,8 @@ Added in v0.9.0
 
 - [Config](#config)
   - [Config (interface)](#config-interface)
+- [utils](#utils)
+  - [getConfig](#getconfig)
 
 ---
 
@@ -27,6 +29,18 @@ Added in v0.9.0
 export interface Config extends Schema.To<typeof ConfigSchema> {
   readonly projectName: string
 }
+```
+
+Added in v0.9.0
+
+# utils
+
+## getConfig
+
+**Signature**
+
+```ts
+export declare const getConfig: Effect.Effect<never, Error, Service.Config>
 ```
 
 Added in v0.9.0

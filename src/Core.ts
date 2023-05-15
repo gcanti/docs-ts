@@ -9,15 +9,15 @@ import * as Effect from '@effect/io/Effect'
 import chalk from 'chalk'
 import * as NodePath from 'path'
 
+import * as Config from './Config'
 import * as Domain from './Domain'
 import * as FileSystem from './FileSystem'
-import * as _ from './internal'
 import * as Logger from './Logger'
 import { printModule } from './Markdown'
 import * as NodeChildProcess from './NodeChildProcess'
 import * as Parser from './Parser'
 import * as Process from './Process'
-import { Config } from './Service'
+import * as Service from './Service'
 
 // -------------------------------------------------------------------------------------
 // readFiles
@@ -26,7 +26,7 @@ import { Config } from './Service'
 const join = (...paths: Array<string>): string => NodePath.normalize(NodePath.join(...paths))
 
 const readFiles = pipe(
-  Config,
+  Service.Config,
   Effect.flatMap(({ config }) => FileSystem.glob(join(config.srcDir, '**', '*.ts'), config.exclude)),
   Effect.tap((paths) => Logger.info(chalk.bold(`${paths.length} module(s) found`))),
   Effect.flatMap(
@@ -36,9 +36,9 @@ const readFiles = pipe(
   )
 )
 
-const writeFile = (file: FileSystem.File): Effect.Effect<Config, Error, void> =>
+const writeFile = (file: FileSystem.File): Effect.Effect<Service.Config, Error, void> =>
   pipe(
-    Effect.all(Config, Process.cwd),
+    Effect.all(Service.Config, Process.cwd),
     Effect.flatMap(([Config, cwd]) => {
       const fileName = NodePath.relative(NodePath.join(cwd, Config.config.outDir), file.path)
 
@@ -89,7 +89,7 @@ const combineAllFiles = ReadonlyArray.getMonoid<FileSystem.File>().combineAll
 
 const getExampleFiles = (modules: ReadonlyArray<Domain.Module>) =>
   pipe(
-    Config,
+    Service.Config,
     Effect.map(({ config }) =>
       pipe(
         modules,
@@ -136,7 +136,7 @@ const addAssertImport = (code: string): string =>
 
 const replaceProjectName = (source: string) =>
   pipe(
-    Config,
+    Service.Config,
     Effect.map(({ config }) => {
       const importRegex = (projectName: string) =>
         new RegExp(`from (?<quote>['"])${projectName}(?:/lib)?(?:/(?<path>.*))?\\k<quote>`, 'g')
@@ -165,19 +165,19 @@ const getExampleIndex = (examples: ReadonlyArray<FileSystem.File>) => {
     ReadonlyArray.combineMap(String.Monoid)((example) => `import './${NodePath.basename(example.path, '.ts')}'\n`)
   )
   return pipe(
-    Config,
+    Service.Config,
     Effect.map(({ config }) => FileSystem.createFile(join(config.outDir, 'examples', 'index.ts'), `${content}\n`, true))
   )
 }
 
 const cleanExamples = pipe(
-  Config,
+  Service.Config,
   Effect.flatMap(({ config }) => FileSystem.remove(join(config.outDir, 'examples')))
 )
 
 const spawnTsNode = pipe(
   Logger.debug('Type checking examples...'),
-  Effect.flatMap(() => Effect.all(Config, Process.cwd)),
+  Effect.flatMap(() => Effect.all(Service.Config, Process.cwd)),
   Effect.flatMap(([Config, cwd]) => {
     const command = process.platform === 'win32' ? 'ts-node.cmd' : 'ts-node'
     const executable = join(cwd, Config.config.outDir, 'examples', 'index.ts')
@@ -185,7 +185,7 @@ const spawnTsNode = pipe(
   })
 )
 
-const writeFiles = (files: ReadonlyArray<FileSystem.File>): Effect.Effect<Config, Error, void> =>
+const writeFiles = (files: ReadonlyArray<FileSystem.File>): Effect.Effect<Service.Config, Error, void> =>
   Effect.forEachDiscard(files, writeFile)
 
 const writeExamples = (examples: ReadonlyArray<FileSystem.File>) =>
@@ -198,7 +198,7 @@ const writeExamples = (examples: ReadonlyArray<FileSystem.File>) =>
 
 const writeTsConfigJson = pipe(
   Logger.debug('Writing examples tsconfig...'),
-  Effect.flatMap(() => Effect.all(Config, Process.cwd)),
+  Effect.flatMap(() => Effect.all(Service.Config, Process.cwd)),
   Effect.flatMap(([Config, cwd]) =>
     writeFile(
       FileSystem.createFile(
@@ -235,7 +235,7 @@ const getMarkdown = (modules: ReadonlyArray<Domain.Module>) =>
   )
 
 const getHome = pipe(
-  Effect.all(Config, Process.cwd),
+  Effect.all(Service.Config, Process.cwd),
   Effect.map(([Config, cwd]) =>
     FileSystem.createFile(
       join(cwd, Config.config.outDir, 'index.md'),
@@ -250,7 +250,7 @@ nav_order: 1
 )
 
 const getModulesIndex = pipe(
-  Effect.all(Config, Process.cwd),
+  Effect.all(Service.Config, Process.cwd),
   Effect.map(([Config, cwd]) =>
     FileSystem.createFile(
       join(cwd, Config.config.outDir, 'modules', 'index.md'),
@@ -270,7 +270,7 @@ const replace =
   (s) =>
     s.replace(searchValue, replaceValue)
 
-const resolveConfigYML = (previousContent: string, config: _.Config): string =>
+const resolveConfigYML = (previousContent: string, config: Config.Config): string =>
   pipe(
     previousContent,
     replace(/^remote_theme:.*$/m, `remote_theme: ${config.theme}`),
@@ -281,13 +281,13 @@ const resolveConfigYML = (previousContent: string, config: _.Config): string =>
     )
   )
 
-const getHomepageNavigationHeader = (config: _.Config): string => {
+const getHomepageNavigationHeader = (config: Config.Config): string => {
   const isGitHub = config.projectHomepage.toLowerCase().includes('github')
   return isGitHub ? config.projectName + ' on GitHub' : 'Homepage'
 }
 
 const getConfigYML = pipe(
-  Effect.all(Config, Process.cwd),
+  Effect.all(Service.Config, Process.cwd),
   Effect.flatMap(([Config, cwd]) => {
     const filePath = join(cwd, Config.config.outDir, '_config.yml')
     return pipe(
@@ -320,7 +320,7 @@ const getConfigYML = pipe(
 
 const getMarkdownOutputPath = (module: Domain.Module) =>
   pipe(
-    Config,
+    Service.Config,
     Effect.map(({ config }) => join(config.outDir, 'modules', `${module.path.slice(1).join(NodePath.sep)}.md`))
   )
 
@@ -340,7 +340,7 @@ const getModuleMarkdownFiles = (modules: ReadonlyArray<Domain.Module>) =>
 
 const writeMarkdown = (files: ReadonlyArray<FileSystem.File>) =>
   pipe(
-    Config,
+    Service.Config,
     Effect.map(({ config }) => join(config.outDir, '**/*.ts.md')),
     Effect.tap((pattern) => Logger.debug(`deleting ${chalk.black(pattern)}`)),
     Effect.flatMap((pattern) => FileSystem.remove(pattern)),
@@ -362,5 +362,5 @@ export const main = pipe(
   Effect.flatMap(getMarkdown),
   Effect.tap(() => Logger.info('writing markdown files...')),
   Effect.flatMap(writeMarkdown),
-  Effect.provideServiceEffect(Config, _.getConfig)
+  Effect.provideServiceEffect(Service.Config, Config.getConfig)
 )

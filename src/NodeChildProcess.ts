@@ -10,10 +10,10 @@ import { flow } from '@effect/data/Function'
  * Executes a command like:
  *
  * ```sh
- * ts-node examples/index.ts
+ * ts-node docs/examples/index.ts
  * ```
  *
- * where `command = ts-node` and `executable = examples/index.ts`
+ * where `command = ts-node` and `executable = docs/examples/index.ts`
  *
  * @since 0.9.0
  */

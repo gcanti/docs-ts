@@ -14,20 +14,9 @@ import * as fs from 'fs-extra'
 import * as Glob from 'glob'
 import * as rimraf from 'rimraf'
 
+import * as Logger from './Logger'
 import * as Process from './Process'
 import * as Service from './Service'
-
-// -------------------------------------------------------------------------------------
-// Logger
-// -------------------------------------------------------------------------------------
-
-/** @internal */
-export const debug = (message: string): Effect.Effect<never, never, void> =>
-  Effect.sync(() => console.log(chalk.gray(`[DEBUG] ${message}`)))
-
-/** @internal */
-export const info = (message: string): Effect.Effect<never, never, void> =>
-  Effect.sync(() => console.info(`[INFO]  ${message}`))
 
 // -------------------------------------------------------------------------------------
 // FileSystem
@@ -179,12 +168,15 @@ const loadConfig = pipe(
   Effect.ifEffect(
     Effect.flatMap(getConfigPath, exists),
     pipe(
-      info(chalk.bold('Configuration file found')),
+      Logger.info(chalk.bold('Configuration file found')),
       Effect.flatMap(() => getConfigPath),
       Effect.flatMap((configPath) => parseJsonFile(configPath, PartialConfigSchema)),
       Effect.map(Option.some)
     ),
-    pipe(info(chalk.bold('No configuration file detected, using default configuration')), Effect.as(Option.none()))
+    pipe(
+      Logger.info(chalk.bold('No configuration file detected, using default configuration')),
+      Effect.as(Option.none())
+    )
   )
 )
 

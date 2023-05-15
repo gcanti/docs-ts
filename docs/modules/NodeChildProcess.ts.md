@@ -1,6 +1,6 @@
 ---
 title: NodeChildProcess.ts
-nav_order: 7
+nav_order: 8
 parent: Modules
 ---
 
@@ -24,10 +24,10 @@ Added in v0.9.0
 Executes a command like:
 
 ```sh
-ts-node examples/index.ts
+ts-node docs/examples/index.ts
 ```
 
-where `command = ts-node` and `executable = examples/index.ts`
+where `command = ts-node` and `executable = docs/examples/index.ts`
 
 **Signature**
 

@@ -11,6 +11,7 @@ import * as NodePath from 'path'
 
 import * as Domain from './Domain'
 import * as _ from './internal'
+import * as Logger from './Logger'
 import { printModule } from './Markdown'
 import * as NodeChildProcess from './NodeChildProcess'
 import * as Parser from './Parser'
@@ -26,7 +27,7 @@ const join = (...paths: Array<string>): string => NodePath.normalize(NodePath.jo
 const readFiles = pipe(
   Config,
   Effect.flatMap(({ config }) => _.glob(join(config.srcDir, '**', '*.ts'), config.exclude)),
-  Effect.tap((paths) => _.info(chalk.bold(`${paths.length} module(s) found`))),
+  Effect.tap((paths) => Logger.info(chalk.bold(`${paths.length} module(s) found`))),
   Effect.flatMap(
     Effect.forEachPar((path) => Effect.map(_.readFile(path), (content) => _.createFile(path, content, false)))
   )
@@ -39,11 +40,11 @@ const writeFile = (file: _.File): Effect.Effect<Config, Error, void> =>
       const fileName = NodePath.relative(NodePath.join(cwd, Config.config.outDir), file.path)
 
       const overwrite = pipe(
-        _.debug(`overwriting file ${chalk.black(fileName)}`),
+        Logger.debug(`overwriting file ${chalk.black(fileName)}`),
         Effect.flatMap(() => _.writeFile(file.path, file.content))
       )
 
-      const skip = _.debug(`file ${chalk.black(fileName)} already exists, skipping creation`)
+      const skip = Logger.debug(`file ${chalk.black(fileName)} already exists, skipping creation`)
 
       const write = _.writeFile(file.path, file.content)
 
@@ -172,7 +173,7 @@ const cleanExamples = pipe(
 )
 
 const spawnTsNode = pipe(
-  _.debug('Type checking examples...'),
+  Logger.debug('Type checking examples...'),
   Effect.flatMap(() => Effect.all(Config, Process.cwd)),
   Effect.flatMap(([Config, cwd]) => {
     const command = process.platform === 'win32' ? 'ts-node.cmd' : 'ts-node'
@@ -186,14 +187,14 @@ const writeFiles = (files: ReadonlyArray<_.File>): Effect.Effect<Config, Error, 
 
 const writeExamples = (examples: ReadonlyArray<_.File>) =>
   pipe(
-    _.debug('Writing examples...'),
+    Logger.debug('Writing examples...'),
     Effect.flatMap(() => getExampleIndex(examples)),
     Effect.map((index) => pipe(examples, ReadonlyArray.prepend(index))),
     Effect.flatMap(writeFiles)
   )
 
 const writeTsConfigJson = pipe(
-  _.debug('Writing examples tsconfig...'),
+  Logger.debug('Writing examples tsconfig...'),
   Effect.flatMap(() => Effect.all(Config, Process.cwd)),
   Effect.flatMap(([Config, cwd]) =>
     writeFile(
@@ -338,7 +339,7 @@ const writeMarkdown = (files: ReadonlyArray<_.File>) =>
   pipe(
     Config,
     Effect.map(({ config }) => join(config.outDir, '**/*.ts.md')),
-    Effect.tap((pattern) => _.debug(`deleting ${chalk.black(pattern)}`)),
+    Effect.tap((pattern) => Logger.debug(`deleting ${chalk.black(pattern)}`)),
     Effect.flatMap((pattern) => _.remove(pattern)),
     Effect.flatMap(() => writeFiles(files))
   )
@@ -348,15 +349,15 @@ const writeMarkdown = (files: ReadonlyArray<_.File>) =>
  * @since 0.9.0
  */
 export const main = pipe(
-  _.info('reading modules...'),
+  Logger.info('reading modules...'),
   Effect.flatMap(() => readFiles),
-  Effect.tap(() => _.info('parsing modules...')),
+  Effect.tap(() => Logger.info('parsing modules...')),
   Effect.flatMap(getModules),
-  Effect.tap(() => _.info('typechecking examples...')),
+  Effect.tap(() => Logger.info('typechecking examples...')),
   Effect.tap(typeCheckExamples),
-  Effect.tap(() => _.info('creating markdown files...')),
+  Effect.tap(() => Logger.info('creating markdown files...')),
   Effect.flatMap(getMarkdown),
-  Effect.tap(() => _.info('writing markdown files...')),
+  Effect.tap(() => Logger.info('writing markdown files...')),
   Effect.flatMap(writeMarkdown),
   Effect.provideServiceEffect(Config, _.getConfig)
 )

@@ -3,12 +3,12 @@ import * as Option from '@effect/data/Option'
 import * as ReadonlyArray from '@effect/data/ReadonlyArray'
 import * as assert from 'assert'
 
-import * as Module from '../src/Module'
+import * as Domain from '../src/Domain'
 
 const documentable = (name: string) =>
-  Module.createDocumentable(name, Option.none(), Option.some('1.0.0'), false, [], Option.none())
+  Domain.createDocumentable(name, Option.none(), Option.some('1.0.0'), false, [], Option.none())
 
-describe.concurrent('Module', () => {
+describe.concurrent('Domain', () => {
   describe.concurrent('constructors', () => {
     it('Documentable', () => {
       assert.deepStrictEqual(documentable('A'), {
@@ -22,7 +22,7 @@ describe.concurrent('Module', () => {
     })
 
     it('Module', () => {
-      const m = Module.createModule(documentable('test'), ['src', 'index.ts'], [], [], [], [], [], [])
+      const m = Domain.createModule(documentable('test'), ['src', 'index.ts'], [], [], [], [], [], [])
 
       assert.deepStrictEqual(m, {
         ...documentable('test'),
@@ -37,7 +37,7 @@ describe.concurrent('Module', () => {
     })
 
     it('Class', () => {
-      const c = Module.createClass(documentable('A'), 'declare class A { constructor() }', [], [], [])
+      const c = Domain.createClass(documentable('A'), 'declare class A { constructor() }', [], [], [])
 
       assert.deepStrictEqual(c, {
         _tag: 'Class',
@@ -50,7 +50,7 @@ describe.concurrent('Module', () => {
     })
 
     it('Constant', () => {
-      const c = Module.createConstant(documentable('foo'), 'declare const foo: string')
+      const c = Domain.createConstant(documentable('foo'), 'declare const foo: string')
 
       assert.deepStrictEqual(c, {
         _tag: 'Constant',
@@ -60,7 +60,7 @@ describe.concurrent('Module', () => {
     })
 
     it('Method', () => {
-      const m = Module.createMethod(documentable('foo'), ['foo(): string'])
+      const m = Domain.createMethod(documentable('foo'), ['foo(): string'])
 
       assert.deepStrictEqual(m, {
         ...documentable('foo'),
@@ -69,7 +69,7 @@ describe.concurrent('Module', () => {
     })
 
     it('Property', () => {
-      const p = Module.createProperty(documentable('foo'), 'foo: string')
+      const p = Domain.createProperty(documentable('foo'), 'foo: string')
 
       assert.deepStrictEqual(p, {
         ...documentable('foo'),
@@ -78,7 +78,7 @@ describe.concurrent('Module', () => {
     })
 
     it('Interface', () => {
-      const i = Module.createInterface(documentable('A'), 'interface A {}')
+      const i = Domain.createInterface(documentable('A'), 'interface A {}')
 
       assert.deepStrictEqual(i, {
         _tag: 'Interface',
@@ -88,7 +88,7 @@ describe.concurrent('Module', () => {
     })
 
     it('Function', () => {
-      const f = Module.createFunction(documentable('func'), ['declare function func(): string'])
+      const f = Domain.createFunction(documentable('func'), ['declare function func(): string'])
 
       assert.deepStrictEqual(f, {
         _tag: 'Function',
@@ -98,7 +98,7 @@ describe.concurrent('Module', () => {
     })
 
     it('TypeAlias', () => {
-      const ta = Module.createTypeAlias(documentable('A'), 'type A = string')
+      const ta = Domain.createTypeAlias(documentable('A'), 'type A = string')
 
       assert.deepStrictEqual(ta, {
         _tag: 'TypeAlias',
@@ -108,7 +108,7 @@ describe.concurrent('Module', () => {
     })
 
     it('Export', () => {
-      const e = Module.createExport(documentable('foo'), 'export declare const foo: string')
+      const e = Domain.createExport(documentable('foo'), 'export declare const foo: string')
 
       assert.deepStrictEqual(e, {
         _tag: 'Export',
@@ -120,11 +120,11 @@ describe.concurrent('Module', () => {
 
   describe.concurrent('instances', () => {
     it('ordModule', () => {
-      const m1 = Module.createModule(documentable('test1'), ['src', 'test1.ts'], [], [], [], [], [], [])
+      const m1 = Domain.createModule(documentable('test1'), ['src', 'test1.ts'], [], [], [], [], [], [])
 
-      const m2 = Module.createModule(documentable('test1'), ['src', 'test1.ts'], [], [], [], [], [], [])
+      const m2 = Domain.createModule(documentable('test1'), ['src', 'test1.ts'], [], [], [], [], [], [])
 
-      const sorted = pipe([m2, m1], ReadonlyArray.sort(Module.Order))
+      const sorted = pipe([m2, m1], ReadonlyArray.sort(Domain.Order))
 
       assert.deepStrictEqual(sorted, [m1, m2])
     })

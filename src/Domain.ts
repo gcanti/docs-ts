@@ -1,14 +1,10 @@
 /**
  * @since 0.9.0
  */
-import { pipe } from '@effect/data/Function'
-import * as Option from '@effect/data/Option'
-import * as S from '@effect/data/String'
-import * as Ord from '@effect/data/typeclass/Order'
 
-// -------------------------------------------------------------------------------------
-// model
-// -------------------------------------------------------------------------------------
+import * as Option from '@effect/data/Option'
+import * as String from '@effect/data/String'
+import * as order from '@effect/data/typeclass/Order'
 
 /**
  * @category model
@@ -244,15 +240,10 @@ export const createExport = (documentable: Documentable, signature: string): Exp
   signature
 })
 
-// -------------------------------------------------------------------------------------
-// instances
-// -------------------------------------------------------------------------------------
-
 /**
  * @category instances
  * @since 0.9.0
  */
-export const Order: Ord.Order<Module> = pipe(
-  S.Order,
-  Ord.contramap((module: Module) => module.path.join('/').toLowerCase())
+export const Order: order.Order<Module> = order.contramap(String.Order, (module: Module) =>
+  module.path.join('/').toLowerCase()
 )

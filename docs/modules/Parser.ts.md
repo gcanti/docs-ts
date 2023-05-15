@@ -31,7 +31,7 @@ Added in v0.9.0
 **Signature**
 
 ```ts
-export declare const parseClasses: Effect.Effect<Service.Config | Service.Source, string[], Module.Class[]>
+export declare const parseClasses: Effect.Effect<Service.Config | Service.Source, string[], Domain.Class[]>
 ```
 
 Added in v0.9.0
@@ -41,7 +41,7 @@ Added in v0.9.0
 **Signature**
 
 ```ts
-export declare const parseConstants: Effect.Effect<Service.Config | Service.Source, string[], Module.Constant[]>
+export declare const parseConstants: Effect.Effect<Service.Config | Service.Source, string[], Domain.Constant[]>
 ```
 
 Added in v0.9.0
@@ -51,7 +51,7 @@ Added in v0.9.0
 **Signature**
 
 ```ts
-export declare const parseExports: Effect.Effect<Service.Config | Service.Source, string[], Module.Export[]>
+export declare const parseExports: Effect.Effect<Service.Config | Service.Source, string[], Domain.Export[]>
 ```
 
 Added in v0.9.0
@@ -63,7 +63,7 @@ Added in v0.9.0
 ```ts
 export declare const parseFiles: (
   files: ReadonlyArray<_.File>
-) => Effect.Effect<Service.Config, string[][], Module.Module[]>
+) => Effect.Effect<Service.Config, string[][], Domain.Module[]>
 ```
 
 Added in v0.9.0
@@ -73,7 +73,7 @@ Added in v0.9.0
 **Signature**
 
 ```ts
-export declare const parseFunctions: Effect.Effect<Service.Config | Service.Source, string[], Module.Function[]>
+export declare const parseFunctions: Effect.Effect<Service.Config | Service.Source, string[], Domain.Function[]>
 ```
 
 Added in v0.9.0
@@ -83,7 +83,7 @@ Added in v0.9.0
 **Signature**
 
 ```ts
-export declare const parseInterfaces: Effect.Effect<Service.Config | Service.Source, string[], Module.Interface[]>
+export declare const parseInterfaces: Effect.Effect<Service.Config | Service.Source, string[], Domain.Interface[]>
 ```
 
 Added in v0.9.0
@@ -93,7 +93,7 @@ Added in v0.9.0
 **Signature**
 
 ```ts
-export declare const parseModule: Effect.Effect<Service.Config | Service.Source, string[], Module.Module>
+export declare const parseModule: Effect.Effect<Service.Config | Service.Source, string[], Domain.Module>
 ```
 
 Added in v0.9.0
@@ -103,7 +103,7 @@ Added in v0.9.0
 **Signature**
 
 ```ts
-export declare const parseTypeAliases: Effect.Effect<Service.Config | Service.Source, string[], Module.TypeAlias[]>
+export declare const parseTypeAliases: Effect.Effect<Service.Config | Service.Source, string[], Domain.TypeAlias[]>
 ```
 
 Added in v0.9.0

@@ -9,12 +9,12 @@ import * as String from '@effect/data/String'
 import * as Order from '@effect/data/typeclass/Order'
 import * as Prettier from 'prettier'
 
-import * as Module from './Module'
+import * as Domain from './Domain'
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const toc = require('markdown-toc')
 
-type Printable = Module.Class | Module.Constant | Module.Export | Module.Function | Module.Interface | Module.TypeAlias
+type Printable = Domain.Class | Domain.Constant | Domain.Export | Domain.Function | Domain.Interface | Domain.TypeAlias
 
 const bold = (s: string) => `**${s}**`
 
@@ -62,7 +62,7 @@ const getSignatures = (ss: ReadonlyArray<string>): string =>
 const getExamples = (es: ReadonlyArray<string>): string =>
   es.map((code) => paragraph(bold('Example')) + paragraph(fence('ts', code))).join('\n\n')
 
-const getStaticMethod = (m: Module.Method): string =>
+const getStaticMethod = (m: Domain.Method): string =>
   paragraph(
     h3(getTitle(m.name, m.deprecated, '(static method)')),
     getDescription(m.description),
@@ -71,7 +71,7 @@ const getStaticMethod = (m: Module.Method): string =>
     getSince(m.since)
   )
 
-const getMethod = (m: Module.Method): string =>
+const getMethod = (m: Domain.Method): string =>
   paragraph(
     h3(getTitle(m.name, m.deprecated, '(method)')),
     getDescription(m.description),
@@ -80,7 +80,7 @@ const getMethod = (m: Module.Method): string =>
     getSince(m.since)
   )
 
-const getProperty = (p: Module.Property): string =>
+const getProperty = (p: Domain.Property): string =>
   paragraph(
     h3(getTitle(p.name, p.deprecated, '(property)')),
     getDescription(p.description),
@@ -89,16 +89,16 @@ const getProperty = (p: Module.Property): string =>
     getSince(p.since)
   )
 
-const getStaticMethods = (methods: ReadonlyArray<Module.Method>): string =>
+const getStaticMethods = (methods: ReadonlyArray<Domain.Method>): string =>
   ReadonlyArray.map(methods, (method) => getStaticMethod(method) + '\n\n').join('')
 
-const getMethods = (methods: ReadonlyArray<Module.Method>): string =>
+const getMethods = (methods: ReadonlyArray<Domain.Method>): string =>
   ReadonlyArray.map(methods, (method) => getMethod(method) + '\n\n').join('')
 
-const getProperties = (properties: ReadonlyArray<Module.Property>): string =>
+const getProperties = (properties: ReadonlyArray<Domain.Property>): string =>
   ReadonlyArray.map(properties, (property) => getProperty(property) + '\n\n').join('')
 
-const getModuleDescription = (module: Module.Module): string =>
+const getModuleDescription = (module: Domain.Module): string =>
   paragraph(
     h2(getTitle(module.name, module.deprecated, 'overview')),
     getDescription(module.description),
@@ -109,7 +109,7 @@ const getModuleDescription = (module: Module.Module): string =>
 const getMeta = (title: string, order: number): string =>
   paragraph('---', `\n`, `title: ${title}`, `\n`, `nav_order: ${order}`, `\n`, `parent: Modules`, `\n`, '---')
 
-const fromClass = (c: Module.Class): string =>
+const fromClass = (c: Domain.Class): string =>
   paragraph(
     paragraph(
       h2(getTitle(c.name, c.deprecated, '(class)')),
@@ -123,7 +123,7 @@ const fromClass = (c: Module.Class): string =>
     getProperties(c.properties)
   )
 
-const fromConstant = (c: Module.Constant): string =>
+const fromConstant = (c: Domain.Constant): string =>
   paragraph(
     h2(getTitle(c.name, c.deprecated)),
     getDescription(c.description),
@@ -132,7 +132,7 @@ const fromConstant = (c: Module.Constant): string =>
     getSince(c.since)
   )
 
-const fromExport = (e: Module.Export): string =>
+const fromExport = (e: Domain.Export): string =>
   paragraph(
     h2(getTitle(e.name, e.deprecated)),
     getDescription(e.description),
@@ -141,7 +141,7 @@ const fromExport = (e: Module.Export): string =>
     getSince(e.since)
   )
 
-const fromFunction = (f: Module.Function): string =>
+const fromFunction = (f: Domain.Function): string =>
   paragraph(
     h2(getTitle(f.name, f.deprecated)),
     getDescription(f.description),
@@ -150,7 +150,7 @@ const fromFunction = (f: Module.Function): string =>
     getSince(f.since)
   )
 
-const fromInterface = (i: Module.Interface): string =>
+const fromInterface = (i: Domain.Interface): string =>
   paragraph(
     h2(getTitle(i.name, i.deprecated, '(interface)')),
     getDescription(i.description),
@@ -159,7 +159,7 @@ const fromInterface = (i: Module.Interface): string =>
     getSince(i.since)
   )
 
-const fromTypeAlias = (ta: Module.TypeAlias): string =>
+const fromTypeAlias = (ta: Domain.TypeAlias): string =>
   paragraph(
     h2(getTitle(ta.name, ta.deprecated, '(type alias)')),
     getDescription(ta.description),
@@ -186,7 +186,7 @@ export const fromPrintable = (p: Printable): string => {
   }
 }
 
-const getPrintables = (module: Module.Module): ReadonlyArray<Printable> =>
+const getPrintables = (module: Domain.Module): ReadonlyArray<Printable> =>
   ReadonlyArray.getMonoid<Printable>().combineAll([
     module.classes,
     module.constants,
@@ -200,7 +200,7 @@ const getPrintables = (module: Module.Module): ReadonlyArray<Printable> =>
  * @category printers
  * @since 0.9.0
  */
-export const printModule = (module: Module.Module, order: number): string => {
+export const printModule = (module: Domain.Module, order: number): string => {
   const DEFAULT_CATEGORY = 'utils'
 
   const header = getMeta(module.path.slice(1).join('/'), order)

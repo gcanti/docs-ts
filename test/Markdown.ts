@@ -2,7 +2,6 @@ import { flow } from '@effect/data/Function'
 import * as Option from '@effect/data/Option'
 import * as assert from 'assert'
 
-import * as _ from '../src/Markdown'
 import {
   createClass,
   createConstant,
@@ -14,7 +13,8 @@ import {
   createModule,
   createProperty,
   createTypeAlias
-} from '../src/Module'
+} from '../src/Domain'
+import * as _ from '../src/Markdown'
 
 const testCases = {
   class: createClass(

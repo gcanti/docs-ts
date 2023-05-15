@@ -1,6 +1,6 @@
 ---
 title: Markdown.ts
-nav_order: 5
+nav_order: 6
 parent: Modules
 ---
 
@@ -24,7 +24,7 @@ Added in v0.9.0
 **Signature**
 
 ```ts
-export declare const printModule: (module: Module.Module, order: number) => string
+export declare const printModule: (module: Domain.Module, order: number) => string
 ```
 
 Added in v0.9.0

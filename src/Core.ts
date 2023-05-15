@@ -9,9 +9,9 @@ import * as Effect from '@effect/io/Effect'
 import chalk from 'chalk'
 import * as NodePath from 'path'
 
+import * as Domain from './Domain'
 import * as _ from './internal'
 import { printModule } from './Markdown'
-import * as Module from './Module'
 import * as Parser from './Parser'
 import * as Process from './Process'
 import { Config } from './Service'
@@ -64,7 +64,7 @@ const getModules = (files: ReadonlyArray<_.File>) =>
 // typeCheckExamples
 // -------------------------------------------------------------------------------------
 
-const typeCheckExamples = (modules: ReadonlyArray<Module.Module>) =>
+const typeCheckExamples = (modules: ReadonlyArray<Domain.Module>) =>
   pipe(
     getExampleFiles(modules),
     Effect.flatMap(handleImports),
@@ -82,7 +82,7 @@ const typeCheckExamples = (modules: ReadonlyArray<Module.Module>) =>
 
 const combineAllFiles = ReadonlyArray.getMonoid<_.File>().combineAll
 
-const getExampleFiles = (modules: ReadonlyArray<Module.Module>) =>
+const getExampleFiles = (modules: ReadonlyArray<Domain.Module>) =>
   pipe(
     Config,
     Effect.map(({ config }) =>
@@ -93,7 +93,7 @@ const getExampleFiles = (modules: ReadonlyArray<Module.Module>) =>
 
           const getDocumentableExamples =
             (id: string) =>
-            (documentable: Module.Documentable): ReadonlyArray<_.File> =>
+            (documentable: Domain.Documentable): ReadonlyArray<_.File> =>
               pipe(
                 documentable.examples,
                 ReadonlyArray.map((content, i) =>
@@ -215,7 +215,7 @@ const writeTsConfigJson = pipe(
 // getMarkdown
 // -------------------------------------------------------------------------------------
 
-const getMarkdown = (modules: ReadonlyArray<Module.Module>) =>
+const getMarkdown = (modules: ReadonlyArray<Domain.Module>) =>
   pipe(
     Effect.Do(),
     Effect.bind('home', () => getHome),
@@ -313,13 +313,13 @@ const getConfigYML = pipe(
   })
 )
 
-const getMarkdownOutputPath = (module: Module.Module) =>
+const getMarkdownOutputPath = (module: Domain.Module) =>
   pipe(
     Config,
     Effect.map(({ config }) => join(config.outDir, 'modules', `${module.path.slice(1).join(NodePath.sep)}.md`))
   )
 
-const getModuleMarkdownFiles = (modules: ReadonlyArray<Module.Module>) =>
+const getModuleMarkdownFiles = (modules: ReadonlyArray<Domain.Module>) =>
   Effect.forEachWithIndex(modules, (module, order) =>
     pipe(
       Effect.Do(),

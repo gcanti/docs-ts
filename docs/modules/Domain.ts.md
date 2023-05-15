@@ -1,10 +1,10 @@
 ---
-title: Module.ts
-nav_order: 6
+title: Domain.ts
+nav_order: 3
 parent: Modules
 ---
 
-## Module overview
+## Domain overview
 
 Added in v0.9.0
 
@@ -171,7 +171,7 @@ Added in v0.9.0
 **Signature**
 
 ```ts
-export declare const Order: Ord.Order<Module>
+export declare const Order: order.Order<Module>
 ```
 
 Added in v0.9.0

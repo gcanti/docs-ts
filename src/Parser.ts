@@ -17,8 +17,8 @@ import chalk from 'chalk'
 import * as doctrine from 'doctrine'
 import * as ast from 'ts-morph'
 
+import * as Domain from './Domain'
 import * as _ from './internal'
-import * as Module from './Module'
 import * as Service from './Service'
 
 interface Comment {
@@ -30,7 +30,7 @@ interface CommentInfo {
   readonly description: Option.Option<string>
   readonly since: Option.Option<string>
   readonly deprecated: boolean
-  readonly examples: ReadonlyArray<Module.Example>
+  readonly examples: ReadonlyArray<Domain.Example>
   readonly category: Option.Option<string>
 }
 
@@ -38,7 +38,7 @@ const createCommentInfo = (
   description: Option.Option<string>,
   since: Option.Option<string>,
   deprecated: boolean,
-  examples: ReadonlyArray<Module.Example>,
+  examples: ReadonlyArray<Domain.Example>,
   category: Option.Option<string>
 ): CommentInfo => ({
   description,
@@ -63,7 +63,7 @@ const byName = pipe(
   Order.contramap(({ name }: { name: string }) => name)
 )
 
-const sortModules = ReadonlyArray.sort(Module.Order)
+const sortModules = ReadonlyArray.sort(Domain.Order)
 
 const isNonEmptyString = (s: string) => s.length > 0
 
@@ -223,8 +223,8 @@ const parseInterfaceDeclaration = (id: ast.InterfaceDeclaration) =>
     getJSDocText(id.getJsDocs()),
     getCommentInfo(id.getName()),
     Effect.map((info) =>
-      Module.createInterface(
-        Module.createDocumentable(
+      Domain.createInterface(
+        Domain.createDocumentable(
           id.getName(),
           info.description,
           info.since,
@@ -316,8 +316,8 @@ const parseFunctionDeclaration = (fd: ast.FunctionDeclaration) =>
                 )
             )
           )
-          return Module.createFunction(
-            Module.createDocumentable(
+          return Domain.createFunction(
+            Domain.createDocumentable(
               name,
               info.description,
               info.since,
@@ -340,8 +340,8 @@ const parseFunctionVariableDeclaration = (vd: ast.VariableDeclaration) => {
     getCommentInfo(name),
     Effect.map((info) => {
       const signature = `export declare const ${name}: ${stripImportTypes(vd.getType().getText(vd))}`
-      return Module.createFunction(
-        Module.createDocumentable(name, info.description, info.since, info.deprecated, info.examples, info.category),
+      return Domain.createFunction(
+        Domain.createDocumentable(name, info.description, info.since, info.deprecated, info.examples, info.category),
         [signature]
       )
     })
@@ -425,8 +425,8 @@ const parseTypeAliasDeclaration = (ta: ast.TypeAliasDeclaration) =>
         getJSDocText(ta.getJsDocs()),
         getCommentInfo(name),
         Effect.map((info) =>
-          Module.createTypeAlias(
-            Module.createDocumentable(
+          Domain.createTypeAlias(
+            Domain.createDocumentable(
               name,
               info.description,
               info.since,
@@ -477,8 +477,8 @@ const parseConstantVariableDeclaration = (vd: ast.VariableDeclaration) => {
     Effect.map((info) => {
       const type = stripImportTypes(vd.getType().getText(vd))
       const signature = `export declare const ${name}: ${type}`
-      return Module.createConstant(
-        Module.createDocumentable(name, info.description, info.since, info.deprecated, info.examples, info.category),
+      return Domain.createConstant(
+        Domain.createDocumentable(name, info.description, info.since, info.deprecated, info.examples, info.category),
         signature
       )
     })
@@ -548,8 +548,8 @@ const parseExportSpecifier = (es: ast.ExportSpecifier) =>
             Option.toEither(() => [`Missing ${name} documentation in ${Source.path.join('/')}`]),
             Effect.flatMap((commentRange) => pipe(commentRange.getText(), getCommentInfo(name))),
             Effect.map((info) =>
-              Module.createExport(
-                Module.createDocumentable(
+              Domain.createExport(
+                Domain.createDocumentable(
                   name,
                   info.description,
                   info.since,
@@ -636,8 +636,8 @@ const parseMethod = (md: ast.MethodDeclaration) =>
                 )
               )
               return Option.some(
-                Module.createMethod(
-                  Module.createDocumentable(
+                Domain.createMethod(
+                  Domain.createDocumentable(
                     name,
                     info.description,
                     info.since,
@@ -668,8 +668,8 @@ const parseProperty = (classname: string) => (pd: ast.PropertyDeclaration) => {
         )
       )
       const signature = `${readonly}${name}: ${type}`
-      return Module.createProperty(
-        Module.createDocumentable(name, info.description, info.since, info.deprecated, info.examples, info.category),
+      return Domain.createProperty(
+        Domain.createDocumentable(name, info.description, info.since, info.deprecated, info.examples, info.category),
         signature
       )
     })
@@ -757,8 +757,8 @@ const parseClass = (c: ast.ClassDeclaration) =>
     ),
     Effect.bind('properties', ({ name }) => parseProperties(name, c)),
     Effect.map(({ methods, staticMethods, properties, info, name, signature }) =>
-      Module.createClass(
-        Module.createDocumentable(name, info.description, info.since, info.deprecated, info.examples, info.category),
+      Domain.createClass(
+        Domain.createDocumentable(name, info.description, info.since, info.deprecated, info.examples, info.category),
         signature,
         methods,
         staticMethods,
@@ -811,7 +811,7 @@ export const parseModuleDocumentation = pipe(
     const onMissingDocumentation = () =>
       isDocumentationRequired
         ? Either.left([`Missing documentation in ${Source.path.join('/')} module`])
-        : Either.right(Module.createDocumentable(name, Option.none(), Option.none(), false, [], Option.none()))
+        : Either.right(Domain.createDocumentable(name, Option.none(), Option.none(), false, [], Option.none()))
     return pipe(
       Source.sourceFile.getStatements(),
       ReadonlyArray.matchLeft(onMissingDocumentation, (statement) =>
@@ -821,7 +821,7 @@ export const parseModuleDocumentation = pipe(
             pipe(
               getCommentInfo(name, true)(commentRange.getText()),
               Effect.map((info) =>
-                Module.createDocumentable(
+                Domain.createDocumentable(
                   name,
                   info.description,
                   info.since,
@@ -855,7 +855,7 @@ export const parseModule = pipe(
       Effect.bind('constants', () => parseConstants),
       Effect.bind('exports', () => parseExports),
       Effect.map(({ documentation, classes, interfaces, functions, typeAliases, constants, exports }) =>
-        Module.createModule(documentation, Source.path, classes, interfaces, functions, typeAliases, constants, exports)
+        Domain.createModule(documentation, Source.path, classes, interfaces, functions, typeAliases, constants, exports)
       )
     )
   )
@@ -866,7 +866,7 @@ export const parseModule = pipe(
  */
 export const parseFile =
   (project: ast.Project) =>
-  (file: _.File): Effect.Effect<Service.Config, Array<string>, Module.Module> => {
+  (file: _.File): Effect.Effect<Service.Config, Array<string>, Domain.Module> => {
     const path = file.path.split(NodePath.sep) as any as ReadonlyArray.NonEmptyReadonlyArray<string>
     const sourceFile = project.getSourceFile(file.path)
     if (sourceFile !== undefined) {
